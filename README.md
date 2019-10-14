@@ -11,4 +11,4 @@ Probing the complementarity of several targets used in Direct Detection Experime
 
 ``conda install -c conda-forge emcee`` 
 
-``pip install numericalunits``
+``pip install numericalunits wimprates``
