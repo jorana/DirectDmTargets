@@ -12,3 +12,10 @@ Probing the complementarity of several targets used in Direct Detection Experime
 ``conda install -c conda-forge emcee`` 
 
 ``pip install numericalunits wimprates``
+
+``pip install jupyter_contrib_nbextensions``
+
+``jupyter contrib nbextension install --user``
+
+``jupyter nbextension enable spellchecker/main``
+
