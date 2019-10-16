@@ -77,14 +77,15 @@ class GenSpectrum:
         self.E_min = 0
         self.E_max = 100
 
-        self.bins = get_bins(self.E_min, self.E_max, self.n_bins)
-        self.bin_centers = np.mean(self.bins, axis=1)
 
     def __str__(self):
         """
         :return: info
         """
         return f"""spectrum of a DM model ({self.dm_model}) in a {self.detector} detector"""
+
+    def get_bin_centers(self):
+        return np.mean(get_bins(self.E_min, self.E_max, self.n_bins), axis=1)
 
     def spectrum(self, benchmark):
         """
@@ -96,7 +97,7 @@ class GenSpectrum:
                          'sigma_nucleon': benchmark[1]}
 
         # Not normalized
-        rate = wr.rate_wimp_std(self.bin_centers,
+        rate = wr.rate_wimp_std(self.get_bin_centers(),
                                 benchmark["mw"],
                                 benchmark["sigma_nucleon"],
                                 halo_model=self.dm_model
@@ -109,7 +110,7 @@ class GenSpectrum:
         """
         assert self.detector != {}, "First enter the parameters of the detector"
         rate = self.spectrum([self.mw, self.sigma_nucleon])
-        bin_width = np.diff(self.bins, axis=1)[:, 0]
+        bin_width = np.diff(get_bins(self.E_min, self.E_max, self.n_bins), axis=1)[:, 0]
         events = rate * bin_width * self.detector['exp_eff']
         return events
 
@@ -130,9 +131,10 @@ class GenSpectrum:
             result['counts'] = self.get_poisson_events()
         else:
             result['counts'] = self.get_events()
-        result['bin_centers'] = self.bin_centers
-        result['bin_left'] = self.bins[:, 0]
-        result['bin_right'] = self.bins[:, 1]
+        result['bin_centers'] = self.get_bin_centers()
+        bins = get_bins(self.E_min, self.E_max, self.n_bins)
+        result['bin_left'] = bins[:, 0]
+        result['bin_right'] = bins[:, 1]
         return result
 
 

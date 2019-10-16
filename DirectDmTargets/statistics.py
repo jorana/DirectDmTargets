@@ -10,7 +10,9 @@ use_SHM = SHM()
 
 priors = {
     'log_mass': {'range': [0.1, 3], 'prior_type': 'flat'},
-    'log_cross_secion': {'range': [-10, -6], 'prior_type': 'flat'},
+    'log_cross_secion': {'range': [-46, -42], 'prior_type': 'flat'},
+    # TODO
+    # 'log_cross_secion': {'range': [-10, -6], 'prior_type': 'flat'},
     'density': {'range': [0.001, 0.9], 'prior_type': 'gauss', 'mean': 0.4, 'std': 0.1},
     'v_0': {'range': [80, 380], 'prior_type': 'gauss', 'mean': 230, 'std': 30},
     'v_esc': {'range': [379, 709], 'prior_type': 'gauss', 'mean': 544, 'std': 33},
@@ -35,7 +37,7 @@ def approx_log_fact(n):
     assert n >= 0, f"Only take the logarithm of n>0. (n={n})"
 
     # if n is small, there is no need for approximation
-    if n < 100:
+    if n < 10:
         # gamma equals factorial for x -> x +1 and also returns results for non-integers
         return np.log(np.math.gamma(n + 1))
 
@@ -50,11 +52,14 @@ def log_likelihood_function(Nb, Nr):
     :param Nr: observed events
     :return: ln(likelihood)
     """
-    # https://www.wolframalpha.com/input/?i=simplify+ln%28R%5Eb+%2F+b%21+exp%28-b%29%29
-    return Nb * np.log((Nr)) - approx_log_fact(Nb) - Nr
+    if Nr < 10 and Nb < 10:
+        return np.log(((Nr**Nb) /np.math.gamma(Nb+1)) * np.exp(-Nr))
+    # https://www.wolframalpha.com/input/?i=simplify+ln%28R%5Eb+%2F+b%21+exp%28-R%29%29
+    else:
+        return Nb * np.log(Nr) - approx_log_fact(Nb) - Nr
 
 
-def log_likelihood(model, data):
+def log_likelihood_df(model, data):
     """
     :param model: pandas dataframe containing the number of counts in bin i
     :param data: pandas dataframe containing the number of counts in bin i
@@ -65,16 +70,42 @@ def log_likelihood(model, data):
     assert_str = f"please insert pd.dataframe for data ({type(data)}) and model ({type(model)})"
     assert type(data) == type(model) == pd.DataFrame, assert_str
 
-    res = 1
-    for i in range(data.shape[0]):
-        Nr = data['counts'][i]
-        Nb = model['counts'][i]
-        res_bin = log_likelihood_function(Nb, Nr)
+    return log_likelihood(model, data['bin_centers'], data['counts'])
 
-        # TODO check this lower bound suitable?
+def log_likelihood(model, x, y):
+    """
+    :param model: pandas dataframe containing the number of counts in bin i
+    :param x: energy of bin i
+    :param y: the number of counts in bin i
+    :return: product of the likelihoods of the bins
+    """
+
+    assert len(x) == len(y) == model.shape[0], f"""Data and model should be of same dimensions (now {len(x), len(y), 
+            model.shape[0]})"""
+    assert_str = f"please insert pd.dataframe for model ({type(model)})"
+    assert type(model) == pd.DataFrame, assert_str
+    # TODO Also add the assertion error for x and y
+    res = 1
+    for i in range(len(x)):
+
+        Nr = y[i]
+        Nb = model['counts'][i]
+        # TODO round Nb to int is okay?
+        ## https://www.wolframalpha.com/input/?i=simplify+ln%28R%5Eb+%2F+b%21+exp%28-b%29%29
+
+        res_bin = log_likelihood_function(Nb, Nr)
+        if np.isnan(res_bin):
+            raise ValueError(
+                f"Returned NaN in bin {i}. Below follows data dump.\n"
+                f"i = {i}, Nb, Nr = {Nb, Nr}\n"
+                f"res_bin {res_bin}\n"
+                f"log(Nr) = {np.log((Nr))}, Nb! = {approx_log_fact(Nb)}\n"
+                f"log_likelihood: {log_likelihood_function(Nb, Nr)}\n"
+                )
+        # TODO check this lowerbound
         res += np.maximum(res_bin, -10e9)
-    if res < -10e9:
-        print('log_likelihood::\tbadly defined likelihood. Something might be wrong.')
+    # if res < -10e9:
+    #     print('log_likelihood::\tbadly defined likelihood. Something might be wrong.')
     return res
 
 
@@ -111,9 +142,9 @@ def remove_nan(x, maskable=False):
     :param maskable: array to take into consideration when removing NaN and/or inf from x
     :return: x where x is well defined (not NaN or inf)
     """
-    if maskable != False:
+    if type(maskable) is not bool:
         assert len(x) == len(maskable), f"match length maskable {len(maskable)} to length array {len(x)}"
-    if type(maskable) == bool and maskable == False:
+    if type(maskable) is bool and maskable is False:
         mask = ~not_nan_inf(x)
         return masking(x, mask)
     else:
@@ -129,11 +160,24 @@ def gaus_prior(_param):
     return np.random.normal(mu, sigma)
 
 
-def log_probability(theta, x, y, x_name):
-    lp = log_prior(theta, x_name)
+def log_probability(theta, x, y, x_names):
+    # single parameter to fit
+    if type(x_names) == str:
+        x_val = theta
+        lp = log_prior(x_val, x_names)
+
+    elif len(x_names) > 1:
+        assert len(theta) == len(x_names), f"provide enough names ({x_names}) for the parameters (len{len(theta)})"
+        lp = np.sum([log_prior(*_x) for _x in zip(theta, x_names)])
+    else:
+        raise TypeError(f"""incorrect format provided. Theta should be array-like for single value of x_names or
+            Theta should be matrix-like for array-like x_names. Theta, x_names (provided) = {theta, x_names}""")
     if not np.isfinite(lp):
         return -np.inf
-    model = eval_log_likelihood(theta)
+    if type(x_names) == str and x_names == 'log_mass':
+        model = eval_log_likelihood_mass(theta)
+    else:
+        model = eval_log_likelihood(theta, x_names)
 
     ll = log_likelihood(model, x, y)
     if np.isnan(lp + ll):
@@ -171,28 +215,26 @@ def log_prior(x, x_name):
     else:
         raise TypeError(f"unknown prior type '{priors[x_name]['prior_type']}', choose either gauss or flat")
 
-
-def eval_log_likelihood(theta):
+# TODO remove this function
+def eval_log_likelihood_mass(theta):
     x = theta
     if np.shape(theta) == (1,):
         x = theta[0]
     return GenSpectrum(x, 10e-45, use_SHM, detectors['Xe']).get_data(poisson=False)
 
 
-def log_likelihood(model, x, y):
-    res = 1
-    for i in range(len(x)):
+def eval_log_likelihood(theta, x_names):
+    if len(x_names) == 2:
+        x0, x1 = theta
+        if np.shape(x0) == (1,): x0 = x0[0]
+        if np.shape(x1) == (1,): x1 = x1[0]
+        if x_names[0] == 'log_mass' and x_names[1] == 'log_cross_secion':
+            return GenSpectrum(x0, x1, use_SHM, detectors['Xe']).get_data(poisson=False)
+        elif x_names[1] == 'log_mass' and x_names[0] == 'log_cross_secion':
+            return GenSpectrum(x1, x0, use_SHM, detectors['Xe']).get_data(poisson=False)
+    elif len(x_names)>2:
+        raise ValueError(f"Not so quick cow-boy, before you code fitting three parameters or more, first code it! "
+                         f"(or make sure that you are not somehow forcing a string in this part of the code)")
+    else:
+        raise ValueError(f"Oops this is not somewhere you want to be, x_names = {x_names}")
 
-        Nr = y[i]
-        Nb = model['counts'][i]
-        # TO DO round Nb to int is okay?
-        ## https://www.wolframalpha.com/input/?i=simplify+ln%28R%5Eb+%2F+b%21+exp%28-b%29%29
-
-        res_bin = Nb * np.log((Nr)) - approx_log_fact(Nb) - Nr
-        if np.isnan(res_bin):
-            raise ValueError(f"Returned NaN in bin {i}. Below follows data dump.\n"
-                             f"i = {i}, Nb, Nr = {Nb, Nr}\n"
-                             f"log(Nr) = {np.log((Nr))}, Nb! = {approx_log_fact(Nb)}")
-        # TODO check this lowerbound
-        res += np.maximum(res_bin, -10e9)
-    return res

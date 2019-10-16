@@ -17,7 +17,7 @@ def plt_ll_sigma():
     xe_data = xe_events.get_data(poisson=True)
     sigma_nucleon = np.linspace(0.1 * 10e-45, 10 * 10e-45, 30)
     model = lambda x: GenSpectrum(50, x, use_SHM, detectors['Xe']).get_data(poisson=False)
-    plr = [log_likelihood(model(x), xe_data) for x in tqdm(sigma_nucleon)]
+    plr = [log_likelihood_df(model(x), xe_data) for x in tqdm(sigma_nucleon)]
     plt.scatter(sigma_nucleon, plr)
     plt.axvline(10e-45)
     plt.xlim(sigma_nucleon[0], sigma_nucleon[-1])
@@ -31,7 +31,7 @@ def plt_ll_mass():
     xe_data = xe_events.get_data(poisson=True)
 
     model = lambda x: GenSpectrum(x, 10e-45, use_SHM, detectors['Xe']).get_data(poisson=False)
-    plr = [log_likelihood(model(x), xe_data) for x in tqdm(mass)]
+    plr = [log_likelihood_df(model(x), xe_data) for x in tqdm(mass)]
 
     mass, plr = remove_nan(mass, plr), remove_nan(plr, mass)
     assert len(mass) > 0, "empty data remains"
@@ -43,7 +43,7 @@ def plt_ll_mass():
     plt.ylim(np.min(plr), np.max(plr))
 
 
-def plt_prios():
+def plt_priors():
     for key in priors.keys():
         par = priors[key]['param']
         dist = priors[key]['dist']
