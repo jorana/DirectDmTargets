@@ -6,6 +6,7 @@ from .statistics import *
 from .detector import *
 from .plot_basics import *
 from .examples import *
+from .emcee_applications import *
 
 # import wimprates as wr
 # import numpy as np

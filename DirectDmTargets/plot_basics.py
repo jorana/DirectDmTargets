@@ -2,7 +2,8 @@
 
 import matplotlib.pyplot as plt
 import numpy as np
-
+from .statistics import *
+from tqdm import tqdm
 
 def error_bar_hist(ax, data, data_range=None, nbins=50, **kwargs):
     x, y, yerr = hist_data(data, data_range, nbins)
@@ -28,3 +29,30 @@ def simple_hist(y):
     data_all = hist_data(y)
     ax.plot(data_all[0], data_all[1], linestyle='steps-mid', label="Pass through")
     error_bar_hist(ax, y)
+
+
+def ll_element_wise(x, y, clip_val=-1e4):
+    rows = len(x)
+    cols = len(x[0])
+    r = np.zeros((rows, cols))
+    for i in tqdm(range(rows)):
+        for j in range(cols):
+            r[i][j] = log_likelihood_function(x[i][j], y[i][j])
+    return np.clip(r, clip_val, 0)
+
+
+def show_ll_function():
+    from pylab import meshgrid, cm, imshow, contour, clabel, colorbar, axis, title, show
+    from matplotlib.colors import LogNorm
+    x = np.arange(0, 1e4, 1)
+    y = np.arange(0, 1e4, 1)
+    X, Y = meshgrid(x, y)  # grid of point
+    clip_val = -1e4
+    Z = -ll_element_wise(X, Y, clip_val)
+    im = imshow(Z, cmap=cm.RdBu,
+                norm=LogNorm(0.1, -clip_val))  # drawing the function
+    colorbar(im, label='$-\mathcal{L}$')  # adding the colobar on the right
+    title('$-\mathcal{L}$ clipped at %i' % (clip_val))
+    plt.xlabel("Nb")
+    plt.ylabel("Nr")
+    show()

@@ -28,7 +28,8 @@ def plt_ll_mass():
     use_SHM = SHM()
     mass = np.linspace(5, 100, 100)
     xe_events = GenSpectrum(50, 10e-45, use_SHM, detectors['Xe'])
-    xe_data = xe_events.get_data(poisson=True)
+    # TODO should add the poissonian noise
+    xe_data = xe_events.get_data(poisson=False)
 
     model = lambda x: GenSpectrum(x, 10e-45, use_SHM, detectors['Xe']).get_data(poisson=False)
     plr = [log_likelihood_df(model(x), xe_data) for x in tqdm(mass)]

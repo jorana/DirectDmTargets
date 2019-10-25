@@ -21,7 +21,7 @@ import numericalunits as nu
 # # TO Do also have @export?
 # # @export
 # class dm_halo:
-#     """Dark matter halo model. Takes astrophysical parameters and returns the elastic recoil spectrum"""
+#     """Dark matter halo model. Takes astrophysical parameters and returns the elastic recoil spectrum_simple"""
 #
 #     def __init__(self):
 #         self.v_0 = None
@@ -77,19 +77,18 @@ class GenSpectrum:
         self.E_min = 0
         self.E_max = 100
 
-
     def __str__(self):
         """
         :return: info
         """
-        return f"""spectrum of a DM model ({self.dm_model}) in a {self.detector} detector"""
+        return f"""spectrum_simple of a DM model ({self.dm_model}) in a {self.detector} detector"""
 
     def get_bin_centers(self):
         return np.mean(get_bins(self.E_min, self.E_max, self.n_bins), axis=1)
 
-    def spectrum(self, benchmark):
+    def spectrum_simple(self, benchmark):
         """
-        :param benchmark: insert the kind of DM to consider (should contain Mass and Crossection
+        :param benchmark: insert the kind of DM to consider (should contain Mass and Crossection)
         :return: returns the rate
         """
         if (not type(benchmark) == dict) or (not type(benchmark) == pd.DataFrame):
@@ -104,12 +103,29 @@ class GenSpectrum:
                                 )
         return rate
 
+    # def spectrum(self, benchmark, halo_parameters):
+    #     """
+    #     :param benchmark: insert the kind of DM to consider (should contain Mass and Crossection)
+    #     :return: returns the rate
+    #     """
+    #     if (not type(benchmark) == dict) or (not type(benchmark) == pd.DataFrame):
+    #         benchmark = {'mw': benchmark[0],
+    #                      'sigma_nucleon': benchmark[1]}
+    #
+    #     # Not normalized
+    #     rate = wr.rate_wimp_std(self.get_bin_centers(),
+    #                             benchmark["mw"],
+    #                             benchmark["sigma_nucleon"],
+    #                             halo_model=self.dm_model
+    #                             )
+    #     return rate
+
     def get_events(self):
         """
         :return: Events (binned)
         """
         assert self.detector != {}, "First enter the parameters of the detector"
-        rate = self.spectrum([self.mw, self.sigma_nucleon])
+        rate = self.spectrum_simple([self.mw, self.sigma_nucleon])
         bin_width = np.diff(get_bins(self.E_min, self.E_max, self.n_bins), axis=1)[:, 0]
         events = rate * bin_width * self.detector['exp_eff']
         return events
@@ -118,7 +134,7 @@ class GenSpectrum:
         """
         :return: events with poisson noise
         """
-        return np.random.poisson(self.get_events())
+        return np.random.poisson(self.get_events()).astype(np.float)
 
     def get_data(self, poisson=True):
         """

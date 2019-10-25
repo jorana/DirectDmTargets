@@ -10,9 +10,9 @@ use_SHM = SHM()
 
 priors = {
     'log_mass': {'range': [0.1, 3], 'prior_type': 'flat'},
-    'log_cross_secion': {'range': [-46, -42], 'prior_type': 'flat'},
+    'log_cross_section': {'range': [-46, -42], 'prior_type': 'flat'},
     # TODO
-    # 'log_cross_secion': {'range': [-10, -6], 'prior_type': 'flat'},
+    # 'log_cross_section': {'range': [-10, -6], 'prior_type': 'flat'},
     'density': {'range': [0.001, 0.9], 'prior_type': 'gauss', 'mean': 0.4, 'std': 0.1},
     'v_0': {'range': [80, 380], 'prior_type': 'gauss', 'mean': 230, 'std': 30},
     'v_esc': {'range': [379, 709], 'prior_type': 'gauss', 'mean': 544, 'std': 33},
@@ -52,11 +52,11 @@ def log_likelihood_function(Nb, Nr):
     :param Nr: observed events
     :return: ln(likelihood)
     """
-    if Nr < 10 and Nb < 10:
+    if Nr < 5 and Nb < 5:
         return np.log(((Nr**Nb) /np.math.gamma(Nb+1)) * np.exp(-Nr))
-    # https://www.wolframalpha.com/input/?i=simplify+ln%28R%5Eb+%2F+b%21+exp%28-R%29%29
-    else:
-        return Nb * np.log(Nr) - approx_log_fact(Nb) - Nr
+    # # https://www.wolframalpha.com/input/?i=simplify+ln%28R%5Eb+%2F+b%21+exp%28-R%29%29
+    # else:
+    return Nb * np.log(Nr) - approx_log_fact(Nb) - Nr
 
 
 def log_likelihood_df(model, data):
@@ -102,8 +102,11 @@ def log_likelihood(model, x, y):
                 f"log(Nr) = {np.log((Nr))}, Nb! = {approx_log_fact(Nb)}\n"
                 f"log_likelihood: {log_likelihood_function(Nb, Nr)}\n"
                 )
+        if not np.isfinite(res_bin):
+            return -np.inf
+        res += res_bin
         # TODO check this lowerbound
-        res += np.maximum(res_bin, -10e9)
+        # res += np.maximum(res_bin, -10e9)
     # if res < -10e9:
     #     print('log_likelihood::\tbadly defined likelihood. Something might be wrong.')
     return res
@@ -159,7 +162,7 @@ def gaus_prior(_param):
     mu, sigma = _param
     return np.random.normal(mu, sigma)
 
-
+# TODO add to class
 def log_probability(theta, x, y, x_names):
     # single parameter to fit
     if type(x_names) == str:
@@ -184,6 +187,29 @@ def log_probability(theta, x, y, x_names):
         raise ValueError(f"Returned NaN from likelihood. lp = {lp}, ll = {ll}")
     return lp + ll
 
+def log_probability_detector(theta, x, y, x_names):
+    # single parameter to fit
+    if type(x_names) == str:
+        x_val = theta
+        lp = log_prior(x_val, x_names)
+
+    elif len(x_names) > 1:
+        assert len(theta) == len(x_names), f"provide enough names ({x_names}) for the parameters (len{len(theta)})"
+        lp = np.sum([log_prior(*_x) for _x in zip(theta, x_names)])
+    else:
+        raise TypeError(f"""incorrect format provided. Theta should be array-like for single value of x_names or
+            Theta should be matrix-like for array-like x_names. Theta, x_names (provided) = {theta, x_names}""")
+    if not np.isfinite(lp):
+        return -np.inf
+    # if type(x_names) == str and x_names == 'log_mass':
+    #     model = eval_log_likelihood_mass(theta)
+    # else:
+    model = eval_log_likelihood(theta, x_names, spectrum_class=DetectorSpectrum)
+
+    ll = log_likelihood(model, x, y)
+    if np.isnan(lp + ll):
+        raise ValueError(f"Returned NaN from likelihood. lp = {lp}, ll = {ll}")
+    return lp + ll
 
 def log_flat(x, x_name):
     a, b = priors[x_name]['param']
@@ -205,6 +231,9 @@ def log_gauss(x, x_name):
 
 
 def log_prior(x, x_name):
+    if x < 0:
+        print(f"finding a negative value for {x_name}, returning -np.inf")
+        return -np.inf
     if priors[x_name]['prior_type'] == 'flat':
         if 'log' in x_name:
             return log_flat(np.log10(x), x_name)
@@ -213,28 +242,63 @@ def log_prior(x, x_name):
     elif priors[x_name]['prior_type'] == 'gauss':
         return log_gauss(x, x_name)
     else:
-        raise TypeError(f"unknown prior type '{priors[x_name]['prior_type']}', choose either gauss or flat")
+        raise TypeError(f"unknown prior type '{priors[x_name]['prior_type']}', choose either gauss "
+                        f"or flat")
 
-# TODO remove this function
-def eval_log_likelihood_mass(theta):
-    x = theta
-    if np.shape(theta) == (1,):
-        x = theta[0]
-    return GenSpectrum(x, 10e-45, use_SHM, detectors['Xe']).get_data(poisson=False)
+# # TODO remove this function
+# def eval_log_likelihood_mass(theta):
+#     x = theta
+#     if np.shape(theta) == (1,):
+#         x = theta[0]
+#     return GenSpectrum(x, 10e-45, use_SHM, detectors['Xe']).get_data(poisson=False)
 
+def check_shape(xs):
+    if not len(xs) > 0:
+        raise TypeError(f"Provided incorrect type of {xs}. Takes either np.array or list")
+    if not type(xs) == np.array:
+        xs = np.array(xs)
+    for i, x in enumerate(xs):
+        if np.shape(x) == (1,):
+            xs[i] = x[0]
+    return xs
 
-def eval_log_likelihood(theta, x_names):
+def eval_log_likelihood(theta, x_names, spectrum_class=GenSpectrum):
+    default_order = ['log_mass', 'log_cross_section', 'v_0', 'v_esc', 'density', 'k']
     if len(x_names) == 2:
-        x0, x1 = theta
-        if np.shape(x0) == (1,): x0 = x0[0]
-        if np.shape(x1) == (1,): x1 = x1[0]
-        if x_names[0] == 'log_mass' and x_names[1] == 'log_cross_secion':
-            return GenSpectrum(x0, x1, use_SHM, detectors['Xe']).get_data(poisson=False)
-        elif x_names[1] == 'log_mass' and x_names[0] == 'log_cross_secion':
-            return GenSpectrum(x1, x0, use_SHM, detectors['Xe']).get_data(poisson=False)
-    elif len(x_names)>2:
-        raise ValueError(f"Not so quick cow-boy, before you code fitting three parameters or more, first code it! "
-                         f"(or make sure that you are not somehow forcing a string in this part of the code)")
+        x0, x1 = check_shape(theta)
+        # if np.shape(x0) == (1,):
+        #     x0 = x0[0]
+        # if np.shape(x1) == (1,):
+        #     x1 = x1[0]
+        if x_names[0] == 'log_mass' and x_names[1] == 'log_cross_section':
+            return spectrum_class(x0, x1, use_SHM, detectors['Xe']).get_data(poisson=False)
+        elif x_names[1] == 'log_mass' and x_names[0] == 'log_cross_section':
+            return spectrum_class(x1, x0, use_SHM, detectors['Xe']).get_data(poisson=False)
+    elif len(x_names) == 5 or len(x_names) == 6:
+        if not x_names == default_order[:len(x_names)]:
+            raise NameError(f"The parameters are not input in the correct order. Please insert"
+                            f"{default_order[:len(x_names)]} rather than {x_names}.")
+        xs = check_shape(theta)
+        if len(x_names) == 5:
+            fit_shm = SHM(v_0=xs[2]    * nu.km / nu.s,
+                          v_esc=xs[3]  * nu.km / nu.s,
+                          rho_dm=xs[4] * nu.GeV / nu.c0 ** 2 / nu.cm ** 3)
+        if len(x_names) == 6:
+            raise NotImplementedError(f"Currently not yet ready to fit for {x_names[5]}")
+
+        result = spectrum_class(xs[0], xs[1], fit_shm, detectors['Xe']).get_data(poisson=False)
+        mask = (result['counts'] < 0) & (result['counts'] > -1)
+        # TODO this is not the correct way, why does wimprates produce negative rates?
+        if np.any(mask):
+            print('Serious error, finding negative rates. Presumably v_esc is too small')
+            result['counts'][mask] = 0
+        return result
+
+    elif len(x_names)>2 and not len(x_names) == 5 and not len(x_names) == 6:
+        raise NotImplementedError(f"Not so quick cow-boy, before you code fitting {len(x_names)} "
+                                  f"parameters or more, first code it! You are now trying to fit "
+                                  f"{x_names}. Make sure that you are not somehow forcing a string "
+                                  f"in this part of the code)")
     else:
-        raise ValueError(f"Oops this is not somewhere you want to be, x_names = {x_names}")
+        raise NotImplementedError(f"Oops this is not somewhere you want to be, x_names = {x_names}")
 
