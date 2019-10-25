@@ -5,7 +5,7 @@ Probing the complementarity of several targets used in Direct Detection Experime
 ## Requirements ##
  - make a new conda env:
 
-``conda create -n DD_DM numpy scipy git python=3.6 matplotlib pandas ipython jupyter``
+``conda create -n DD_DM numpy scipy git python=3.6 matplotlib pandas ipython jupyter emcee``
 
 ``conda activate DD_DM``
 
@@ -18,4 +18,6 @@ Probing the complementarity of several targets used in Direct Detection Experime
 ``jupyter contrib nbextension install --user``
 
 ``jupyter nbextension enable spellchecker/main``
+
+``pip install emcee`` if not during conda create
 
