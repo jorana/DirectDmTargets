@@ -96,11 +96,17 @@ class GenSpectrum:
                          'sigma_nucleon': benchmark[1]}
 
         # Not normalized
-        rate = wr.rate_wimp_std(self.get_bin_centers(),
-                                benchmark["mw"],
-                                benchmark["sigma_nucleon"],
-                                halo_model=self.dm_model
-                                )
+        # TODO why not rate_wimp_std
+        # raise NotImplementedError("somehow this is not working, did I change it in the code")
+        return (wr.rate_wimp(es=self.get_bin_centers() * nu.keV,
+	                      mw = benchmark["mw"] * nu.GeV/nu.c0**2,
+	                      sigma_nucleon = benchmark["sigma_nucleon"] * nu.cm**2,
+	                      halo_model=self.dm_model) * (nu.keV * (1000 * nu.kg) * nu.year))
+        # rate = wr.rate_elastic(self.get_bin_centers(),
+        #                         benchmark["mw"],
+        #                         benchmark["sigma_nucleon"],
+        #                         halo_model=self.dm_model
+        #                         )
         return rate
 
     # def spectrum(self, benchmark, halo_parameters):
