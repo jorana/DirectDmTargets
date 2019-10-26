@@ -7,38 +7,6 @@ import emcee
 import multiprocessing
 import matplotlib.pyplot as plt
 import corner
-# def truth():
-#     use_SHM = SHM()
-#     xe_events = DetectorSpectrum(50, 1e-45, use_SHM, detectors['Xe'])
-#     xe_data = xe_events.get_data(poisson = False)
-#     return xe_data
-# nwalkers = 500
-# def fit_emcee(log_probability = log_probability_detector,
-#               nwalkers = 500,
-#               nsteps = 200,
-#               pos = np.hstack(
-#             [50 + 3 * 10 * np.random.rand(nwalkers, 1),
-#              1e-45 + 1e-45 * np.random.rand(nwalkers, 1),
-#              230 + 3 * 30 * np.random.rand(nwalkers, 1),
-#              544 + 3 * 33 * np.random.rand(nwalkers, 1),
-#              0.4 + 3 * 0.1 * np.random.rand(nwalkers, 1)
-#              ]),
-#               args = args=(xe_data['bin_centers'],
-#                                                                              xe_data['counts'],
-#                                                                              ['log_mass',
-#                                                                               'log_cross_section',
-#                                                                               'v_0',
-#                                                                               'v_esc',
-#                                                                               'density']),
-#               pool = False):
-#     with Pool() as pool:
-#         nwalkers, ndim = pos.shape
-#
-#         sampler = emcee.EnsembleSampler(nwalkers, ndim,
-#                                         log_probability, )
-#                                         , pool=pool
-#                                         )
-#         sampler.run_mcmc(np.abs(pos), step, progress=True);
 
 
 class MCMCStatModel(StatModel):
@@ -52,22 +20,30 @@ class MCMCStatModel(StatModel):
         self.nwalkers = 50
         self.nsteps = 100
         self.fit_parameters = ['log_mass', 'log_cross_section']
-        self.sampler = False
-        self.log = {'sampler': False, 'did_run': False}
+        self.sampler = None
+        self.pos = None
+        self.log = {'sampler': False, 'did_run': False, 'pos':False}
 
     def set_fit_parameters(self, params):
         if not type(params) == list:
             raise TypeError("Set the parameter names in a list of strings")
         for param in params:
             if param not in self.known_parameters:
-                raise NotImplementedError(f"{param} does not match any of the known parameters "
-                                          f"try any of {self.known_parameters}")
+                raise NotImplementedError(f"{param} does not match any of the "
+                                          f"known parameters try any of "
+                                          f"{self.known_parameters}")
         if not params == self.known_parameters[:len(params)]:
-            raise NameError(f"The parameters are not input in the correct order. Please insert"
-                            f"{self.known_parameters[:len(params)]} rather than {params}.")
+            raise NameError(f"The parameters are not input in the correct order"
+                            f". Please insert "
+                            f"{self.known_parameters[:len(params)]} rather than"
+                            f" {params}.")
         self.fit_parameters = params
 
-    def set_pos(self):
+    def set_pos(self, use_pos = None):
+        self.log['pos'] = True
+        if not use_pos is None:
+            self.pos = use_pos
+            return
         pos = np.hstack([
             [[self.config['prior'][param]['dist'](
                 self.config['prior'][param]['param']
@@ -83,7 +59,7 @@ class MCMCStatModel(StatModel):
                 pos[i] = 1e-45 + 1e-45 * np.random.rand(self.nwalkers)
             if 'mass' in p:
                 pos[i] = 50 + 50 * np.random.rand(self.nwalkers)
-        return pos.T
+        self.pos=pos.T
 
     def set_sampler(self):
         ndim = len(self.fit_parameters)
@@ -96,13 +72,16 @@ class MCMCStatModel(StatModel):
     def run_emcee(self):
         if not self.log['sampler']:
             self.set_sampler()
-        pos = self.set_pos()
+        if not self.log['pos']:
+            self.set_pos()
         try:
-            self.sampler.run_mcmc(pos, self.nsteps, progress=True)
+            self.sampler.run_mcmc(self.pos, self.nsteps, progress=True)
         except ValueError as e:
-            print(f"MCMC did not finish due to a ValueError. Was running with\npos={pos.shape} "
-                  f"nsteps = {self.nsteps}, walkers = {self.nwalkers}, ndim = "
-                  f"{len(self.fit_parameters)} for fitparamters {self.fit_parameters}")
+            print(f"MCMC did not finish due to a ValueError. Was running with\n"
+                  f"pos={self.pos.shape} nsteps = {self.nsteps}, walkers = "
+                  f"{self.nwalkers}, ndim = "
+                  f"{len(self.fit_parameters)} for fitparamters "
+                  f"{self.fit_parameters}")
             raise e
         self.log['did_run'] = True
 
@@ -139,5 +118,5 @@ class MCMCStatModel(StatModel):
                   ]
 
         fig = corner.corner(flat_samples, labels=self.fit_parameters,
-                            truths=truths[:len(self.fit_parameters)]);
+                            truths=truths[:len(self.fit_parameters)])
         # plt.show()

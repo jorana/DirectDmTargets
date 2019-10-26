@@ -1,10 +1,9 @@
-import numpy as np
-import wimprates as wr
-from scipy.integrate import quad as scipy_int
-from .halo import GenSpectrum, get_bins
-from numba import jit
 import numba
+import numpy as np
 import pandas as pd
+
+from .halo import GenSpectrum, get_bins
+
 
 def det_res_Xe(E):
     return 0.6 * np.sqrt(E)
@@ -20,9 +19,12 @@ def det_res_Ge(E):
 
 benchmark = {'mw': 50, 'sigma_nucleon': 10e-45}
 detectors = {
-    'Xe': {'exp': 5, 'cut_eff': 0.8, 'nr_eff': 0.5, 'E_thr': 10, 'res': det_res_Xe},
-    'Ar': {'exp': 3, 'cut_eff': 0.8, 'nr_eff': 0.9, 'E_thr': 10, 'res': det_res_Ar},
-    'Ge': {'exp': 10, 'cut_eff': 0.8, 'nr_eff': 0.8, 'E_thr': 30, 'res': det_res_Ge}}
+    'Xe': {'exp': 5, 'cut_eff': 0.8, 'nr_eff': 0.5, 'E_thr': 10,
+           'res': det_res_Xe},
+    'Ar': {'exp': 3, 'cut_eff': 0.8, 'nr_eff': 0.9, 'E_thr': 10,
+           'res': det_res_Ar},
+    'Ge': {'exp': 10, 'cut_eff': 0.8, 'nr_eff': 0.8, 'E_thr': 30,
+           'res': det_res_Ge}}
 
 for name in detectors.keys():
     detectors[name]['exp_eff'] = (detectors[name]['exp'] *
@@ -107,60 +109,66 @@ def _smear_signal(rate, energy, func):
     bin_width = np.mean(np.diff(energy))
     sigma = func(energy)
     for i, E in enumerate(energy):
-        result[i] = np.sum(bin_width * rate * (1 / (np.sqrt(2 * np.pi) * sigma)) * \
-                           np.exp(-((E - energy)**2 / (2 * sigma**2))))
+        result[i] = np.sum(
+            bin_width * rate * (1 / (np.sqrt(2 * np.pi) * sigma)) *
+            np.exp(-((E - energy) ** 2 / (2 * sigma ** 2))))
     return result
 
-# @jit
+
 @numba.njit
 def smear_signal(rate, energy, sigma, bin_width):
     result = []
     for i in range(len(energy)):
         res = 0
         for j in range(len(rate)):
-            res = res +\
-                        (bin_width * rate[j] *
-                          (1 / (np.sqrt(2 * np.pi) * sigma[j])) *
-                           np.exp(
-                               -((energy[i] - energy[j])**2 / (2 * sigma[j] **2))
-                           )
-                          )
+            res = res + (
+                    bin_width *
+                    rate[j] *
+                    (1 / (np.sqrt(2 * np.pi) * sigma[j])) *
+                    np.exp(
+                        -((energy[i] - energy[j]) ** 2 / (2 * sigma[j] ** 2)))
+            )
         result.append(res)
     return result
 
+
 class DetectorSpectrum(GenSpectrum):
-    # GenSpectrum generates a number of bins (default 10), however, since an numerical integration
-    # is performed in compute_detected_spectrum, this number is multiplied here.
+    # GenSpectrum generates a number of bins (default 10), however, since a
+    # numerical integration is performed in compute_detected_spectrum, this
+    # number is multiplied here.
 
     def __init__(self, *args):
         GenSpectrum.__init__(self, *args)
         self.rebin_factor = 10
 
     def __str__(self):
-        return (f"DetectorSpectrum class inherited from GenSpectrum.\nSmears spectrum with detector"
-               f"resolution and implements the energy threshold for the detector")
+        return (f"DetectorSpectrum class inherited from GenSpectrum.\nSmears "
+                f"spectrum with detector resolution and implements the energy "
+                f"threshold for the detector")
 
     @staticmethod
     def n_integrate(rate, eval_res, bin_width):
         """
 
         :param rate: np.array of rates computed at the center of energybins
-        :param eval_res: the evaluated detector resolution at the energy where the rate is
-        :param bin_width: either array or scalar of the binwidth(s) of the energy bins wherein the
-        rate is calculated
+        :param eval_res: the evaluated detector resolution at the energy where
+        the rate is
+        :param bin_width: either array or scalar of the binwidth(s) of the
+        energy bins wherein the rate is calculated
         :return: spectrum smeared with the energy resolution of the detector
         """
         if not ((type(bin_width) == np.ndarray and len(bin_width) == len(rate))
                 or np.isscalar(bin_width)):
-            raise TypeError(f"bin_width is not  of correct type, should be either scalar like or"
-                            f"of the same length as the rate. bin_width = {bin_width}")
+            raise TypeError(f"bin_width is not  of correct type, should be "
+                            f"either scalar like or of the same length as the "
+                            f"rate. bin_width = {bin_width}")
         if not len(eval_res) == len(rate):
-            raise TypeError(f"bin_width (len = {len(eval_res)}) and rate (len = {len(rate)}) are"
-                            f"of unequal length.")
+            raise TypeError(f"bin_width (len = {len(eval_res)}) and rate (len "
+                            f"= {len(rate)}) are of unequal length.")
         if not type(rate) == type(eval_res) == np.ndarray:
-            raise TypeError(f"both the rate and the evaluated detector resolution should be "
-                            f"np.arrays. Instead got {type(rate)} and {type(eval_res)} "
-                            f"respectively.")
+            raise TypeError(f"both the rate and the evaluated detector "
+                            f"resolution should be np.arrays. Instead got "
+                            f"{type(rate)} and {type(eval_res)} respectively.")
 
         return np.sum(rate * eval_res * bin_width)
 
@@ -171,7 +179,9 @@ class DetectorSpectrum(GenSpectrum):
             # print(mask, energies, rates, energies[mask])
             bin_width = np.average(np.diff(energies[mask]))
             eval_res = self.detector['res']
-            res[i] = self.n_integrate(rates[mask], eval_res(energies[mask]), bin_width)
+            res[i] = self.n_integrate(rates[mask],
+                                      eval_res(energies[mask]),
+                                      bin_width)
         return res
 
     def chuck_integration(self, rates, energies, bins):
@@ -179,27 +189,26 @@ class DetectorSpectrum(GenSpectrum):
         for i, bin in enumerate(bins):
             mask = (energies > bin[0]) & (energies < bin[1])
             bin_width = np.average(np.diff(energies[mask]))
-            #TODO ugly
-            res[i] = self.n_integrate(rates[mask], np.ones(len(rates[mask])), bin_width)
+            # TODO ugly
+            res[i] = self.n_integrate(rates[mask],
+                                      np.ones(len(rates[mask])),
+                                      bin_width)
         return res
 
     def above_threshold(self, rates, energies):
-        # TODO something smarter than just a hard cutof?
+        # TODO something smarter than just a hard cutoff?
         rates[energies < self.detector['E_thr']] = 0
         return rates
 
     def compute_detected_spectrum(self):
-        # assert self.n_bins / self.n_bins_result > 2, "binning to course for numerical integration"
+        assert self.n_bins / self.n_bins_result > 2, f"binning to course for " \
+                                                     f"numerical integration"
         self.n_bins_result = self.n_bins
         self.n_bins = self.n_bins * self.rebin_factor
         rates = self.spectrum_simple([self.mw, self.sigma_nucleon])
         energies = self.get_bin_centers()
         rates = self.above_threshold(rates, energies)
         result_bins = get_bins(self.E_min, self.E_max, self.n_bins_result)
-        # events = self.chuck_integration(rates, energies, result_bins) * self.detector['exp_eff']
-        # print(energies)
-        # events = smear_signal(rates, energies, self.detector['res'])
-
         sigma = self.detector['res'](energies)
         bin_width = np.mean(np.diff(energies))
         events = np.array(smear_signal(rates, energies, sigma, bin_width))
@@ -211,7 +220,6 @@ class DetectorSpectrum(GenSpectrum):
         :return: Events (binned)
         """
         return self.compute_detected_spectrum()
-
 
     def get_poisson_events(self):
         """

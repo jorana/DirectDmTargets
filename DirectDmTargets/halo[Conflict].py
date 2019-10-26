@@ -81,43 +81,40 @@ class GenSpectrum:
         """
         :return: info
         """
-        return f"spectrum_simple of a DM model ({self.dm_model}) in a " \
-               f"{self.detector} detector"
+        return f"""spectrum_simple of a DM model ({self.dm_model}) in a {self.detector} detector"""
 
     def get_bin_centers(self):
         return np.mean(get_bins(self.E_min, self.E_max, self.n_bins), axis=1)
 
     def spectrum_simple(self, benchmark):
         """
-        :param benchmark: insert the kind of DM to consider (should contain Mass
-         and Crossection)
+        :param benchmark: insert the kind of DM to consider (should contain Mass and Crossection)
         :return: returns the rate
         """
-        if (not type(benchmark) == dict) or (
-        not type(benchmark) == pd.DataFrame):
+        if (not type(benchmark) == dict) or (not type(benchmark) == pd.DataFrame):
             benchmark = {'mw': benchmark[0],
                          'sigma_nucleon': benchmark[1]}
 
         # Not normalized
         # TODO why not rate_wimp_std
-        # raise NotImplementedError("somehow this is not working, did I change
-        # it in the code")
-
-        rate = wr.rate_elastic(self.get_bin_centers() * nu.keV,
-                               benchmark["mw"] * nu.GeV / nu.c0 ** 2,
-                               benchmark["sigma_nucleon"] * nu.cm ** 2,
-                               halo_model=self.dm_model
-                               )
+        # raise NotImplementedError("somehow this is not working, did I change it in the code")
+        return (wr.rate_wimp(es=self.get_bin_centers() * nu.keV,
+	                      mw = benchmark["mw"] * nu.GeV/nu.c0**2,
+	                      sigma_nucleon = benchmark["sigma_nucleon"] * nu.cm**2,
+	                      halo_model=self.dm_model) * (nu.keV * (1000 * nu.kg) * nu.year))
+        # rate = wr.rate_elastic(self.get_bin_centers(),
+        #                         benchmark["mw"],
+        #                         benchmark["sigma_nucleon"],
+        #                         halo_model=self.dm_model
+        #                         )
         return rate
 
     # def spectrum(self, benchmark, halo_parameters):
     #     """
-    #     :param benchmark: insert the kind of DM to consider (should contain
-    #     Mass and Crossection)
+    #     :param benchmark: insert the kind of DM to consider (should contain Mass and Crossection)
     #     :return: returns the rate
     #     """
-    #     if (not type(benchmark) == dict) or (not type(benchmark) ==
-    #     pd.DataFrame):
+    #     if (not type(benchmark) == dict) or (not type(benchmark) == pd.DataFrame):
     #         benchmark = {'mw': benchmark[0],
     #                      'sigma_nucleon': benchmark[1]}
     #
@@ -135,8 +132,7 @@ class GenSpectrum:
         """
         assert self.detector != {}, "First enter the parameters of the detector"
         rate = self.spectrum_simple([self.mw, self.sigma_nucleon])
-        bin_width = np.diff(get_bins(self.E_min, self.E_max, self.n_bins),
-                            axis=1)[:, 0]
+        bin_width = np.diff(get_bins(self.E_min, self.E_max, self.n_bins), axis=1)[:, 0]
         events = rate * bin_width * self.detector['exp_eff']
         return events
 
@@ -168,13 +164,14 @@ def test_test():
     print('done')
 
 
+# @export
 class SHM:
     """
         class used to pass a halo model to the rate computation
         must contain:
         :param v_esc -- escape velocity
-        :function velocity_dist -- function taking v,t giving normalised
-        velocity distribution in earth rest-frame.
+        :function velocity_dist -- function taking v,t
+        giving normalised valocity distribution in earth rest-frame.
         :param rho_dm -- density in mass/volume of dark matter at the Earth
         The standard halo model also allows variation of v_0
         :param v_0
@@ -183,8 +180,7 @@ class SHM:
     def __init__(self, v_0=None, v_esc=None, rho_dm=None):
         self.v_0 = 230 * nu.km / nu.s if v_0 is None else v_0
         self.v_esc = 544 * nu.km / nu.s if v_esc is None else v_esc
-        self.rho_dm = (0.3 * nu.GeV / nu.c0 ** 2 / nu.cm ** 3
-                       if rho_dm is None else rho_dm)
+        self.rho_dm = 0.3 * nu.GeV / nu.c0 ** 2 / nu.cm ** 3 if rho_dm is None else rho_dm
 
     def velocity_dist(self, v, t):
         # in units of per velocity,
@@ -198,8 +194,8 @@ class SHM_12:
         class used to pass a halo model to the rate computation
         must contain:
         :param v_esc -- escape velocity
-        :function velocity_dist -- function taking v,t giving normalised
-        velocity distribution in earth rest-frame.
+        :function velocity_dist -- function taking v,t
+        giving normalised valocity distribution in earth rest-frame.
         :param rho_dm -- density in mass/volume of dark matter at the Earth
         The standard halo model also allows variation of v_0
         :param v_0
@@ -208,8 +204,7 @@ class SHM_12:
     def __init__(self, v_0=None, v_esc=None, rho_dm=None):
         self.v_0 = 230 * nu.km / nu.s if v_0 is None else v_0
         self.v_esc = 544 * nu.km / nu.s if v_esc is None else v_esc
-        self.rho_dm = (0.3 * nu.GeV / nu.c0 ** 2 / nu.cm ** 3
-                       if rho_dm is None else rho_dm)
+        self.rho_dm = 0.3 * nu.GeV / nu.c0 ** 2 / nu.cm ** 3 if rho_dm is None else rho_dm
 
     def velocity_dist(self, v, t):
         # in units of per velocity,
