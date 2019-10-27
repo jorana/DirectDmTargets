@@ -14,19 +14,24 @@ def get_priors():
 
     :return: dictionary of priors, type and values
     """
-    priors = {
-        'log_mass': {'range': [0.1, 3], 'prior_type': 'flat'},
-        'log_cross_section': {'range': [-46, -42], 'prior_type': 'flat'},
-        # TODO
-        # 'log_cross_section': {'range': [-10, -6], 'prior_type': 'flat'},
-        'density': {'range': [0.001, 0.9], 'prior_type': 'gauss', 'mean': 0.4,
-                    'std': 0.1},
-        'v_0': {'range': [80, 380], 'prior_type': 'gauss', 'mean': 230,
-                'std': 30},
-        'v_esc': {'range': [379, 709], 'prior_type': 'gauss', 'mean': 544,
-                  'std': 33},
-        'k': {'range': [0.5, 3.5], 'prior_type': 'flat'}
-    }
+    priors = \
+        {
+        'log_mass':
+            {'range': [0.1, 3], 'prior_type': 'flat'},
+        'log_cross_section':
+            {'range': [-46, -42], 'prior_type': 'flat'},
+        'density':
+            {'range': [0.001, 0.9], 'prior_type': 'gauss', 'mean': 0.4,
+             'std': 0.1},
+        'v_0':
+            {'range': [80, 380], 'prior_type': 'gauss', 'mean': 230,
+             'std': 30},
+        'v_esc':
+            {'range': [379, 709], 'prior_type': 'gauss', 'mean': 544,
+             'std': 33},
+        'k':
+            {'range': [0.5, 3.5], 'prior_type': 'flat'}
+        }
     for key in priors.keys():
         param = priors[key]
         if param['prior_type'] == 'flat':
@@ -43,6 +48,10 @@ class StatModel:
         self.config = dict()
         self.config['detector'] = detector_name
         self.config['prior'] = get_priors()
+        self.config['poisson'] = False
+        self.config['v_0'] = 220
+        self.config['v_esc'] = 544
+        self.config['rho_0'] = 0.3
         print(
             f"stat_model::initialized for {detector_name} detector. See "
             f"print(stat_model) for default settings")
@@ -61,12 +70,17 @@ class StatModel:
             # print(f"setting the benchmark for for Mw ({mw}) and cross-section
             # ({sigma}) to default")
 
-    def set_models(self, halo_model='default', spectrum_class='default'):
+
+    def set_models(self, halo_model='default', spec='default'):
         self.config[
-            'halo_model'] = halo_model if halo_model != 'default' else SHM()
+            'halo_model'] = halo_model if halo_model != 'default' else SHM(
+            v_0=self.config['v_0'] * nu.km / nu.s,
+            v_esc=self.config['v_esc'] * nu.km / nu.s,
+            rho_dm=self.config['rho_0'] * nu.GeV / nu.c0 ** 2 / nu.cm ** 3
+        )
         self.config[
-            'spectrum_class'] = spectrum_class if spectrum_class != 'default' else DetectorSpectrum
-        if halo_model != 'default' or spectrum_class != 'default':
+            'spectrum_class'] = spec if spec != 'default' else DetectorSpectrum
+        if halo_model != 'default' or spec != 'default':
             print("re-evaluate benchmark")
             self.eval_benchmark()
 
@@ -85,7 +99,7 @@ class StatModel:
             self.config['sigma'],
             self.config['halo_model'],
             self.config['det_params'])
-        return spectrum.get_data(poisson=False)
+        return spectrum.get_data(poisson=self.config['poisson'])
 
     def eval_benchmark(self):
         # TODO make sure always evaluated before the log_probablity is evaluated
@@ -128,34 +142,22 @@ class StatModel:
                 f"Returned NaN from likelihood. lp = {lp}, ll = {ll}")
         return lp + ll
 
-    def log_flat(self, x, x_name):
-        a, b = self.config['prior'][x_name]['param']
-        try:
-            if a < x < b:
-                return 0
-            else:
-                return -np.inf
-        except ValueError:
-            result = np.zeros(len(x))
-            mask = (x > a) & (x < b)
-            result[~mask] = -np.inf
-            return result
 
-    def log_gauss(self, x, x_name):
-        mu, sigma = self.config['prior'][x_name]['param']
-        return -0.5 * np.sum((x - mu) ** 2 / (sigma ** 2) + np.log(sigma ** 2))
 
     def log_prior(self, x, x_name):
-        if x < 0:
-            print(f"finding a negative value for {x_name}, returning -np.inf")
-            return -np.inf
         if self.config['prior'][x_name]['prior_type'] == 'flat':
+            a, b = self.config['prior'][x_name]['param']
             if 'log' in x_name:
-                return self.log_flat(np.log10(x), x_name)
-            else:
-                return self.log_flat(x, x_name)
+                x = np.log10(x)
+            return log_flat(a, b, x)
         elif self.config['prior'][x_name]['prior_type'] == 'gauss':
-            return self.log_gauss(x, x_name)
+            a, b = self.config['prior'][x_name]['range']
+            m, s = self.config['prior'][x_name]['param']
+            # if x < 0:
+            #     print(
+            #         f"finding a negative value for {x_name}, returning -np.inf")
+            #     return -np.inf
+            return log_gauss(a, b, m, s, x)
         else:
             raise TypeError(
                 f"unknown prior type '"
@@ -195,10 +197,10 @@ class StatModel:
             result = spectrum.get_data(poisson=False)
 
             # TODO this is not the correct way, why does wimprates produce negative rates?
-            mask = (result['counts'] < 0) & (result['counts'] > -1)
+            mask = (result['counts'] < 0)
             if np.any(mask):
-                print('Serious error, finding negative rates. Presumably v_esc '
-                      'is too small')
+                print(f"Serious error, finding negative rates. Presumably v_esc"
+                      f" is too small ({values[3]})")
                 result['counts'][mask] = 0
             return result
 
@@ -373,3 +375,30 @@ def check_shape(xs):
         if np.shape(x) == (1,):
             xs[i] = x[0]
     return xs
+
+def log_flat(a, b, x):
+    try:
+        if a < x < b:
+            return 0
+        else:
+            return -np.inf
+    except ValueError:
+        result = np.zeros(len(x))
+        mask = (x > a) & (x < b)
+        result[~mask] = -np.inf
+        return result
+
+def log_gauss(a, b, mu, sigma, x):
+    try:
+        if a < x < b:
+            return -0.5 * np.sum(
+                (x - mu) ** 2 / (sigma ** 2) + np.log(sigma ** 2))
+        else:
+            return -np.inf
+    except ValueError:
+        result = np.zeros(len(x))
+        mask = (x > a) & (x < b)
+        result[~mask] = -np.inf
+        result[mask] = -0.5 * np.sum(
+            (x - mu) ** 2 / (sigma ** 2) + np.log(sigma ** 2))
+        return result
