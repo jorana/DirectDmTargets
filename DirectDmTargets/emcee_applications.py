@@ -76,12 +76,13 @@ class MCMCStatModel(StatModel):
             ])
         self.pos = np.abs(pos)
 
-    def set_sampler(self):
+    def set_sampler(self, mult=True):
         ndim = len(self.fit_parameters)
+        kwargs = {"threads" : multiprocessing.cpu_count()} if mult else {}
         self.sampler = emcee.EnsembleSampler(self.nwalkers, ndim,
                               self.log_probability,
                               args=([self.fit_parameters]),
-                              threads=multiprocessing.cpu_count())
+                              **kwargs)
         self.log['sampler'] = True
 
     def run_emcee(self):

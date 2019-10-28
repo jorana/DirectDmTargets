@@ -70,7 +70,6 @@ class StatModel:
             # print(f"setting the benchmark for for Mw ({mw}) and cross-section
             # ({sigma}) to default")
 
-
     def set_models(self, halo_model='default', spec='default'):
         self.config[
             'halo_model'] = halo_model if halo_model != 'default' else SHM(
