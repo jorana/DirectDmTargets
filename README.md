@@ -13,7 +13,14 @@ Install wimprates from source (since pip gives a too low version):
 
 ``conda install -c conda-forge emcee`` 
 
-``pip install wimprates corner numericalunits``
+``pip install corner numericalunits``
+
+''git clone https://github.com/jorana/wimprates.git''
+
+''cd wimprates''
+
+''python setup.py develop''
+
 
 --``pip install numericalunits``--
 
