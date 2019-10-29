@@ -15,11 +15,11 @@ Install wimprates from source (since pip gives a too low version):
 
 ``pip install corner numericalunits``
 
-''git clone https://github.com/jorana/wimprates.git''
+``git clone https://github.com/jorana/wimprates.git``
 
-''cd wimprates''
+``cd wimprates``
 
-''python setup.py develop''
+``python setup.py develop``
 
 
 --``pip install numericalunits``--
