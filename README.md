@@ -7,15 +7,15 @@ Install wimprates from source (since pip gives a too low version):
 ## Requirements ##
  - make a new conda env:
 
-``conda create -n DD_DM numpy scipy git python=3.7 matplotlib pandas ipython jupyter numba corner``
+``conda create -n DD_DM numpy scipy git python=3.7 matplotlib pandas ipython jupyter numba``
 
 ``conda activate DD_DM``
 
 ``conda install -c conda-forge emcee`` 
 
-``pip install wimprates``
+``pip install wimprates corner numericalunits``
 
-``pip install numericalunits``
+--``pip install numericalunits``--
 
 ``pip install jupyter_contrib_nbextensions``
 
