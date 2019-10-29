@@ -1,0 +1,8 @@
+# ignore pychache
+DirectDmTargets/__pycache__/*
+*.pyc
+2019*
+notebooks/*
+DirectDmTargets/__*
+backups/*
+results/test*

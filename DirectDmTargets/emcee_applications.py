@@ -7,6 +7,9 @@ import emcee
 import multiprocessing
 import matplotlib.pyplot as plt
 import corner
+import os
+import json
+
 
 
 class MCMCStatModel(StatModel):
@@ -24,6 +27,8 @@ class MCMCStatModel(StatModel):
         self.sampler = None
         self.pos = None
         self.log = {'sampler': False, 'did_run': False, 'pos': False}
+        self.remove_frac = 0.2
+        self.thin = 15
 
     def set_fit_parameters(self, params):
         if not type(params) == list:
@@ -46,20 +51,23 @@ class MCMCStatModel(StatModel):
             self.pos = use_pos
             return
         pos = np.hstack([
-            [[self.config['prior'][param]['dist'](
-                self.config['prior'][param]['param']
+            [[np.clip(self.config['prior'][param]['dist'](
+                self.config['prior'][param]['param']),
+                1.2 * self.config['prior'][param]['range'][0],
+                0.8 * self.config['prior'][param]['range'][-1]
                 ) for i in range(self.nwalkers)]
                 for param in self.fit_parameters]
             ])
         for i, p in enumerate(self.fit_parameters):
             if 'log' in p:
                 pos[i] = 10**pos[i]
-            # #TODO workaround
+        #     # #TODO workaround
             # if 'cross' in p:
             #     pos[i] = 1e-45 + 1e-45 * np.random.rand(self.nwalkers)
             # if 'mass' in p:
             #     pos[i] = 50 + 50 * np.random.rand(self.nwalkers)
-        self.pos = pos.T
+        # self.pos = pos.T
+        return pos.T
 
     def set_pos(self, use_pos=None):
         self.log['pos'] = True
@@ -70,15 +78,16 @@ class MCMCStatModel(StatModel):
         nparameters = len(self.fit_parameters)
         keys = ['mw', 'sigma', 'v_0', 'v_esc', 'rho_0'][:nparameters]
         vals = [self.config.get(key) for key in keys]
-        pos = np.hstack([
-            val + 0.1 * val * np.random.randn(self.nwalkers, 1)
-            for val in vals
-            ])
-        self.pos = np.abs(pos)
+        # pos = np.hstack([
+        #     val + 0.1 * val * np.random.randn(self.nwalkers, 1)
+        #     for val in vals
+        #     ])
+        # self.pos = np.abs(pos)
+        self.pos = self._set_pos()
 
     def set_sampler(self, mult=True):
         ndim = len(self.fit_parameters)
-        kwargs = {"threads" : multiprocessing.cpu_count()} if mult else {}
+        kwargs = {"threads": multiprocessing.cpu_count()} if mult else {}
         self.sampler = emcee.EnsembleSampler(self.nwalkers, ndim,
                               self.log_probability,
                               args=([self.fit_parameters]),
@@ -119,10 +128,13 @@ class MCMCStatModel(StatModel):
     def show_corner(self):
         if not self.log['did_run']:
             self.run_emcee()
-        remove_frac = 0.2
-        print(f"Removing a fraction of {remove_frac} of the samples")
+        print(f"Removing a fraction of {self.remove_frac} of the samples, total"
+              f"number of removed samples = {self.nsteps * self.remove_frac}")
         flat_samples = self.sampler.get_chain(
-            discard=int(self.nsteps * remove_frac), thin=15, flat=True)
+            discard=int(self.nsteps * self.remove_frac),
+            thin=self.thin,
+            flat=True
+            )
         print(flat_samples.shape)
         #TODO
         # truths = [50, 1e-45, 230, 544, 0.3]
@@ -136,3 +148,77 @@ class MCMCStatModel(StatModel):
         fig = corner.corner(flat_samples, labels=self.fit_parameters,
                             truths=truths[:len(self.fit_parameters)])
         # plt.show()
+
+    def save_results(self, force_index=False):
+        if not self.log['did_run']:
+            self.run_emcee()
+        base = 'results/'
+        save = 'test'
+        files = os.listdir(base)
+        if force_index is False:
+            if files is []:
+                index = 0
+            else:
+                index = max([int(f.split(save)[-1]) for f in files]) + 1
+        else:
+            index = force_index
+
+        save_dir = base + save + str(index) + '/'
+        print('save_results::\tusing ' + save_dir)
+        if force_index is False:
+            os.mkdir(save_dir)
+        else:
+            assert os.path.exists(save_dir), "specify existing directory, exit"
+            for file in os.listdir(save_dir):
+                print('save_results::\tremoving ' + save_dir + file)
+                os.remove(save_dir + file)
+        # save the config, chain and flattened chain
+        with open(save_dir + 'config.json', 'w') as fp:
+            json.dump(convert_config_to_savable(self.config), fp)
+        np.save(save_dir + 'config.npy',
+                convert_config_to_savable(self.config))
+        np.save(save_dir + 'full_chain.npy', self.sampler.get_chain())
+        np.save(save_dir + 'flat_chain.npy', self.sampler.get_chain(
+            discard=int(self.nsteps * self.remove_frac), thin=self.thin,
+            flat=True))
+        print("save_results::\tdone_saving")
+
+
+def is_savable_type(item):
+    if type(item) in [list, np.array, np.ndarray, int, str, np.int, np.float,
+                      bool]:
+        return True
+    return False
+
+
+def convert_config_to_savable(config):
+    result = config.copy()
+    for key in result.keys():
+        if is_savable_type(result[key]):
+            pass
+        elif type(result[key]) == dict:
+            result[key] = convert_config_to_savable(result[key])
+        else:
+            result[key] = str(result[key])
+    return result
+
+
+def load_chain(item='latest'):
+    base = 'results/'
+    save = 'test'
+    files = os.listdir(base)
+    if item is 'latest':
+        item = max([int(f.split(save)[-1]) for f in files])
+    result = {}
+    load_dir = base + save + str(item) + '/'
+    if not os.path.exists(load_dir):
+        raise FileNotFoundError(f"Cannot find {load_dir} specified by arg: "
+                                f"{item}")
+    print("loading", load_dir)
+
+    keys = ['config', 'full_chain', 'flat_chain']
+
+    for key in keys:
+        result[key] = np.load(load_dir + key + '.npy', allow_pickle=True)
+    print(f"done loading\naccess result with:\n{keys}")
+    return result
