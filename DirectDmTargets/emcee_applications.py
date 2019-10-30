@@ -78,12 +78,19 @@ class MCMCStatModel(StatModel):
         nparameters = len(self.fit_parameters)
         keys = ['mw', 'sigma', 'v_0', 'v_esc', 'rho_0'][:nparameters]
         vals = [self.config.get(key) for key in keys]
-        # pos = np.hstack([
-        #     val + 0.1 * val * np.random.randn(self.nwalkers, 1)
-        #     for val in vals
-        #     ])
-        # self.pos = np.abs(pos)
-        self.pos = self._set_pos()
+
+        ranges = [self.config['prior'][self.fit_parameters[i]]['range'] for i in range(nparameters)]
+        for i, param in enumerate(self.fit_parameters):
+            if 'log' in param:
+                ranges[i] = [10 ** range for range in ranges[i]]
+        pos = np.hstack([
+            np.clip(
+                val + 0.2 * val * np.random.randn(self.nwalkers, 1),
+                1.2 * ranges[i][0],
+                0.8 * ranges[i][-1])
+            for i, val in enumerate(vals)])
+        self.pos = np.abs(pos)
+        # self.pos = self._set_pos()
 
     def set_sampler(self, mult=True):
         ndim = len(self.fit_parameters)
