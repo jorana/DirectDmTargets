@@ -79,10 +79,11 @@ class MCMCStatModel(StatModel):
         keys = ['mw', 'sigma', 'v_0', 'v_esc', 'rho_0'][:nparameters]
         vals = [self.config.get(key) for key in keys]
 
-        ranges = [self.config['prior'][self.fit_parameters[i]]['range'] for i in range(nparameters)]
+        ranges = [self.config['prior'][self.fit_parameters[i]]['range']
+                  for i in range(nparameters)]
         for i, param in enumerate(self.fit_parameters):
             if 'log' in param:
-                ranges[i] = [10 ** range for range in ranges[i]]
+                ranges[i] = [10 ** this_range for this_range in ranges[i]]
         pos = np.hstack([
             np.clip(
                 val + 0.2 * val * np.random.randn(self.nwalkers, 1),
