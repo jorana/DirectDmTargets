@@ -30,23 +30,31 @@ print("run_dddm.py::\tstart")
 
 parser = argparse.ArgumentParser(
     description="#TODO")
-parser.add_argument('--mw', 
+parser.add_argument('-mw', 
   type = np.float,
   default = 50.,
   help="wimp mass")
-parser.add_argument('--cross_section', 
+parser.add_argument('-cross_section', 
   type = np.float, 
   default = 1e-45, 
-  help="arguments for the python script (specified by --target)")
+  help="wimp cross-section")
+parser.add_argument('-nwalkers', 
+  type = int, 
+  default = 250, 
+  help="walkers of MCMC")
+parser.add_argument('-nsteps', 
+  type = int, 
+  default = 150, 
+  help="steps of MCMC")
 args = parser.parse_args()
 
 stats = dddm.MCMCStatModel("Xe")
 
 stats.set_benchmark(mw=args.mw, 
-	sigma=args.cross_section)
+    sigma=args.cross_section)
 
-stats.nwalkers = 500
-stats.nsteps = 500
+stats.nwalkers = args.nwalkers
+stats.nsteps = args.nsteps
 
 print(f"run_dddm.py::\tstart for mw = {args.mw}, sigma = {args.cross_section}")
 start = time.time()

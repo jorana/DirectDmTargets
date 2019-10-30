@@ -5,4 +5,5 @@ DirectDmTargets/__pycache__/*
 notebooks/*
 DirectDmTargets/__*
 backups/*
+submit_to_stoomboot*
 results/test*

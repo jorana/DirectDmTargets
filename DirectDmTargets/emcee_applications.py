@@ -163,6 +163,7 @@ class MCMCStatModel(StatModel):
         save = 'test'
         files = os.listdir(base)
         if force_index is False:
+            #TODO this does not prevent the programm from crashing when thre results folder is empty
             if files is []:
                 index = 0
             else:
