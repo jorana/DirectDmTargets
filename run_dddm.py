@@ -38,6 +38,10 @@ parser.add_argument('-cross_section',
   type = np.float, 
   default = 1e-45, 
   help="wimp cross-section")
+parser.add_argument('-poisson', 
+  type = bool, 
+  default = False, 
+  help="Add poisson noise to the test dataset")
 parser.add_argument('-nwalkers', 
   type = int, 
   default = 250, 
@@ -49,6 +53,7 @@ parser.add_argument('-nsteps',
 args = parser.parse_args()
 
 stats = dddm.MCMCStatModel("Xe")
+stats.config['poisson'] = args.poisson
 
 stats.set_benchmark(mw=args.mw, 
     sigma=args.cross_section)
@@ -70,6 +75,7 @@ print(f"run_dddm.py::\tfinished for mw = {args.mw}, sigma = {args.cross_section}
 print(f"run_dddm.py::\tfull fit")
 print(f"run_dddm.py::\tstart for mw = {args.mw}, sigma = {args.cross_section}")
 stats_full = dddm.MCMCStatModel("Xe")
+stats_full.config['poisson'] = args.poisson
 stats_full.set_benchmark(mw=stats.config['mw'], 
                          sigma=stats.config['sigma'])
 
