@@ -1,16 +1,14 @@
-import emcee
-from multiprocessing import Pool
-from .statistics import *
-from .detector import *
-from .halo import *
-import emcee
-import multiprocessing
-import matplotlib.pyplot as plt
-import corner
-import os
-import json
 import datetime
+import json
+import multiprocessing
+import os
 
+import corner
+import emcee
+import matplotlib.pyplot as plt
+
+from .halo import *
+from .statistics import *
 
 
 class MCMCStatModel(StatModel):
@@ -30,7 +28,7 @@ class MCMCStatModel(StatModel):
         self.log = {'sampler': False, 'did_run': False, 'pos': False}
         self.remove_frac = 0.2
         self.thin = 15
-        self.config['start'] = datetime.datetime.now()#.date().isoformat()
+        self.config['start'] = datetime.datetime.now()  # .date().isoformat()
         self.config['notes'] = "default"
 
     def set_fit_parameters(self, params):
@@ -58,17 +56,17 @@ class MCMCStatModel(StatModel):
                 self.config['prior'][param]['param']),
                 1.25 * self.config['prior'][param]['range'][0],
                 0.75 * self.config['prior'][param]['range'][-1]
-                ) for i in range(self.nwalkers)]
+            ) for i in range(self.nwalkers)]
                 for param in self.fit_parameters]
-            ])
+        ])
         for i, p in enumerate(self.fit_parameters):
             if 'log' in p:
-                pos[i] = 10**pos[i]
+                pos[i] = 10 ** pos[i]
         #     # #TODO workaround
-            # if 'cross' in p:
-            #     pos[i] = 1e-45 + 1e-45 * np.random.rand(self.nwalkers)
-            # if 'mass' in p:
-            #     pos[i] = 50 + 50 * np.random.rand(self.nwalkers)
+        # if 'cross' in p:
+        #     pos[i] = 1e-45 + 1e-45 * np.random.rand(self.nwalkers)
+        # if 'mass' in p:
+        #     pos[i] = 50 + 50 * np.random.rand(self.nwalkers)
         # self.pos = pos.T
         return pos.T
 
@@ -89,23 +87,23 @@ class MCMCStatModel(StatModel):
                 ranges[i] = [10 ** this_range for this_range in ranges[i]]
         pos = np.hstack([
             np.clip(
-#                 val + 0.001 * val * np.random.randn(self.nwalkers, 1),
+                #                 val + 0.001 * val * np.random.randn(self.nwalkers, 1),
                 val + 0.25 * val * np.random.randn(self.nwalkers, 1),
-#                 val + 0.5 * val * np.abs(
-#                     np.random.randn(self.nwalkers, 1)),
+                #                 val + 0.5 * val * np.abs(
+                #                     np.random.randn(self.nwalkers, 1)),
                 1.5 * ranges[i][0],
                 0.5 * ranges[i][-1])
             for i, val in enumerate(vals)])
         self.pos = pos
-#         self.pos = self._set_pos()
+    #         self.pos = self._set_pos()
 
     def set_sampler(self, mult=True):
         ndim = len(self.fit_parameters)
         kwargs = {"threads": multiprocessing.cpu_count()} if mult else {}
         self.sampler = emcee.EnsembleSampler(self.nwalkers, ndim,
-                              self.log_probability,
-                              args=([self.fit_parameters]),
-                              **kwargs)
+                                             self.log_probability,
+                                             args=([self.fit_parameters]),
+                                             **kwargs)
         self.log['sampler'] = True
 
     def run_emcee(self):
@@ -137,7 +135,6 @@ class MCMCStatModel(StatModel):
             ax.set_ylabel(labels[i])
             ax.yaxis.set_label_coords(-0.1, 0.5)
         axes[-1].set_xlabel("step number")
-        # plt.show()
 
     def show_corner(self):
         if not self.log['did_run']:
@@ -148,20 +145,15 @@ class MCMCStatModel(StatModel):
             discard=int(self.nsteps * self.remove_frac),
             thin=self.thin,
             flat=True
-            )
-        print(flat_samples.shape)
-        #TODO
-        # truths = [50, 1e-45, 230, 544, 0.3]
+        )
         truths = [self.config['mw'],
                   self.config['sigma'],
                   self.config['v_0'],
                   self.config['v_esc'],
                   self.config['rho_0']
                   ]
-
-        fig = corner.corner(flat_samples, labels=self.fit_parameters,
+        corner.corner(flat_samples, labels=self.fit_parameters,
                             truths=truths[:len(self.fit_parameters)])
-        # plt.show()
 
     def save_results(self, force_index=False):
         if not self.log['did_run']:
@@ -169,12 +161,10 @@ class MCMCStatModel(StatModel):
         base = 'results/'
         save = '2nd_test'
         files = os.listdir(base)
+        if not save + '0' in files:
+            os.makedirs(base + save + '0')
         if force_index is False:
-            #TODO this does not prevent the programm from crashing when thre results folder is empty
-            if files is []:
-                index = 0
-            else:
-                index = max([int(f.split(save)[-1]) for f in files]) + 1
+            index = max([int(f.split(save)[-1]) for f in files]) + 1
         else:
             index = force_index
 
