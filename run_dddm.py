@@ -50,10 +50,15 @@ parser.add_argument('-nsteps',
   type = int, 
   default = 150, 
   help="steps of MCMC")
+parser.add_argument('-notes', 
+  type = str, 
+  default = "default", 
+  help="notes on particular settings")
 args = parser.parse_args()
 
 stats = dddm.MCMCStatModel("Xe")
 stats.config['poisson'] = args.poisson
+stats.config['notes'] = args.notes
 
 stats.set_benchmark(mw=args.mw, 
     sigma=args.cross_section)
@@ -76,6 +81,7 @@ print(f"run_dddm.py::\tfull fit")
 print(f"run_dddm.py::\tstart for mw = {args.mw}, sigma = {args.cross_section}")
 stats_full = dddm.MCMCStatModel("Xe")
 stats_full.config['poisson'] = args.poisson
+stats_full.config['notes'] = args.notes
 stats_full.set_benchmark(mw=stats.config['mw'], 
                          sigma=stats.config['sigma'])
 

@@ -9,6 +9,7 @@ import matplotlib.pyplot as plt
 import corner
 import os
 import json
+import datetime
 
 
 
@@ -29,6 +30,8 @@ class MCMCStatModel(StatModel):
         self.log = {'sampler': False, 'did_run': False, 'pos': False}
         self.remove_frac = 0.2
         self.thin = 15
+        self.config['start'] = datetime.datetime.now()#.date().isoformat()
+        self.config['notes'] = "default"
 
     def set_fit_parameters(self, params):
         if not type(params) == list:
@@ -53,8 +56,8 @@ class MCMCStatModel(StatModel):
         pos = np.hstack([
             [[np.clip(self.config['prior'][param]['dist'](
                 self.config['prior'][param]['param']),
-                1.2 * self.config['prior'][param]['range'][0],
-                0.8 * self.config['prior'][param]['range'][-1]
+                1.25 * self.config['prior'][param]['range'][0],
+                0.75 * self.config['prior'][param]['range'][-1]
                 ) for i in range(self.nwalkers)]
                 for param in self.fit_parameters]
             ])
@@ -86,12 +89,15 @@ class MCMCStatModel(StatModel):
                 ranges[i] = [10 ** this_range for this_range in ranges[i]]
         pos = np.hstack([
             np.clip(
-                val + 0.2 * val * np.random.randn(self.nwalkers, 1),
-                1.2 * ranges[i][0],
-                0.8 * ranges[i][-1])
+#                 val + 0.001 * val * np.random.randn(self.nwalkers, 1),
+                val + 0.25 * val * np.random.randn(self.nwalkers, 1),
+#                 val + 0.5 * val * np.abs(
+#                     np.random.randn(self.nwalkers, 1)),
+                1.5 * ranges[i][0],
+                0.5 * ranges[i][-1])
             for i, val in enumerate(vals)])
-        self.pos = np.abs(pos)
-        # self.pos = self._set_pos()
+        self.pos = pos
+#         self.pos = self._set_pos()
 
     def set_sampler(self, mult=True):
         ndim = len(self.fit_parameters)
@@ -161,7 +167,7 @@ class MCMCStatModel(StatModel):
         if not self.log['did_run']:
             self.run_emcee()
         base = 'results/'
-        save = 'test'
+        save = '2nd_test'
         files = os.listdir(base)
         if force_index is False:
             #TODO this does not prevent the programm from crashing when thre results folder is empty
@@ -214,7 +220,7 @@ def convert_config_to_savable(config):
 
 def load_chain(item='latest'):
     base = 'results/'
-    save = 'test'
+    save = '2nd_test'
     files = os.listdir(base)
     if item is 'latest':
         item = max([int(f.split(save)[-1]) for f in files])
