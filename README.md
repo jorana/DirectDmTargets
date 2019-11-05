@@ -2,7 +2,10 @@
 Probing the complementarity of several targets used in Direct Detection Experiments for Dark Matter
 
 Install wimprates from source (since pip gives a too low version):
-<https://github.com/JelleAalbers/wimprates/tree/master/wimprates>
+<https://github.com/jorana/wimprates.git> (originally <https://github.com/JelleAalbers/wimprates/tree/master/wimprates>)
+
+Also instal multihist from source
+https://github.com/JelleAalbers/multihist.git
 
 ## Requirements ##
  - make a new conda env:
@@ -14,13 +17,6 @@ Install wimprates from source (since pip gives a too low version):
 ``conda install -c conda-forge emcee`` 
 
 ``pip install corner numericalunits``
-
-``git clone https://github.com/jorana/wimprates.git``
-
-``cd wimprates``
-
-``python setup.py develop``
-
 
 --``pip install numericalunits``--
 
