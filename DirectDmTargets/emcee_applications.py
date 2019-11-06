@@ -85,15 +85,27 @@ class MCMCStatModel(StatModel):
         for i, param in enumerate(self.fit_parameters):
             if 'log' in param:
                 ranges[i] = [10 ** this_range for this_range in ranges[i]]
-        pos = np.hstack([
-            np.clip(
-                #                 val + 0.001 * val * np.random.randn(self.nwalkers, 1),
-                val + 0.25 * val * np.random.randn(self.nwalkers, 1),
-                #                 val + 0.5 * val * np.abs(
-                #                     np.random.randn(self.nwalkers, 1)),
-                1.5 * ranges[i][0],
-                0.5 * ranges[i][-1])
-            for i, val in enumerate(vals)])
+#         pos = np.hstack([
+#             np.clip(
+#                 #                 val + 0.001 * val * np.random.randn(self.nwalkers, 1),
+#                 val + 0.25 * val * np.random.randn(self.nwalkers, 1),
+#                 #                 val + 0.5 * val * np.abs(
+#                 #                     np.random.randn(self.nwalkers, 1)),
+#                 1. * ranges[i][0],
+#                 1. * ranges[i][-1])
+#             for i, val in enumerate(vals)])
+        # Change
+        pos = []
+        for i, key in enumerate(keys):
+            val = self.config.get(key)
+            a, b = ranges[i]
+            if key in ['sigma', 'v_0', 'v_esc', 'rho_0']:
+                start_at = np.random.uniform(a, b, (self.nwalkers, 1))
+            else:
+                start_at = val + 0.25 * val * np.random.randn(self.nwalkers, 1)
+            start_at = np.clip(start_at, a, b)
+            pos.append(start_at)
+        pos = np.hstack(pos)
         self.pos = pos
     #         self.pos = self._set_pos()
 
@@ -161,6 +173,7 @@ class MCMCStatModel(StatModel):
         base = 'results/'
         save = '2nd_test'
         files = os.listdir(base)
+        files = [f for f in files if save in f]
         if not save + '0' in files:
             os.makedirs(base + save + '0')
         if force_index is False:
