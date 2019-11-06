@@ -36,7 +36,7 @@ parser.add_argument('-mw',
   help="wimp mass")
 parser.add_argument('-cross_section', 
   type = np.float, 
-  default = 1e-45, 
+  default = -45, 
   help="wimp cross-section")
 parser.add_argument('-poisson', 
   type = bool, 
@@ -78,7 +78,7 @@ print(f"run_dddm.py::\tstart for mw = {args.mw}, sigma = {args.cross_section}")
 stats_full = dddm.MCMCStatModel("Xe")
 stats_full.config['poisson'] = args.poisson
 stats_full.config['notes'] = args.notes
-stats_full.set_benchmark(mw=stats.config['mw'], sigma=stats.config['sigma'])
+stats_full.set_benchmark(mw=args.mw, sigma=stats.config['sigma'])
 stats_full.nwalkers = stats.nwalkers
 stats_full.nsteps = stats.nsteps * 2
 stats_full.fit_parameters = stats_full.known_parameters

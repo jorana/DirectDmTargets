@@ -99,7 +99,7 @@ class MCMCStatModel(StatModel):
         for i, key in enumerate(keys):
             val = self.config.get(key)
             a, b = ranges[i]
-            if key in ['sigma', 'v_0', 'v_esc', 'rho_0']:
+            if key in ['v_0', 'v_esc', 'rho_0']:
                 start_at = np.random.uniform(a, b, (self.nwalkers, 1))
             else:
                 start_at = val + 0.25 * val * np.random.randn(self.nwalkers, 1)
@@ -204,7 +204,7 @@ class MCMCStatModel(StatModel):
 
 def is_savable_type(item):
     if type(item) in [list, np.array, np.ndarray, int, str, np.int, np.float,
-                      bool]:
+                      bool, np.float64]:
         return True
     return False
 
