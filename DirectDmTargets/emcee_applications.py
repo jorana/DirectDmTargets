@@ -59,9 +59,9 @@ class MCMCStatModel(StatModel):
             ) for i in range(self.nwalkers)]
                 for param in self.fit_parameters]
         ])
-        for i, p in enumerate(self.fit_parameters):
-            if 'log' in p:
-                pos[i] = 10 ** pos[i]
+        # for i, p in enumerate(self.fit_parameters):
+        #     if 'log' in p:
+        #         pos[i] = 10 ** pos[i]
         #     # #TODO workaround
         # if 'cross' in p:
         #     pos[i] = 1e-45 + 1e-45 * np.random.rand(self.nwalkers)
@@ -82,9 +82,9 @@ class MCMCStatModel(StatModel):
 
         ranges = [self.config['prior'][self.fit_parameters[i]]['range']
                   for i in range(nparameters)]
-        for i, param in enumerate(self.fit_parameters):
-            if 'log' in param:
-                ranges[i] = [10 ** this_range for this_range in ranges[i]]
+        # for i, param in enumerate(self.fit_parameters):
+        #     if 'log' in param:
+        #         ranges[i] = [10 ** this_range for this_range in ranges[i]]
 #         pos = np.hstack([
 #             np.clip(
 #                 #                 val + 0.001 * val * np.random.randn(self.nwalkers, 1),

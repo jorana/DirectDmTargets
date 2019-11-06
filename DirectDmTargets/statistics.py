@@ -1,12 +1,6 @@
-# import emcee
-# import scipy
 from .detector import *
 from .halo import *
 import numericalunits as nu
-
-
-# TODO
-# use_SHM = SHM()
 
 
 def get_priors():
@@ -61,10 +55,11 @@ class StatModel:
         return f"stat_model::for {self.config['detector']} detector. For info" \
                f" see the config file:\n{self.config}"
 
-    def set_benchmark(self, mw=50, sigma=1e-45):
-        self.config['mw'] = mw
+    def set_benchmark(self, mw=50, sigma=-45):
+        print(f"taking log10 of mass of {mw}")
+        self.config['mw'] = np.log10(mw)
         self.config['sigma'] = sigma
-        if not ((mw == 50) and (sigma == 1e-45)):
+        if not ((mw == 50) and (sigma == -45)):
             print("re-evaluate benchmark")
             self.eval_benchmark()
             # print(f"setting the benchmark for for Mw ({mw}) and cross-section
@@ -94,8 +89,8 @@ class StatModel:
 
     def check_spectrum(self):
         spectrum = self.config['spectrum_class'](
-            self.config['mw'],
-            self.config['sigma'],
+            10 ** self.config['mw'],
+            10 ** self.config['sigma'],
             self.config['halo_model'],
             self.config['det_params'])
         return spectrum.get_data(poisson=self.config['poisson'])
@@ -141,21 +136,15 @@ class StatModel:
                 f"Returned NaN from likelihood. lp = {lp}, ll = {ll}")
         return lp + ll
 
-
-
     def log_prior(self, x, x_name):
         if self.config['prior'][x_name]['prior_type'] == 'flat':
             a, b = self.config['prior'][x_name]['param']
-            if 'log' in x_name:
-                x = np.log10(x)
+            # if 'log' in x_name:
+            #     x = np.log10(x)
             return log_flat(a, b, x)
         elif self.config['prior'][x_name]['prior_type'] == 'gauss':
             a, b = self.config['prior'][x_name]['range']
             m, s = self.config['prior'][x_name]['param']
-            # if x < 0:
-            #     print(
-            #         f"finding a negative value for {x_name}, returning -np.inf")
-            #     return -np.inf
             return log_gauss(a, b, m, s, x)
         else:
             raise TypeError(
@@ -173,7 +162,9 @@ class StatModel:
             elif x_names[1] == 'log_mass' and x_names[0] == 'log_cross_section':
                 x0, x1 = x1, x0
             spectrum = self.config['spectrum_class'](
-                x0, x1, self.config['halo_model'], self.config['det_params'])
+                10 ** x0,
+                10 ** x1,
+                self.config['halo_model'], self.config['det_params'])
             return spectrum.get_data(poisson=False)
         elif len(x_names) == 5 or len(x_names) == 6:
             if not x_names == default_order[:len(x_names)]:
@@ -189,8 +180,8 @@ class StatModel:
                 raise NotImplementedError(
                     f"Currently not yet ready to fit for {x_names[5]}")
 
-            spectrum = self.config['spectrum_class'](xs[0],
-                                                     xs[1],
+            spectrum = self.config['spectrum_class'](10 ** xs[0],
+                                                     10 ** xs[1],
                                                      fit_shm,
                                                      self.config['det_params'])
             result = spectrum.get_data(poisson=False)
@@ -232,7 +223,6 @@ def approx_log_fact(n):
     return n * np.log(n) - n
 
 
-# @numba.autojit
 def log_likelihood_function(nb, nr):
     """return the ln(likelihood) for Nb expected events and Nr observed events
 
@@ -281,7 +271,7 @@ def log_likelihood(model, y):
     assert type(model) == pd.DataFrame, assert_str
     # TODO Also add the assertion error for x and y
 
-    ym = model['counts']
+    # ym = model['counts']
     # res, err = log_likelihood_numba(y, ym)
     # if err:
     #     raise ValueError(err)

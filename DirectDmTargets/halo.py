@@ -1,41 +1,9 @@
 import numpy as np
 import pandas as pd
 import wimprates as wr
-from scipy.integrate import quad as scipy_int
-
 import numericalunits as nu
 
 
-#
-# def empty_model():
-#     return None
-#
-# config = {
-#     'v_0'  : 230  * un.km / un.s,
-#     'v_esc': 544  * un.km / un.s,
-#     'rho_0': 0.3  * un.GeV / (un.c0**2),
-#     'm_dm' : 100  * un.GeV / (un.c0**2),
-#     'k'    : 1
-# }
-#
-# # TO Do also have @export?
-# # @export
-# class dm_halo:
-#     """Dark matter halo model. Takes astrophysical parameters and returns the elastic recoil spectrum_simple"""
-#
-#     def __init__(self):
-#         self.v_0 = None
-#         self.v_e = None
-#         self.v_lsr = None
-#         self.model = None
-#
-#     def model(self, name):
-#         # TO DO
-#         # Add an assertion error here to check if there is a model
-#         assert True
-#         model = empty_model
-#         return model()
-#
 def bin_edges(a, b, n):
     """
 
@@ -76,6 +44,8 @@ class GenSpectrum:
         self.n_bins = 10
         self.E_min = 0
         self.E_max = 100
+        assert 1 < mw < 1000, "err"
+        assert 1e-46 < sig < 1e-42, "err"
 
     def __str__(self):
         """
@@ -98,36 +68,17 @@ class GenSpectrum:
             benchmark = {'mw': benchmark[0],
                          'sigma_nucleon': benchmark[1]}
 
-        # Not normalized
-        # TODO why not rate_wimp_std
-        # raise NotImplementedError("somehow this is not working, did I change
-        # it in the code")
-
-        rate = wr.rate_elastic(self.get_bin_centers() * nu.keV,
-                               benchmark["mw"] * nu.GeV / nu.c0 ** 2,
-                               benchmark["sigma_nucleon"] * nu.cm ** 2,
-                               halo_model=self.dm_model
-                               )
+        rate = wr.rate_wimp_std(self.get_bin_centers(),
+                                benchmark["mw"],
+                                benchmark["sigma_nucleon"],
+                                halo_model=self.dm_model
+                                )
+        # rate = wr.rate_elastic(self.get_bin_centers() * nu.keV,
+        #                        benchmark["mw"] * nu.GeV / nu.c0 ** 2,
+        #                        benchmark["sigma_nucleon"] * nu.cm ** 2,
+        #                        halo_model=self.dm_model
+        #                        )
         return rate
-
-    # def spectrum(self, benchmark, halo_parameters):
-    #     """
-    #     :param benchmark: insert the kind of DM to consider (should contain
-    #     Mass and Crossection)
-    #     :return: returns the rate
-    #     """
-    #     if (not type(benchmark) == dict) or (not type(benchmark) ==
-    #     pd.DataFrame):
-    #         benchmark = {'mw': benchmark[0],
-    #                      'sigma_nucleon': benchmark[1]}
-    #
-    #     # Not normalized
-    #     rate = wr.rate_wimp_std(self.get_bin_centers(),
-    #                             benchmark["mw"],
-    #                             benchmark["sigma_nucleon"],
-    #                             halo_model=self.dm_model
-    #                             )
-    #     return rate
 
     def get_events(self):
         """
@@ -192,7 +143,6 @@ class SHM:
         return wr.observed_speed_dist(v, t, self.v_0, self.v_esc)
 
 
-# @export
 class SHM_12:
     """
         class used to pass a halo model to the rate computation
