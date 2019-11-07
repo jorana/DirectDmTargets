@@ -43,9 +43,9 @@ class StatModel:
         self.config['detector'] = detector_name
         self.config['prior'] = get_priors()
         self.config['poisson'] = False
-        self.config['v_0'] = 220
+        self.config['v_0'] = 230
         self.config['v_esc'] = 544
-        self.config['rho_0'] = 0.3
+        self.config['rho_0'] = 0.4
         print(
             f"StatModel::\tinitialized for {detector_name} detector. See "
             f"print(stat_model) for default settings")
