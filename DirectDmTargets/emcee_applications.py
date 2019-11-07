@@ -99,7 +99,7 @@ class MCMCStatModel(StatModel):
         for i, key in enumerate(keys):
             val = self.config.get(key)
             a, b = ranges[i]
-            if key in ['v_0', 'v_esc', 'rho_0']:
+            if key in ['sigma', 'v_0', 'v_esc', 'rho_0']:
                 start_at = np.random.uniform(a, b, (self.nwalkers, 1))
             else:
                 start_at = val + 0.25 * val * np.random.randn(self.nwalkers, 1)
@@ -124,7 +124,9 @@ class MCMCStatModel(StatModel):
         if not self.log['pos']:
             self.set_pos()
         try:
-            self.sampler.run_mcmc(self.pos, self.nsteps, progress=True)
+            start = datetime.datetime.now()
+            self.sampler.run_mcmc(self.pos, self.nsteps, progress=False)
+            end = datetime.datetime.now()
         except ValueError as e:
             print(f"MCMC did not finish due to a ValueError. Was running with\n"
                   f"pos={self.pos.shape} nsteps = {self.nsteps}, walkers = "
@@ -133,6 +135,11 @@ class MCMCStatModel(StatModel):
                   f"{self.fit_parameters}")
             raise e
         self.log['did_run'] = True
+        try:
+            dt = start - end
+            self.config['fit_time'] = dt.seconds
+        except NameError:
+            self.config['fit_time'] = -1
 
     def show_walkers(self):
         if not self.log['did_run']:
@@ -171,7 +178,7 @@ class MCMCStatModel(StatModel):
         if not self.log['did_run']:
             self.run_emcee()
         base = 'results/'
-        save = '2nd_test'
+        save = 'test_emcee'
         files = os.listdir(base)
         files = [f for f in files if save in f]
         if not save + '0' in files:
@@ -204,7 +211,7 @@ class MCMCStatModel(StatModel):
 
 def is_savable_type(item):
     if type(item) in [list, np.array, np.ndarray, int, str, np.int, np.float,
-                      bool, np.float64]:
+                      bool]:
         return True
     return False
 
@@ -222,8 +229,9 @@ def convert_config_to_savable(config):
 
 
 def load_chain(item='latest'):
+    print('will be deleted soom please use load_chain_emcee!!\n')
     base = 'results/'
-    save = '2nd_test'
+    save = 'test_emcee'
     files = os.listdir(base)
     if item is 'latest':
         item = max([int(f.split(save)[-1]) for f in files])
@@ -238,5 +246,27 @@ def load_chain(item='latest'):
 
     for key in keys:
         result[key] = np.load(load_dir + key + '.npy', allow_pickle=True)
+    print(f"done loading\naccess result with:\n{keys}")
+    return result
+
+def load_chain_emcee(item='latest'):
+    base = 'results/'
+    save = 'test_emcee'
+    files = os.listdir(base)
+    if item is 'latest':
+        item = max([int(f.split(save)[-1]) for f in files])
+    result = {}
+    load_dir = base + save + str(item) + '/'
+    if not os.path.exists(load_dir):
+        raise FileNotFoundError(f"Cannot find {load_dir} specified by arg: "
+                                f"{item}")
+    print("loading", load_dir)
+
+    keys = ['config', 'full_chain', 'flat_chain']
+
+    for key in keys:
+        result[key] = np.load(load_dir + key + '.npy', allow_pickle=True)
+        if key == 'config':
+            result[key] = result[key].item()
     print(f"done loading\naccess result with:\n{keys}")
     return result

@@ -7,6 +7,7 @@ from .detector import *
 from .plot_basics import *
 from .examples import *
 from .emcee_applications import *
+from .nestle import *
 
 # import wimprates as wr
 # import numpy as np

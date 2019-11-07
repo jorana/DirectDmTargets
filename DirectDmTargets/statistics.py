@@ -47,20 +47,20 @@ class StatModel:
         self.config['v_esc'] = 544
         self.config['rho_0'] = 0.3
         print(
-            f"stat_model::initialized for {detector_name} detector. See "
+            f"StatModel::initialized for {detector_name} detector. See "
             f"print(stat_model) for default settings")
         self.set_default()
 
     def __str__(self):
-        return f"stat_model::for {self.config['detector']} detector. For info" \
-               f" see the config file:\n{self.config}"
+        return f"StatModel::for {self.config['detector']} detector. For info " \
+               f"see the config file:\n{self.config}"
 
     def set_benchmark(self, mw=50, sigma=-45):
-        print(f"taking log10 of mass of {mw}")
+        print(f"StatModel::taking log10 of mass of {mw}")
         self.config['mw'] = np.log10(mw)
         self.config['sigma'] = sigma
         if not ((mw == 50) and (sigma == -45)):
-            print("re-evaluate benchmark")
+            print("StatModel::re-evaluate benchmark")
             self.eval_benchmark()
             # print(f"setting the benchmark for for Mw ({mw}) and cross-section
             # ({sigma}) to default")
