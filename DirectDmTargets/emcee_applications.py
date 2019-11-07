@@ -181,9 +181,9 @@ class MCMCStatModel(StatModel):
         save = 'test_emcee'
         files = os.listdir(base)
         files = [f for f in files if save in f]
-        if not save + '0' in files:
-            os.makedirs(base + save + '0')
-        if force_index is False:
+        if not save + '0' in files and not force_index:
+            index = 0
+        elif force_index is False:
             index = max([int(f.split(save)[-1]) for f in files]) + 1
         else:
             index = force_index
@@ -199,7 +199,7 @@ class MCMCStatModel(StatModel):
                 os.remove(save_dir + file)
         # save the config, chain and flattened chain
         with open(save_dir + 'config.json', 'w') as fp:
-            json.dump(convert_config_to_savable(self.config), fp)
+            json.dump(convert_config_to_savable(self.config), fp, indent=4)
         np.save(save_dir + 'config.npy',
                 convert_config_to_savable(self.config))
         np.save(save_dir + 'full_chain.npy', self.sampler.get_chain())
@@ -211,7 +211,7 @@ class MCMCStatModel(StatModel):
 
 def is_savable_type(item):
     if type(item) in [list, np.array, np.ndarray, int, str, np.int, np.float,
-                      bool]:
+                      bool, np.float64]:
         return True
     return False
 
@@ -234,7 +234,7 @@ def load_chain(item='latest'):
     save = 'test_emcee'
     files = os.listdir(base)
     if item is 'latest':
-        item = max([int(f.split(save)[-1]) for f in files])
+        item = max([int(f.split(save)[-1]) for f in files if save in f])
     result = {}
     load_dir = base + save + str(item) + '/'
     if not os.path.exists(load_dir):
@@ -254,7 +254,7 @@ def load_chain_emcee(item='latest'):
     save = 'test_emcee'
     files = os.listdir(base)
     if item is 'latest':
-        item = max([int(f.split(save)[-1]) for f in files])
+        item = max([int(f.split(save)[-1]) for f in files if save in f])
     result = {}
     load_dir = base + save + str(item) + '/'
     if not os.path.exists(load_dir):

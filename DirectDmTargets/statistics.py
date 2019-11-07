@@ -47,7 +47,7 @@ class StatModel:
         self.config['v_esc'] = 544
         self.config['rho_0'] = 0.3
         print(
-            f"StatModel::initialized for {detector_name} detector. See "
+            f"StatModel::\tinitialized for {detector_name} detector. See "
             f"print(stat_model) for default settings")
         self.set_default()
 
@@ -55,12 +55,13 @@ class StatModel:
         return f"StatModel::for {self.config['detector']} detector. For info " \
                f"see the config file:\n{self.config}"
 
-    def set_benchmark(self, mw=50, sigma=-45):
-        print(f"StatModel::taking log10 of mass of {mw}")
+    def set_benchmark(self, mw=50, sigma=-45, verbose = True):
+        if verbose:
+            print(f"StatModel::\ttaking log10 of mass of {mw}")
         self.config['mw'] = np.log10(mw)
         self.config['sigma'] = sigma
         if not ((mw == 50) and (sigma == -45)):
-            print("StatModel::re-evaluate benchmark")
+            print("StatModel::\tre-evaluate benchmark")
             self.eval_benchmark()
             # print(f"setting the benchmark for for Mw ({mw}) and cross-section
             # ({sigma}) to default")
@@ -75,14 +76,14 @@ class StatModel:
         self.config[
             'spectrum_class'] = spec if spec != 'default' else DetectorSpectrum
         if halo_model != 'default' or spec != 'default':
-            print("re-evaluate benchmark")
+            print("StatModel::\tre-evaluate benchmark")
             self.eval_benchmark()
 
     def set_det_params(self):
         self.config['det_params'] = detectors[self.config['detector']]
 
     def set_default(self):
-        self.set_benchmark()
+        self.set_benchmark(verbose = False)
         self.set_models()
         self.set_det_params()
         self.eval_benchmark()

@@ -97,16 +97,15 @@ class NestleStatModel(StatModel):
 
     def run_nestle(self):
         method = 'multi'  # use MutliNest algorithm
-        ndims = len(self.fit_parameters)
+        ndim = len(self.fit_parameters)
         tol = self.tol  # the stopping criterion
         try:
             # todo
-            print("run_nestle::\tstart_fit")
-            print(ndims)
+            print("run_nestle::\tstart_fit for %i parameters"%ndim)
             start = datetime.datetime.now()
             self.result = nestle.sample(self._log_probability_nestle,
                                         self._log_prior_transform_nestle,
-                                        ndims,
+                                        ndim,
                                         method=method,
                                         npoints=self.nlive,
                                         dlogz=tol)
@@ -156,7 +155,7 @@ class NestleStatModel(StatModel):
         p, cov = nestle.mean_and_cov(self.result.samples, self.result.weights)
         for i, key in enumerate(self.fit_parameters):
             resdict[key + "_fit_res"] = "{0:5.2f} +/- {1:5.2f}".format(p[i], np.sqrt(cov[i, i]))
-            print(key, resdict[key + "_fit_res"])
+            print('\t', key, resdict[key + "_fit_res"])
         return resdict
 
     def save_results(self, force_index=False):
@@ -166,7 +165,7 @@ class NestleStatModel(StatModel):
         files = os.listdir(base)
         files = [f for f in files if save in f]
         if not save + '0' in files and not force_index:
-            os.makedirs(base + save + '0')
+#             os.makedirs(base + save + '0')
             index = 0
         elif force_index is False:
             index = max([int(f.split(save)[-1]) for f in files]) + 1
@@ -188,7 +187,6 @@ class NestleStatModel(StatModel):
 
         with open(save_dir + 'res_dict.json', 'w') as file:
             json.dump(convert_config_to_savable(self.get_summary()), file, indent=4)
-            file.write("\n")
         np.save(save_dir + 'config.npy',
                 convert_config_to_savable(self.config))
         np.save(save_dir + 'res_dict.npy',
@@ -204,7 +202,7 @@ class NestleStatModel(StatModel):
 
 def is_savable_type(item):
     if type(item) in [list, np.array, np.ndarray, int, str, np.int, np.float,
-                      bool]:
+                      bool, np.float64]:
         return True
     return False
 
