@@ -190,8 +190,9 @@ class StatModel:
             # TODO this is not the correct way, why does wimprates produce negative rates?
             mask = (result['counts'] < 0)
             if np.any(mask):
-                print(f"Serious error, finding negative rates. Presumably v_esc"
-                      f" is too small ({values[3]})")
+                print(f"statistics.py::\tSerious error, finding negative rates. Presumably v_esc"
+                      f" is too small ({values[3]})\nFull dump of paramters:\n"
+                      f"{x_names} = {values}")
                 result['counts'][mask] = 0
             return result
 

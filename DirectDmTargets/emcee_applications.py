@@ -102,7 +102,7 @@ class MCMCStatModel(StatModel):
             if key in ['v_0', 'v_esc', 'rho_0']:
                 start_at = np.random.uniform(a, b, (self.nwalkers, 1))
             else:
-                start_at = val + 0.25 * val * np.random.randn(self.nwalkers, 1)
+                start_at = val + 0.05 * val * np.random.randn(self.nwalkers, 1)
             start_at = np.clip(start_at, a, b)
             pos.append(start_at)
         pos = np.hstack(pos)
@@ -136,7 +136,8 @@ class MCMCStatModel(StatModel):
             raise e
         self.log['did_run'] = True
         try:
-            dt = start - end
+            dt = end - start
+            print("run_emcee::\tfit_done in %i s (%.1f h)"%(dt.seconds, dt.seconds/3600.))
             self.config['fit_time'] = dt.seconds
         except NameError:
             self.config['fit_time'] = -1

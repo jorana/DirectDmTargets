@@ -73,11 +73,15 @@ class NestleStatModel(StatModel):
         elif self.config['prior'][x_name]['prior_type'] == 'gauss':
             a, b = self.config['prior'][x_name]['range']
             m, s = self.config['prior'][x_name]['param']
-            res = m + s * spsp.ndtri(x)
-            if a < res < b:
-                return res
-            else:
-                return -np.inf
+            aprime = spsp.ndtr((a - m) / s)
+            bprime = spsp.ndtr((b - m) / s)
+            xprime = x *(bprime - aprime) + aprime
+            res =  m + s * spsp.ndtri(xprime)
+            return res
+#             if a < res < b:
+#                 return res
+#             else:
+#                 return -np.inf
         else:
             raise TypeError(
                 f"unknown prior type '"
@@ -111,7 +115,7 @@ class NestleStatModel(StatModel):
                                         dlogz=tol)
             end = datetime.datetime.now()
             dt = end - start
-            print("run_nestle::\tfit_done in %i s"%(dt.seconds))
+            print("run_nestle::\tfit_done in %i s (%.1f h)"%(dt.seconds, dt.seconds/3600.))
         except ValueError as e:
             print(
                 f"Nestle did not finish due to a ValueError. Was running with\n"
@@ -156,6 +160,10 @@ class NestleStatModel(StatModel):
         for i, key in enumerate(self.fit_parameters):
             resdict[key + "_fit_res"] = "{0:5.2f} +/- {1:5.2f}".format(p[i], np.sqrt(cov[i, i]))
             print('\t', key, resdict[key + "_fit_res"])
+            if "log_" in key:
+                resdict[key[4:] + "_fit_res"] = "%.3g +/- %.2g"%(
+                    10 ** p[i], 10 **(p[i]) * np.log(10) * np.sqrt(cov[i, i]))
+                print('\t', key[4:], resdict[key[4:] + "_fit_res"])
         return resdict
 
     def save_results(self, force_index=False):
