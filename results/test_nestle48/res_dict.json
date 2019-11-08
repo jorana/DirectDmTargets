@@ -1,0 +1,15 @@
+{
+    "nestle_nposterior": 2582,
+    "nestle_time": 2100,
+    "nestle_logZ": -8.16745401938365,
+    "nestle_logZerr": 0.08250502562620178,
+    "summary": "niter: 12913\nncall: 30925\nnsamples: 13937\nlogz: -8.167 +/-  0.083\nh:  6.970",
+    "N_posterior_samples ": 2582,
+    "log_mass_fit_res": " 1.39 +/-  0.04",
+    "mass_fit_res": "24.8 +/- 2.4",
+    "log_cross_section_fit_res": "-44.97 +/-  0.14",
+    "cross_section_fit_res": "1.08e-45 +/- 3.4e-46",
+    "v_0_fit_res": "231.93 +/- 28.37",
+    "v_esc_fit_res": "543.33 +/- 31.65",
+    "density_fit_res": " 0.40 +/-  0.09"
+}

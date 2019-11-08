@@ -1,0 +1,12 @@
+{
+    "nestle_nposterior": 3479,
+    "nestle_time": 3420,
+    "nestle_logZ": -10.801145362537962,
+    "nestle_logZerr": 0.0834944989664296,
+    "summary": "niter: 13770\nncall: 32906\nnsamples: 14794\nlogz: -10.801 +/-  0.083\nh:  7.139",
+    "N_posterior_samples ": 3479,
+    "log_mass_fit_res": " 1.72 +/-  0.04",
+    "mass_fit_res": "52.1 +/- 4.4",
+    "log_cross_section_fit_res": "-45.00 +/-  0.02",
+    "cross_section_fit_res": "1e-45 +/- 5.7e-47"
+}
