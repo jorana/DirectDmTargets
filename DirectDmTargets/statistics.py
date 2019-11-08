@@ -10,35 +10,40 @@ def get_priors():
     """
     priors = \
         {
-        'log_mass':
-            {'range': [0.1, 3], 'prior_type': 'flat'},
-        'log_cross_section':
-            {'range': [-46, -42], 'prior_type': 'flat'},
-        'density':
-            {'range': [0.001, 0.9], 'prior_type': 'gauss', 'mean': 0.4,
-             'std': 0.1},
-        'v_0':
-            {'range': [80, 380], 'prior_type': 'gauss', 'mean': 230,
-             'std': 30},
-        'v_esc':
-            {'range': [379, 709], 'prior_type': 'gauss', 'mean': 544,
-             'std': 33},
-        'k':
-            {'range': [0.5, 3.5], 'prior_type': 'flat'}
+            'log_mass':
+                {'range': [0.1, 3], 'prior_type': 'flat'},
+            'log_cross_section':
+                {'range': [-46, -42], 'prior_type': 'flat'},
+            'density':
+                {'range': [0.001, 0.9], 'prior_type': 'gauss', 'mean': 0.4,
+                 'std': 0.1},
+            'v_0':
+                {'range': [80, 380], 'prior_type': 'gauss', 'mean': 230,
+                 'std': 30},
+            'v_esc':
+                {'range': [379, 709], 'prior_type': 'gauss', 'mean': 544,
+                 'std': 33},
+            'k':
+                {'range': [0.5, 3.5], 'prior_type': 'flat'}
         }
     for key in priors.keys():
         param = priors[key]
         if param['prior_type'] == 'flat':
             param['param'] = param['range']
-            param['dist'] = lambda x: flat_prior(x)
+            param['dist'] = lambda x: flat_prior_distribution(x)
         elif param['prior_type'] == 'gauss':
             param['param'] = param['mean'], param['std']
-            param['dist'] = lambda x: gaus_prior(x)
+            param['dist'] = lambda x: gaus_prior_distribution(x)
     return priors
 
 
 class StatModel:
     def __init__(self, detector_name):
+        """
+        Statistical model used for Bayesian interference of detection in
+        multiple experiments.
+        :param detector_name: name of the detector (e.g. Xe)
+        """
         self.config = dict()
         self.config['detector'] = detector_name
         self.config['prior'] = get_priors()
@@ -55,7 +60,17 @@ class StatModel:
         return f"StatModel::for {self.config['detector']} detector. For info " \
                f"see the config file:\n{self.config}"
 
-    def set_benchmark(self, mw=50, sigma=-45, verbose = True):
+    def set_benchmark(self, mw=50, sigma=-45, verbose=True):
+        """
+        Set up the benchmark used in this statistical model. Likelihood of other
+        models can be evaluated for this 'truth'
+
+        :param mw: mass of benchmark wimp in GeV. log10(mass) will be saved to
+        config
+        :param sigma: cross-secontion of wimp in cm^2. log10(sigma) will be
+        saved to config
+        :param verbose: bool, if True add print statements
+        """
         if verbose:
             print(f"StatModel::\ttaking log10 of mass of {mw}")
         self.config['mw'] = np.log10(mw)
@@ -63,10 +78,14 @@ class StatModel:
         if not ((mw == 50) and (sigma == -45)):
             print("StatModel::\tre-evaluate benchmark")
             self.eval_benchmark()
-            # print(f"setting the benchmark for for Mw ({mw}) and cross-section
-            # ({sigma}) to default")
 
     def set_models(self, halo_model='default', spec='default'):
+        """
+        Update the config with the required settings
+        :param halo_model: The halo model used
+        :param spec: class used to generate the response of the spectrum in the
+        detector
+        """
         self.config[
             'halo_model'] = halo_model if halo_model != 'default' else SHM(
             v_0=self.config['v_0'] * nu.km / nu.s,
@@ -83,7 +102,7 @@ class StatModel:
         self.config['det_params'] = detectors[self.config['detector']]
 
     def set_default(self):
-        self.set_benchmark(verbose = False)
+        self.set_benchmark(verbose=False)
         self.set_models()
         self.set_det_params()
         self.eval_benchmark()
@@ -114,6 +133,7 @@ class StatModel:
         if type(parameter_names) == str:
             lp = self.log_prior(parameter_vals, parameter_names)
 
+        # check the input and compute the prior
         elif len(parameter_names) > 1:
             assert len(parameter_vals) == len(
                 parameter_names), f"provide enough names (" \
@@ -124,89 +144,121 @@ class StatModel:
         else:
             raise TypeError(
                 f"incorrect format provided. Theta should be array-like for "
-                f"single value of x_names or Theta should be matrix-like for "
-                f"array-like x_names. Theta, x_names (provided) "
+                f"single value of parameter_names or Theta should be matrix-like for "
+                f"array-like parameter_names. Theta, parameter_names (provided) "
                 f"= {parameter_vals, parameter_names}")
         if not np.isfinite(lp):
             return -np.inf
         model = self.eval_spectrum(parameter_vals, parameter_names)
 
+        # Compute the likelihood
         ll = log_likelihood(model, self.benchmark_values)
         if np.isnan(lp + ll):
             raise ValueError(
                 f"Returned NaN from likelihood. lp = {lp}, ll = {ll}")
         return lp + ll
 
-    def log_prior(self, x, x_name):
-        if self.config['prior'][x_name]['prior_type'] == 'flat':
-            a, b = self.config['prior'][x_name]['param']
-            # if 'log' in x_name:
-            #     x = np.log10(x)
-            return log_flat(a, b, x)
-        elif self.config['prior'][x_name]['prior_type'] == 'gauss':
-            a, b = self.config['prior'][x_name]['range']
-            m, s = self.config['prior'][x_name]['param']
-            return log_gauss(a, b, m, s, x)
+    def log_prior(self, value, variable_name):
+        """
+        Compute the prior of variable_name for a given value
+        :param value: value of variable name
+        :param variable_name: name of the 'value'. This name should be in the
+        config of the class under the priors with a similar content as the
+        priors as specified in the get_prior function.
+        :return: prior of value
+        """
+        # For each of the priors read from the config file how the prior looks
+        # like. Get the boundaries (and mean (m) and width (s) for gausian
+        # distributions).
+        if self.config['prior'][variable_name]['prior_type'] == 'flat':
+            a, b = self.config['prior'][variable_name]['param']
+            return log_flat(a, b, value)
+        elif self.config['prior'][variable_name]['prior_type'] == 'gauss':
+            a, b = self.config['prior'][variable_name]['range']
+            m, s = self.config['prior'][variable_name]['param']
+            return log_gauss(a, b, m, s, value)
         else:
             raise TypeError(
-                f"unknown prior type '"
-                f"{self.config['prior'][x_name]['prior_type']}', choose either "
-                f"gauss or flat")
+                f"unknown prior type "
+                f"'{self.config['prior'][variable_name]['prior_type']}'"
+                f", choose either gauss or flat")
 
-    def eval_spectrum(self, values, x_names):
+    def eval_spectrum(self, values, parameter_names):
+        """
+        For given values and parameter names, return the spectrum one would have
+        with these parameters. The values and parameter names should be array
+        like objects of the same length. Usually, one fits either two
+        ('log_mass', 'log_cross_section') or five parameters ('log_mass',
+        'log_cross_section', 'v_0', 'v_esc', 'density').
+        :param values: array like object of
+        :param parameter_names: names of parameters
+        :return: a spectrum as specified by the parameter_names
+        """
         default_order = ['log_mass', 'log_cross_section', 'v_0', 'v_esc',
                          'density', 'k']
-        if len(x_names) == 2:
+        if type(parameter_names) is str:
+            raise NotImplementedError(
+                f"Trying to fit a single parameter ({parameter_names}), such a "
+                f"feature is not implemented.")
+        if len(parameter_names) == 2:
             x0, x1 = check_shape(values)
-            if x_names[0] == 'log_mass' and x_names[1] == 'log_cross_section':
+            if (parameter_names[0] is 'log_mass'
+                and parameter_names[1] is 'log_cross_section'):
+                # This is the right order
                 pass
-            elif x_names[1] == 'log_mass' and x_names[0] == 'log_cross_section':
+            elif (parameter_names[1] is 'log_mass'
+                  and parameter_names[0] is 'log_cross_section'):
                 x0, x1 = x1, x0
+            else:
+                raise NotImplementedError(
+                    f"Trying to fit two parameters ({parameter_names}), this "
+                    f"is not implemented.")
             spectrum = self.config['spectrum_class'](
                 10 ** x0,
                 10 ** x1,
                 self.config['halo_model'], self.config['det_params'])
             return spectrum.get_data(poisson=False)
-        elif len(x_names) == 5 or len(x_names) == 6:
-            if not x_names == default_order[:len(x_names)]:
+        elif len(parameter_names) == 5 or len(parameter_names) == 6:
+            if not parameter_names == default_order[:len(parameter_names)]:
                 raise NameError(
                     f"The parameters are not in correct order. Please insert"
-                    f"{default_order[:len(x_names)]} rather than {x_names}.")
-            xs = check_shape(values)
-            if len(x_names) == 5:
-                fit_shm = SHM(v_0=xs[2] * nu.km / nu.s,
-                              v_esc=xs[3] * nu.km / nu.s,
-                              rho_dm=xs[4] * nu.GeV / nu.c0 ** 2 / nu.cm ** 3)
-            if len(x_names) == 6:
-                raise NotImplementedError(
-                    f"Currently not yet ready to fit for {x_names[5]}")
+                    f"{default_order[:len(parameter_names)]} rather than "
+                    f"{parameter_names}.")
 
-            spectrum = self.config['spectrum_class'](10 ** xs[0],
-                                                     10 ** xs[1],
+            checked_values = check_shape(values)
+            if len(parameter_names) == 5:
+                fit_shm = SHM(
+                    v_0=checked_values[2] * nu.km / nu.s,
+                    v_esc=checked_values[3] * nu.km / nu.s,
+                    rho_dm=checked_values[4] * nu.GeV / nu.c0 ** 2 / nu.cm ** 3)
+            if len(parameter_names) == 6:
+                raise NotImplementedError(
+                    f"Currently not yet ready to fit for {parameter_names}")
+
+            spectrum = self.config['spectrum_class'](10 ** checked_values[0],
+                                                     10 ** checked_values[1],
                                                      fit_shm,
                                                      self.config['det_params'])
             result = spectrum.get_data(poisson=False)
 
-            # TODO this is not the correct way, why does wimprates produce negative rates?
-            mask = (result['counts'] < 0)
-            if np.any(mask):
-                print(f"statistics.py::\tSerious error, finding negative rates. Presumably v_esc"
-                      f" is too small ({values[3]})\nFull dump of paramters:\n"
-                      f"{x_names} = {values}")
-                result['counts'][mask] = 0
+            if np.any(result['counts'] < 0):
+                raise ValueError(
+                    f"statistics.py::Finding negative rates. Presumably v_esc"
+                    f" is too small ({values[3]})\nFull dump of parameters:\n"
+                    f"{parameter_names} = {values}.\nIf this occurs, one or "
+                    f"more priors might not be constrained correctly.")
             return result
-
-        elif len(x_names) > 2 and not len(x_names) == 5 and not len(
-                x_names) == 6:
+        elif len(parameter_names) > 2 and not len(parameter_names) == 5 and \
+                not len(parameter_names) == 6:
             raise NotImplementedError(
-                f"Not so quick cow-boy, before you code fitting {len(x_names)} "
+                f"Not so quick cow-boy, before you code fitting {len(parameter_names)} "
                 f"parameters or more, first code it! You are now trying to fit "
-                f"{x_names}. Make sure that you are not using forcing a string "
+                f"{parameter_names}. Make sure that you are not using forcing a string "
                 f"in this part of the code)")
         else:
             raise NotImplementedError(
-                f"Oops this is not somewhere you want to be, "
-                f"x_names = {x_names}")
+                f"Something strange went wrong here. Trying to fit for the"
+                f"parameter_names = {parameter_names}")
 
 
 def approx_log_fact(n):
@@ -239,31 +291,11 @@ def log_likelihood_function(nb, nr):
     return nb * np.log(nr) - approx_log_fact(nb) - nr
 
 
-# @numba.autojit
-# def log_likelihood_numba(nr, nb):
-#     res = 1
-#     error = False
-#     for i in range(len(nr)):
-#         # TODO round nb_i to int is okay?
-#         nr_i = nr[i]
-#         nb_i = nb[i]
-#
-#         # https://www.wolframalpha.com/input/?i=simplify+ln%28R%5Eb+%2F+b%21+exp%28-b%29%29
-#         res_bin = log_likelihood_function(nb_i, nr_i)
-#         if np.isnan(res_bin):
-#             error = ("Returned NaN in bin " + str(i) )# + "Below follows data dump.\n i = " + str(i) +
-#                      #"nb_i, nr_i = %.1f %.1f"%(nb_i, nr_i))
-#         if not np.isfinite(res_bin):
-#             return -np.inf
-#         res += res_bin
-#     return res, error
-
-
 def log_likelihood(model, y):
     """
     :param model: pandas dataframe containing the number of counts in bin i
     :param y: the number of counts in bin i
-    :return: product of the likelihoods of the bins
+    :return: sum of the log-likelihoods of the bins
     """
 
     assert len(y) == model.shape[
@@ -271,21 +303,13 @@ def log_likelihood(model, y):
             f"{len(y), model.shape[0]})"
     assert_str = f"please insert pd.dataframe for model ({type(model)})"
     assert type(model) == pd.DataFrame, assert_str
-    # TODO Also add the assertion error for x and y
 
-    # ym = model['counts']
-    # res, err = log_likelihood_numba(y, ym)
-    # if err:
-    #     raise ValueError(err)
-    # else:
-    #     return res
-    res = 1
+    # TODO should start at 0 right?
+    res = 0
     for i in range(len(y)):
-
         Nr = y[i]
         Nb = model['counts'][i]
-        # TODO round Nb to int is okay?
-        ## https://www.wolframalpha.com/input/?i=simplify+ln%28R%5Eb+%2F+b%21+exp%28-b%29%29
+        # https://www.wolframalpha.com/input/?i=simplify+ln%28R%5Eb+%2F+b%21+exp%28-b%29%29
 
         res_bin = log_likelihood_function(Nb, Nr)
         if np.isnan(res_bin):
@@ -293,9 +317,8 @@ def log_likelihood(model, y):
                 f"Returned NaN in bin {i}. Below follows data dump.\n"
                 f"i = {i}, Nb, Nr = {Nb, Nr}\n"
                 f"res_bin {res_bin}\n"
-                f"log(Nr) = {np.log((Nr))}, Nb! = {approx_log_fact(Nb)}\n"
-                f"log_likelihood: {log_likelihood_function(Nb, Nr)}\n"
-            )
+                f"log(Nr) = {np.log(Nr)}, Nb! = {approx_log_fact(Nb)}\n"
+                f"log_likelihood: {log_likelihood_function(Nb, Nr)}\n")
         if not np.isfinite(res_bin):
             return -np.inf
         res += res_bin
@@ -347,16 +370,20 @@ def remove_nan(x, maskable=False):
         return masking(x, ~not_nan_inf(maskable) ^ not_nan_inf(x))
 
 
-def flat_prior(_range):
+def flat_prior_distribution(_range):
     return np.random.uniform(_range[0], _range[1])
 
 
-def gaus_prior(_param):
+def gaus_prior_distribution(_param):
     mu, sigma = _param
     return np.random.normal(mu, sigma)
 
 
 def check_shape(xs):
+    """
+    :param xs: values
+    :return: flat array of values
+    """
     if not len(xs) > 0:
         raise TypeError(
             f"Provided incorrect type of {xs}. Takes either np.array or list")
@@ -367,7 +394,15 @@ def check_shape(xs):
             xs[i] = x[0]
     return xs
 
+
 def log_flat(a, b, x):
+    """
+    Return a flat prior as function of x in log space
+    :param a: lower bound
+    :param b: upper bound
+    :param x: value
+    :return: 0 for x in bound, -np.inf otherwise
+    """
     try:
         if a < x < b:
             return 0
@@ -379,14 +414,27 @@ def log_flat(a, b, x):
         result[~mask] = -np.inf
         return result
 
+
 def log_gauss(a, b, mu, sigma, x):
+    """
+    Return a gaussian prior as function of x in log space
+    :param a: lower bound
+    :param b: upper bound
+    :param mu: mean of gauss
+    :param sigma: std of gauss
+    :param x: value to evaluate
+    :return: log prior of x evaluated for gaussian (given by mu and sigma) if in
+    between the bounds
+    """
     try:
+        # for single values of x
         if a < x < b:
             return -0.5 * np.sum(
                 (x - mu) ** 2 / (sigma ** 2) + np.log(sigma ** 2))
         else:
             return -np.inf
     except ValueError:
+        # for array like objects return as follows
         result = np.zeros(len(x))
         mask = (x > a) & (x < b)
         result[~mask] = -np.inf

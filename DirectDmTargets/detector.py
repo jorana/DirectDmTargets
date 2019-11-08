@@ -6,18 +6,33 @@ from .halo import GenSpectrum, get_bins
 
 
 def det_res_Xe(E):
+    """
+    :param E: recoil energy (in keV)
+    :return: detector resolution for Xe detector
+    """
     return 0.6 * np.sqrt(E)
 
 
 def det_res_Ar(E):
+    """
+    :param E: recoil energy (in keV)
+    :return: detector resolution for Ar detector
+    """
     return 0.7 * np.sqrt(E)
 
 
 def det_res_Ge(E):
+    """
+    :param E: recoil energy (in keV)
+    :return: detector resolution for Ge detector
+    """
     return np.sqrt(0.3 ** 2 + (0.06 ** 2) * E)
 
 
-benchmark = {'mw': 50, 'sigma_nucleon': 10e-45}
+# Set the default benchmark for a 50 GeV WIMP with a cross-section of 1e-45 cm^2
+benchmark = {'mw': 50, 'sigma_nucleon': 1e-45}
+
+# Set up a dictonary of the different detectors
 detectors = {
     'Xe': {'exp': 5, 'cut_eff': 0.8, 'nr_eff': 0.5, 'E_thr': 10,
            'res': det_res_Xe},
@@ -25,7 +40,7 @@ detectors = {
            'res': det_res_Ar},
     'Ge': {'exp': 10, 'cut_eff': 0.8, 'nr_eff': 0.8, 'E_thr': 30,
            'res': det_res_Ge}}
-
+# And calculate the effective exposure for each
 for name in detectors.keys():
     detectors[name]['exp_eff'] = (detectors[name]['exp'] *
                                   detectors[name]['cut_eff'] *
@@ -33,19 +48,34 @@ for name in detectors.keys():
     print(f"calculating effective efficiency for {name} detector done")
 
 
-def _smear_signal(rate, energy, func):
-    result = np.zeros(len(rate))
-    bin_width = np.mean(np.diff(energy))
-    sigma = func(energy)
-    for i, E in enumerate(energy):
-        result[i] = np.sum(
-            bin_width * rate * (1 / (np.sqrt(2 * np.pi) * sigma)) *
-            np.exp(-((E - energy) ** 2 / (2 * sigma ** 2))))
-    return result
+# TODO obsolete, use the smear_signal function
+# def _smear_signal(rate, energy, func):
+#
+#     result = np.zeros(len(rate))
+#     bin_width = np.mean(np.diff(energy))
+#     sigma = func(energy)
+#     for i, E in enumerate(energy):
+#         result[i] = np.sum(
+#             bin_width * rate * (1 / (np.sqrt(2 * np.pi) * sigma)) *
+#             np.exp(-((E - energy) ** 2 / (2 * sigma ** 2))))
+#     return result
 
 
 @numba.njit
 def smear_signal(rate, energy, sigma, bin_width):
+    """
+
+    :param rate: counts/bin
+    :param energy: energy bin_center
+    :param sigma: energy resolution
+    :param bin_width: should be scalar of the bin width
+    :return: the rate smeared with the specified energy resolution at given
+    energy
+
+    This function takes a binned DM-spectrum and takes into account the energy
+    resolution of the detector. The rate, energy and resolution should be arrays
+    of equal length. The the bin_width
+    """
     result = []
     for i in range(len(energy)):
         res = 0
@@ -62,12 +92,11 @@ def smear_signal(rate, energy, sigma, bin_width):
 
 
 class DetectorSpectrum(GenSpectrum):
-    # GenSpectrum generates a number of bins (default 10), however, since a
-    # numerical integration is performed in compute_detected_spectrum, this
-    # number is multiplied here.
-
     def __init__(self, *args):
         GenSpectrum.__init__(self, *args)
+        # GenSpectrum generates a number of bins (default 10), however, since a
+        # numerical integration is performed in compute_detected_spectrum, this
+        # number is multiplied here.
         self.rebin_factor = 10
 
     def __str__(self):
@@ -75,10 +104,20 @@ class DetectorSpectrum(GenSpectrum):
                 f"spectrum with detector resolution and implements the energy "
                 f"threshold for the detector")
 
-    def chuck_integration(self, rates, energies, bins):
+    @staticmethod
+    def chuck_integration(rates, energies, bins):
+        """
+        :param rates: counts/bin
+        :param energies: energy bin_center
+        :param bins: two-dimensional array of the bin-boundaries wherein the
+        energies should be integrated
+        :return: the re-binned number of counts/bin specified by the two-
+        dimensional array bins
+        """
         res = np.zeros(len(bins))
-        for i, bin in enumerate(bins):
-            mask = (energies > bin[0]) & (energies < bin[1])
+        for i, bin_i in enumerate(bins):
+            # bin_i should be right bin and left bin
+            mask = (energies > bin_i[0]) & (energies < bin_i[1])
             bin_width = np.average(np.diff(energies[mask]))
             res[i] = np.sum(rates[mask] * bin_width)
         return res
@@ -89,6 +128,13 @@ class DetectorSpectrum(GenSpectrum):
         return rates
 
     def compute_detected_spectrum(self):
+        """
+
+        :return: spectrum taking into account the detector properties
+        """
+        # The numerical integration requires finer binning, therefore compute a
+        # spectrum at finer binning than the number of bins the result should be
+        # in.
         self.n_bins_result = self.n_bins
         self.n_bins = self.n_bins * self.rebin_factor
         rates = self.spectrum_simple([self.mw, self.sigma_nucleon])
@@ -98,6 +144,7 @@ class DetectorSpectrum(GenSpectrum):
         sigma = self.detector['res'](energies)
         bin_width = np.mean(np.diff(energies))
         events = np.array(smear_signal(rates, energies, sigma, bin_width))
+        # re-bin final result to the desired number of bins
         events = self.chuck_integration(events, energies, result_bins)
         return events * self.detector['exp_eff']
 

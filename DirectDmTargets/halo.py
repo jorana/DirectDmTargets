@@ -32,7 +32,7 @@ class GenSpectrum:
     def __init__(self, mw, sig, model, det):
         """
         :param mw: wimp mass
-        :param sig: crossection of the wimp nucleon interaction
+        :param sig: cross-section of the wimp nucleon interaction
         :param model: the dark matter model
         :param det: detector name
         """
@@ -42,10 +42,14 @@ class GenSpectrum:
         self.detector = det
 
         self.n_bins = 10
-        self.E_min = 0
-        self.E_max = 100
-        assert 1 < mw < 1000, "err"
-        assert 1e-46 < sig < 1e-42, "err"
+        self.E_min = 0 #keV
+        self.E_max = 100 #keV
+
+        assertion_string = "temporary assertion statement to check that the " \
+                           "mass and the cross-section do not go beyond the " \
+                           "boundaries of the prior."
+        assert 1 < mw < 1000, assertion_string
+        assert 1e-46 < sig < 1e-42, assertion_string
 
     def __str__(self):
         """
@@ -73,11 +77,7 @@ class GenSpectrum:
                                 benchmark["sigma_nucleon"],
                                 halo_model=self.dm_model
                                 )
-        # rate = wr.rate_elastic(self.get_bin_centers() * nu.keV,
-        #                        benchmark["mw"] * nu.GeV / nu.c0 ** 2,
-        #                        benchmark["sigma_nucleon"] * nu.cm ** 2,
-        #                        halo_model=self.dm_model
-        #                        )
+
         return rate
 
     def get_events(self):
@@ -114,36 +114,7 @@ class GenSpectrum:
         result['bin_right'] = bins[:, 1]
         return result
 
-
-def test_test():
-    print('done')
-
-
 class SHM:
-    """
-        class used to pass a halo model to the rate computation
-        must contain:
-        :param v_esc -- escape velocity
-        :function velocity_dist -- function taking v,t giving normalised
-        velocity distribution in earth rest-frame.
-        :param rho_dm -- density in mass/volume of dark matter at the Earth
-        The standard halo model also allows variation of v_0
-        :param v_0
-    """
-
-    def __init__(self, v_0=None, v_esc=None, rho_dm=None):
-        self.v_0 = 230 * nu.km / nu.s if v_0 is None else v_0
-        self.v_esc = 544 * nu.km / nu.s if v_esc is None else v_esc
-        self.rho_dm = (0.3 * nu.GeV / nu.c0 ** 2 / nu.cm ** 3
-                       if rho_dm is None else rho_dm)
-
-    def velocity_dist(self, v, t):
-        # in units of per velocity,
-        # v is in units of velocity
-        return wr.observed_speed_dist(v, t, self.v_0, self.v_esc)
-
-
-class SHM_12:
     """
         class used to pass a halo model to the rate computation
         must contain:
