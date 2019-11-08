@@ -1,6 +1,5 @@
 numpy
 scipy
-python==3.7
 matplotlib
 pandas
 ipython
@@ -11,4 +10,3 @@ emcee
 corner 
 numericalunits
 multihist
-wimprates==0.3.0
