@@ -1,4 +1,6 @@
 # DD_DM_targets
+[![Build Status](https://api.travis-ci.org/jorana/DD_DM_targets.svg?branch=master)](https://travis-ci.org/jorana/DD_DM_targets)
+
 Probing the complementarity of several targets used in Direct Detection Experiments for Dark Matter
 
 Install wimprates from source (since pip gives a too low version):
