@@ -1,5 +1,5 @@
 # DD_DM_targets
-[![Build Status](https://api.travis-ci.org/jorana/DD_DM_targets.svg?branch=master)](https://travis-ci.org/jorana/DD_DM_targets)
+[![Build Status](https://travis-ci.com/jorana/DD_DM_targets.svg?token=2MSppqzrkto9C3uuoWiK&branch=master)
 
 Probing the complementarity of several targets used in Direct Detection Experiments for Dark Matter
 
