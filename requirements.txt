@@ -1,6 +1,5 @@
 numpy
 scipy
-git
 python==3.7
 matplotlib
 pandas
