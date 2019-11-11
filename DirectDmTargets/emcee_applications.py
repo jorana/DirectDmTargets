@@ -99,10 +99,10 @@ class MCMCStatModel(StatModel):
         for i, key in enumerate(keys):
             val = self.config.get(key)
             a, b = ranges[i]
-            if key in ['v_0', 'v_esc', 'rho_0']:
+            if key in []:
                 start_at = np.random.uniform(a, b, (self.nwalkers, 1))
             else:
-                start_at = val + 0.05 * val * np.random.randn(self.nwalkers, 1)
+                start_at = val + 0.005 * val * np.random.randn(self.nwalkers, 1)
             start_at = np.clip(start_at, a, b)
             pos.append(start_at)
         pos = np.hstack(pos)
