@@ -51,6 +51,10 @@ parser.add_argument('-notes',
   type = str, 
   default = "default", 
   help="notes on particular settings")
+parser.add_argument('-bins', 
+  type = int, 
+  default = 10, 
+  help="the number of energybins")
 args = parser.parse_args()
 
 print(f"run_dddm_nestle.py::\tstart for mw = {args.mw}, sigma = {args.cross_section}")
