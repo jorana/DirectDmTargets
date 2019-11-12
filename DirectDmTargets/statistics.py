@@ -307,8 +307,9 @@ def log_likelihood_function(nb, nr):
     """
     #TODO Test if this is needed
     # # No need for approximating very small values of N
-    # if nr < 5 and nb < 5:
-    #     return np.log(((nr ** nb) / np.math.gamma(nb + 1)) * np.exp(-nr))
+    if ((nr < 5 and nb < 5) or
+        (nr < 1 and nb < 10)):
+         return np.log(((nr ** nb) / np.math.gamma(nb + 1)) * np.exp(-nr))
     # https://www.wolframalpha.com/input/?i=simplify+ln%28R%5Eb+%2F+b%21+exp%28-R%29%29
     return nb * np.log(nr) - approx_log_fact(nb) - nr
 
@@ -335,6 +336,7 @@ def log_likelihood(model, y):
 
         res_bin = log_likelihood_function(Nb, Nr)
         if np.isnan(res_bin):
+            # TODO, return scientific notation for Nb and Nr 
             raise ValueError(
                 f"Returned NaN in bin {i}. Below follows data dump.\n"
                 f"i = {i}, Nb, Nr = {Nb, Nr}\n"

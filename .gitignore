@@ -9,8 +9,10 @@ submit_to_stoomboot*
 results/test*
 results/nestle*
 results/emcee*
+results/*
 .ipynb_checkpoints/*
 notebooks/.ipynb_checkpoints/*
+notebooks/.ipynb_checkpoints*
 .idea*
 .eggs/*
 DirectDmTargets.egg-info/*
