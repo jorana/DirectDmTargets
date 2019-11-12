@@ -66,6 +66,7 @@ stats.fit_parameters = stats.known_parameters[:args.nparams]
 stats.set_benchmark(mw=args.mw, sigma=args.cross_section)
 stats.nwalkers = args.nwalkers
 stats.nsteps = args.nsteps
+stats.eval_benchmark()
 stats.run_emcee()
 stats.save_results()
 assert stats.log['did_run']
