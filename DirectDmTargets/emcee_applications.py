@@ -170,7 +170,7 @@ class MCMCStatModel(StatModel):
 
 
 def load_chain_emcee(load_from=default_emcee_save_dir(), item='latest'):
-    base = get_result_folder
+    base = get_result_folder()
     save = load_from
     files = os.listdir(base)
     if item is 'latest':

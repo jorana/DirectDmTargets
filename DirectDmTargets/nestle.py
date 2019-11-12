@@ -261,7 +261,7 @@ def nestle_corner(result, save=False):
             pass
     labels = get_param_list()[:ndim]
     truths = [result['config'][prior_name] for prior_name in
-              get_prior_list()[:len(result['config']['fit_parameters'])]]
+              get_prior_list()[:ndim]]
     fig = corner.corner(
         result['samples'],
         weights=result['weights'],
