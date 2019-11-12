@@ -6,4 +6,5 @@ install:
 - git clone https://github.com/jorana/wimprates
 - pip install -e wimprates
 - pip install -r requirements.txt
+- python setup.py install
 script: python tests/test_all.py
