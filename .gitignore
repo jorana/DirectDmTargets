@@ -2,7 +2,7 @@
 DirectDmTargets/__pycache__/*
 *.pyc
 2019*
-notebooks/*
+notebooks/old/*
 DirectDmTargets/__*
 backups/*
 submit_to_stoomboot*
@@ -11,3 +11,5 @@ results/nestle*
 results/emcee*
 .ipynb_checkpoints/*
 .idea*
+.eggs/*
+DirectDmTargets.egg-info/*

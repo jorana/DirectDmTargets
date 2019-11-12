@@ -120,6 +120,7 @@ class GenSpectrum:
         result['bin_right'] = bins[:, 1]
         return result
 
+
 class SHM:
     """
         class used to pass a halo model to the rate computation

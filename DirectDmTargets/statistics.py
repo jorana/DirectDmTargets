@@ -215,7 +215,7 @@ class StatModel:
         if len(parameter_names) == 2:
             x0, x1 = check_shape(values)
             if (parameter_names[0] is 'log_mass'
-                and parameter_names[1] is 'log_cross_section'):
+                    and parameter_names[1] is 'log_cross_section'):
                 # This is the right order
                 pass
             elif (parameter_names[1] is 'log_mass'
@@ -275,6 +275,10 @@ class StatModel:
                 f"parameter_names = {parameter_names}")
 
 
+def log_fact(n):
+    return np.log(np.math.gamma(n + 1))
+
+
 def approx_log_fact(n):
     """take the approximate logarithm of factorial n for large n
 
@@ -285,10 +289,13 @@ def approx_log_fact(n):
     # if n is small, there is no need for approximation
     if n < 10:
         # gamma equals factorial for x -> x +1 & returns results for non-int
-        return np.log(np.math.gamma(n + 1))
+        return log_fact(n)
 
     # Stirling's approx. <https://nl.wikipedia.org/wiki/Formule_van_Stirling>
-    return n * np.log(n) - n
+    # return n * np.log(n) - n
+    return (n * np.log(n) - n + 0.5 * np.log(2 * np.pi * n)
+            + 1 / (12 * n) - 1 / (360 * (n ** 3)) + 1 / (1260 * (n ** 5))
+            - 1 / (1680 * (n ** 7)))
 
 
 def log_likelihood_function(nb, nr):
@@ -298,9 +305,10 @@ def log_likelihood_function(nb, nr):
     :param nr: observed events
     :return: ln(likelihood)
     """
-    # No need for approximating very small values of N
-    if nr < 5 and nb < 5:
-        return np.log(((nr ** nb) / np.math.gamma(nb + 1)) * np.exp(-nr))
+    #TODO Test if this is needed
+    # # No need for approximating very small values of N
+    # if nr < 5 and nb < 5:
+    #     return np.log(((nr ** nb) / np.math.gamma(nb + 1)) * np.exp(-nr))
     # https://www.wolframalpha.com/input/?i=simplify+ln%28R%5Eb+%2F+b%21+exp%28-R%29%29
     return nb * np.log(nr) - approx_log_fact(nb) - nr
 

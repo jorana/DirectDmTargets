@@ -29,7 +29,7 @@ parser.add_argument('-cross_section',
 parser.add_argument('-poisson',
                     type=bool,
                     default=False,
-                    help="Add poisson noise to the test dataset")
+                    help="Add poisson noise to the test data set")
 parser.add_argument('-nwalkers',
                     type=int,
                     default=250,
@@ -56,7 +56,7 @@ parser.add_argument('-nparams',
                     help="Number of parameters to fit")
 args = parser.parse_args()
 
-print(f"run_dddm_nestle.py::\tstart for mw = {args.mw}, sigma = "
+print(f"run_dddm_emcee.py::\tstart for mw = {args.mw}, sigma = "
       f"{args.cross_section}. Fitting {args.nparams} parameters")
 stats = dddm.MCMCStatModel(args.target)
 stats.config['poisson'] = args.poisson
