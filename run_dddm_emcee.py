@@ -39,44 +39,39 @@ parser.add_argument('-nsteps',
   type = int, 
   default = 150, 
   help="steps of MCMC")
-parser.add_argument('-notes', 
-  type = str, 
-  default = "default", 
-  help="notes on particular settings")
+parser.add_argument('-notes',
+                    type=str,
+                    default="default",
+                    help="notes on particular settings")
+parser.add_argument('-bins',
+                    type=int,
+                    default=10,
+                    help="the number of energy bins")
+parser.add_argument('-target',
+                    type=str,
+                    default='Xe',
+                    help="Target material of the detector (Xe/Ge/Ar)")
+parser.add_argument('-nparams',
+                    type=int,
+                    default=2,
+                    help="Number of parameters to fit")
 args = parser.parse_args()
 
-stats = dddm.MCMCStatModel("Xe")
+
+print(f"run_dddm_nestle.py::\tstart for mw = {args.mw}, sigma = "
+      f"{args.cross_section}. Fitting {args.nparams} parameters")
+stats = dddm.MCMCStatModel(args.target)
 stats.config['poisson'] = args.poisson
 stats.config['notes'] = args.notes
+stats.config['n_energy_bins'] = args.bins
+stats.fit_parameters = stats.known_parameters[:args.nparams]
 stats.set_benchmark(mw=args.mw, sigma=args.cross_section)
 stats.nwalkers = args.nwalkers
 stats.nsteps = args.nsteps
-print(f"run_dddm_emcee.py::\tstart for mw = {args.mw}, sigma = {args.cross_section}")
-start = time.time()
 stats.run_emcee()
-end = time.time()
-print(f"lasted {end-start} s = {(end-start)/3600} h")
 stats.save_results()
 assert stats.log['did_run']
-print(f"run_dddm_emcee.py::\tfinished for mw = {args.mw}, "
-      f"sigma = {args.cross_section}")
 
-# ## Full dimensionality ##
-print(f"run_dddm_emcee.py::\tfull fit")
-print(f"run_dddm_emcee.py::\tstart for mw = {args.mw}, sigma = {args.cross_section}")
-stats_full = dddm.MCMCStatModel("Xe")
-stats_full.config['poisson'] = args.poisson
-stats_full.config['notes'] = args.notes
-stats_full.set_benchmark(mw=args.mw, sigma=args.cross_section)
-stats_full.nwalkers = stats.nwalkers
-stats_full.nsteps = stats.nsteps * 2
-stats_full.fit_parameters = stats_full.known_parameters
-start = time.time()
-stats_full.run_emcee()
-end = time.time()
-print(f"lasted {end-start} s = {(end-start)/3600} h")
-stats_full.save_results()
-assert stats.log['did_run']
 print(f"run_dddm_emcee.py::\tfinished for mw = {args.mw}, "
       f"sigma = {args.cross_section}")
 print("finished, bye bye")
