@@ -40,6 +40,10 @@ def get_prior_list():
     return ['mw', 'sigma', 'v_0', 'v_esc', 'rho_0']
 
 
+def get_param_list():
+    return ['log_mass', 'log_cross_section', 'v_0', 'v_esc', 'density']
+
+
 class StatModel:
     def __init__(self, detector_name):
         """

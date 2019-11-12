@@ -6,7 +6,7 @@ Probing the complementarity of several targets used in Direct Detection Experime
 Install wimprates from source (since pip gives a too low version):
 <https://github.com/jorana/wimprates.git> (originally <https://github.com/JelleAalbers/wimprates/tree/master/wimprates>)
 
-Also instal multihist from source
+Also install multihist from source
 https://github.com/JelleAalbers/multihist.git
 
 ## Requirements ##

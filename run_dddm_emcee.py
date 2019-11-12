@@ -1,9 +1,8 @@
 import DirectDmTargets as dddm
 import wimprates as wr
-assert wr.__version__ !='0.2.2'
 import numpy as np
-import time
 import argparse
+assert wr.__version__ != '0.2.2'
 
 # # Direct detection of Dark matter using different target materials #
 # 
@@ -19,26 +18,26 @@ print("run_dddm_emcee.py::\tstart")
 
 parser = argparse.ArgumentParser(description="Running a fit for a certain set "
                                              "of parameters")
-parser.add_argument('-mw', 
-  type = np.float,
-  default = 50.,
-  help="wimp mass")
-parser.add_argument('-cross_section', 
-  type = np.float, 
-  default = -45, 
-  help="wimp cross-section")
-parser.add_argument('-poisson', 
-  type = bool, 
-  default = False, 
-  help="Add poisson noise to the test dataset")
-parser.add_argument('-nwalkers', 
-  type = int, 
-  default = 250, 
-  help="walkers of MCMC")
-parser.add_argument('-nsteps', 
-  type = int, 
-  default = 150, 
-  help="steps of MCMC")
+parser.add_argument('-mw',
+                    type=np.float,
+                    default=50.,
+                    help="wimp mass")
+parser.add_argument('-cross_section',
+                    type=np.float,
+                    default=-45,
+                    help="wimp cross-section")
+parser.add_argument('-poisson',
+                    type=bool,
+                    default=False,
+                    help="Add poisson noise to the test dataset")
+parser.add_argument('-nwalkers',
+                    type=int,
+                    default=250,
+                    help="walkers of MCMC")
+parser.add_argument('-nsteps',
+                    type=int,
+                    default=150,
+                    help="steps of MCMC")
 parser.add_argument('-notes',
                     type=str,
                     default="default",
@@ -56,7 +55,6 @@ parser.add_argument('-nparams',
                     default=2,
                     help="Number of parameters to fit")
 args = parser.parse_args()
-
 
 print(f"run_dddm_nestle.py::\tstart for mw = {args.mw}, sigma = "
       f"{args.cross_section}. Fitting {args.nparams} parameters")

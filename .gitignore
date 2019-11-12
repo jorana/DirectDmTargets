@@ -7,5 +7,7 @@ DirectDmTargets/__*
 backups/*
 submit_to_stoomboot*
 results/test*
+results/nestle*
+results/emcee*
 .ipynb_checkpoints/*
 .idea*

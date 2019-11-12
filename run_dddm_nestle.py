@@ -1,11 +1,8 @@
 import DirectDmTargets as dddm
 import wimprates as wr
-
-assert wr.__version__ != '0.2.2'
 import numpy as np
-import time
 import argparse
-
+assert wr.__version__ != '0.2.2'
 # # Direct detection of Dark matter using different target materials #
 # 
 # Author:

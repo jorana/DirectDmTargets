@@ -18,11 +18,7 @@ def default_nestle_save_dir():
 
 
 class NestleStatModel(StatModel):
-    known_parameters = ['log_mass',
-                        'log_cross_section',
-                        'v_0',
-                        'v_esc',
-                        'density']
+    known_parameters = get_param_list()
 
     def __init__(self, *args):
         StatModel.__init__(self, *args)
@@ -85,7 +81,7 @@ class NestleStatModel(StatModel):
             m, s = self.config['prior'][x_name]['param']
             aprime = spsp.ndtr((a - m) / s)
             bprime = spsp.ndtr((b - m) / s)
-            xprime = x *(bprime - aprime) + aprime
+            xprime = x * (bprime - aprime) + aprime
             res = m + s * spsp.ndtri(xprime)
             return res
         else:
@@ -110,7 +106,7 @@ class NestleStatModel(StatModel):
         ndim = len(self.fit_parameters)
         tol = self.tol  # the stopping criterion
         try:
-            print("run_nestle::\tstart_fit for %i parameters"%ndim)
+            print("run_nestle::\tstart_fit for %i parameters" % ndim)
             start = datetime.datetime.now()
             self.result = nestle.sample(self._log_probability_nestle,
                                         self._log_prior_transform_nestle,
@@ -120,7 +116,8 @@ class NestleStatModel(StatModel):
                                         dlogz=tol)
             end = datetime.datetime.now()
             dt = end - start
-            print("run_nestle::\tfit_done in %i s (%.1f h)"%(dt.seconds, dt.seconds/3600.))
+            print("run_nestle::\tfit_done in %i s (%.1f h)" % (
+            dt.seconds, dt.seconds / 3600.))
         except ValueError as e:
             print(
                 f"Nestle did not finish due to a ValueError. Was running with\n"
@@ -137,7 +134,8 @@ class NestleStatModel(StatModel):
         self.check_did_run()
         logZnestle = self.result.logz  # value of logZ
         infogainnestle = self.result.h  # value of the information gain in nats
-        logZerrnestle = np.sqrt(infogainnestle / self.nlive)  # estimate of the statistcal uncertainty on logZ
+        logZerrnestle = np.sqrt(
+            infogainnestle / self.nlive)  # estimate of the statistcal uncertainty on logZ
         # re-scale weights to have a maximum of one
         nweights = self.result.weights / np.max(self.result.weights)
         # get the probability of keeping a sample from the weights
@@ -150,7 +148,8 @@ class NestleStatModel(StatModel):
         # resdict['cnestle_mu'] = np.mean(samples_nestle[:, 1])  # mean of c samples
         # resdict['cnestle_sig'] = np.std(samples_nestle[:, 1])  # standard deviation of c samples
         # resdict['ccnestle'] = np.corrcoef(samples_nestle.T)[0, 1]  # correlation coefficient between parameters
-        resdict['nestle_nposterior'] = len(samples_nestle)  # number of posterior samples
+        resdict['nestle_nposterior'] = len(
+            samples_nestle)  # number of posterior samples
         resdict['nestle_time'] = self.config['fit_time']  # run time
         resdict['nestle_logZ'] = logZnestle  # log marginalised likelihood
         resdict['nestle_logZerr'] = logZerrnestle  # uncertainty on log(Z)
@@ -158,11 +157,12 @@ class NestleStatModel(StatModel):
         resdict['N_posterior_samples '] = len(samples_nestle)
         p, cov = nestle.mean_and_cov(self.result.samples, self.result.weights)
         for i, key in enumerate(self.fit_parameters):
-            resdict[key + "_fit_res"] = "{0:5.2f} +/- {1:5.2f}".format(p[i], np.sqrt(cov[i, i]))
+            resdict[key + "_fit_res"] = \
+                ("{0:5.2f} +/- {1:5.2f}".format(p[i], np.sqrt(cov[i, i])))
             print('\t', key, resdict[key + "_fit_res"])
             if "log_" in key:
-                resdict[key[4:] + "_fit_res"] = "%.3g +/- %.2g"%(
-                    10 ** p[i], 10 **(p[i]) * np.log(10) * np.sqrt(cov[i, i]))
+                resdict[key[4:] + "_fit_res"] = "%.3g +/- %.2g" % (
+                    10 ** p[i], 10 ** (p[i]) * np.log(10) * np.sqrt(cov[i, i]))
                 print('\t', key[4:], resdict[key[4:] + "_fit_res"])
         return resdict
 
@@ -239,7 +239,7 @@ def load_nestle_samples_from_file(load_dir):
     return result
 
 
-def nestle_corner(result, save = False):
+def nestle_corner(result, save=False):
     info = "$M_\chi}$=%.2f" % 10 ** np.float(result['config']['mw'])
     for prior_key in result['config']['prior'].keys():
         try:
@@ -247,10 +247,9 @@ def nestle_corner(result, save = False):
             info += f"\n{prior_key} = {mean}"
         except KeyError:
             pass
-
     nposterior, ndim = np.shape(result['samples'])
     info += "\nnposterior = %s" % nposterior
-    for str_inf in ['detector','notes', 'start', 'fit_time', 'poisson']:
+    for str_inf in ['detector', 'notes', 'start', 'fit_time', 'poisson']:
         try:
             info += f"\n{str_inf} = %s" % result['config'][str_inf]
             if str_inf is 'start':
@@ -260,24 +259,16 @@ def nestle_corner(result, save = False):
 
         except KeyError:
             pass
-    labels = ['log_mass',
-              'log_cross_section',
-              'v_0',
-              'v_esc',
-              'density'][:ndim]
-
+    labels = get_param_list()[:ndim]
     truths = [result['config'][prior_name] for prior_name in
               get_prior_list()[:len(result['config']['fit_parameters'])]]
-
-    fig = corner.corner(result['samples'],
-                        weights=result['weights'],
-                        labels=labels,
-                        range=[0.99999, 0.99999, 0.99999, 0.99999, 0.99999][
-                              :ndim],
-                        truths=truths,
-                        show_titles=True
-                        #                     bins=30
-                        )
+    fig = corner.corner(
+        result['samples'],
+        weights=result['weights'],
+        labels=labels,
+        range=[0.99999, 0.99999, 0.99999, 0.99999, 0.99999][:ndim],
+        truths=truths,
+        show_titles=True)
     fig.axes[1].set_title(f"Fit title", loc='left')
     fig.axes[1].text(0, 1, info, verticalalignment='top')
     if save:
