@@ -7,8 +7,12 @@ import corner
 import emcee
 import matplotlib.pyplot as plt
 
-from .halo import *
 from .statistics import *
+from .utils import *
+
+
+def default_emcee_save_dir():
+    return 'emcee'
 
 
 class MCMCStatModel(StatModel):
@@ -46,7 +50,7 @@ class MCMCStatModel(StatModel):
                             f" {params}.")
         self.fit_parameters = params
 
-    def _set_pos(self, use_pos=None):
+    def set_pos_full_prior(self, use_pos=None):
         self.log['pos'] = True
         if use_pos is not None:
             self.pos = use_pos
@@ -59,15 +63,6 @@ class MCMCStatModel(StatModel):
             ) for i in range(self.nwalkers)]
                 for param in self.fit_parameters]
         ])
-        # for i, p in enumerate(self.fit_parameters):
-        #     if 'log' in p:
-        #         pos[i] = 10 ** pos[i]
-        #     # #TODO workaround
-        # if 'cross' in p:
-        #     pos[i] = 1e-45 + 1e-45 * np.random.rand(self.nwalkers)
-        # if 'mass' in p:
-        #     pos[i] = 50 + 50 * np.random.rand(self.nwalkers)
-        # self.pos = pos.T
         return pos.T
 
     def set_pos(self, use_pos=None):
@@ -77,25 +72,12 @@ class MCMCStatModel(StatModel):
             self.pos = use_pos
             return
         nparameters = len(self.fit_parameters)
-        keys = ['mw', 'sigma', 'v_0', 'v_esc', 'rho_0'][:nparameters]
-        vals = [self.config.get(key) for key in keys]
+        keys = get_prior_list()[:nparameters]
 
         ranges = [self.config['prior'][self.fit_parameters[i]]['range']
                   for i in range(nparameters)]
-        # for i, param in enumerate(self.fit_parameters):
-        #     if 'log' in param:
-        #         ranges[i] = [10 ** this_range for this_range in ranges[i]]
-#         pos = np.hstack([
-#             np.clip(
-#                 #                 val + 0.001 * val * np.random.randn(self.nwalkers, 1),
-#                 val + 0.25 * val * np.random.randn(self.nwalkers, 1),
-#                 #                 val + 0.5 * val * np.abs(
-#                 #                     np.random.randn(self.nwalkers, 1)),
-#                 1. * ranges[i][0],
-#                 1. * ranges[i][-1])
-#             for i, val in enumerate(vals)])
-        # Change
         pos = []
+
         for i, key in enumerate(keys):
             val = self.config.get(key)
             a, b = ranges[i]
@@ -107,7 +89,6 @@ class MCMCStatModel(StatModel):
             pos.append(start_at)
         pos = np.hstack(pos)
         self.pos = pos
-    #         self.pos = self._set_pos()
 
     def set_sampler(self, mult=True):
         ndim = len(self.fit_parameters)
@@ -166,43 +147,21 @@ class MCMCStatModel(StatModel):
             thin=self.thin,
             flat=True
         )
-        truths = [self.config['mw'],
-                  self.config['sigma'],
-                  self.config['v_0'],
-                  self.config['v_esc'],
-                  self.config['rho_0']
-                  ]
-        corner.corner(flat_samples, labels=self.fit_parameters,
-                            truths=truths[:len(self.fit_parameters)])
+        truths = [self.config[prior_name] for prior_name in
+                  get_prior_list()[:len(self.fit_parameters)]]
+
+        corner.corner(flat_samples, labels=self.fit_parameters, truths=truths)
 
     def save_results(self, force_index=False):
         if not self.log['did_run']:
             self.run_emcee()
-        base = 'results/'
-        save = 'test_emcee'
-        files = os.listdir(base)
-        files = [f for f in files if save in f]
-        if not save + '0' in files and not force_index:
-            index = 0
-        elif force_index is False:
-            index = max([int(f.split(save)[-1]) for f in files]) + 1
-        else:
-            index = force_index
-
-        save_dir = base + save + str(index) + '/'
-        print('save_results::\tusing ' + save_dir)
-        if force_index is False:
-            os.mkdir(save_dir)
-        else:
-            assert os.path.exists(save_dir), "specify existing directory, exit"
-            for file in os.listdir(save_dir):
-                print('save_results::\tremoving ' + save_dir + file)
-                os.remove(save_dir + file)
+        # open a folder where to save to results
+        save_dir = open_save_dir(default_emcee_save_dir(), force_index)
         # save the config, chain and flattened chain
         with open(save_dir + 'config.json', 'w') as fp:
-            json.dump(convert_config_to_savable(self.config), fp, indent=4)
+            json.dump(convert_dic_to_savable(self.config), fp, indent=4)
         np.save(save_dir + 'config.npy',
-                convert_config_to_savable(self.config))
+                convert_dic_to_savable(self.config))
         np.save(save_dir + 'full_chain.npy', self.sampler.get_chain())
         np.save(save_dir + 'flat_chain.npy', self.sampler.get_chain(
             discard=int(self.nsteps * self.remove_frac), thin=self.thin,
@@ -210,49 +169,9 @@ class MCMCStatModel(StatModel):
         print("save_results::\tdone_saving")
 
 
-def is_savable_type(item):
-    if type(item) in [list, np.array, np.ndarray, int, str, np.int, np.float,
-                      bool, np.float64]:
-        return True
-    return False
-
-
-def convert_config_to_savable(config):
-    result = config.copy()
-    for key in result.keys():
-        if is_savable_type(result[key]):
-            pass
-        elif type(result[key]) == dict:
-            result[key] = convert_config_to_savable(result[key])
-        else:
-            result[key] = str(result[key])
-    return result
-
-
-def load_chain(item='latest'):
-    print('will be deleted soom please use load_chain_emcee!!\n')
-    base = 'results/'
-    save = 'test_emcee'
-    files = os.listdir(base)
-    if item is 'latest':
-        item = max([int(f.split(save)[-1]) for f in files if save in f])
-    result = {}
-    load_dir = base + save + str(item) + '/'
-    if not os.path.exists(load_dir):
-        raise FileNotFoundError(f"Cannot find {load_dir} specified by arg: "
-                                f"{item}")
-    print("loading", load_dir)
-
-    keys = ['config', 'full_chain', 'flat_chain']
-
-    for key in keys:
-        result[key] = np.load(load_dir + key + '.npy', allow_pickle=True)
-    print(f"done loading\naccess result with:\n{keys}")
-    return result
-
-def load_chain_emcee(item='latest'):
-    base = 'results/'
-    save = 'test_emcee'
+def load_chain_emcee(load_from=default_emcee_save_dir(), item='latest'):
+    base = get_result_folder
+    save = load_from
     files = os.listdir(base)
     if item is 'latest':
         item = max([int(f.split(save)[-1]) for f in files if save in f])

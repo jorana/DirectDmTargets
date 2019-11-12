@@ -15,7 +15,7 @@ import argparse
 # 
 # 28 october 2019 
 # 
-print("run_dddm.py::\tstart")
+print("run_dddm_emcee.py::\tstart")
 
 parser = argparse.ArgumentParser(description="Running a fit for a certain set "
                                              "of parameters")
@@ -51,19 +51,19 @@ stats.config['notes'] = args.notes
 stats.set_benchmark(mw=args.mw, sigma=args.cross_section)
 stats.nwalkers = args.nwalkers
 stats.nsteps = args.nsteps
-print(f"run_dddm.py::\tstart for mw = {args.mw}, sigma = {args.cross_section}")
+print(f"run_dddm_emcee.py::\tstart for mw = {args.mw}, sigma = {args.cross_section}")
 start = time.time()
 stats.run_emcee()
 end = time.time()
 print(f"lasted {end-start} s = {(end-start)/3600} h")
 stats.save_results()
 assert stats.log['did_run']
-print(f"run_dddm.py::\tfinished for mw = {args.mw}, "
+print(f"run_dddm_emcee.py::\tfinished for mw = {args.mw}, "
       f"sigma = {args.cross_section}")
 
 # ## Full dimensionality ##
-print(f"run_dddm.py::\tfull fit")
-print(f"run_dddm.py::\tstart for mw = {args.mw}, sigma = {args.cross_section}")
+print(f"run_dddm_emcee.py::\tfull fit")
+print(f"run_dddm_emcee.py::\tstart for mw = {args.mw}, sigma = {args.cross_section}")
 stats_full = dddm.MCMCStatModel("Xe")
 stats_full.config['poisson'] = args.poisson
 stats_full.config['notes'] = args.notes
@@ -77,6 +77,6 @@ end = time.time()
 print(f"lasted {end-start} s = {(end-start)/3600} h")
 stats_full.save_results()
 assert stats.log['did_run']
-print(f"run_dddm.py::\tfinished for mw = {args.mw}, "
+print(f"run_dddm_emcee.py::\tfinished for mw = {args.mw}, "
       f"sigma = {args.cross_section}")
 print("finished, bye bye")

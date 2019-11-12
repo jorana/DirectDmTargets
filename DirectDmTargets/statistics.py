@@ -5,7 +5,6 @@ import numericalunits as nu
 
 def get_priors():
     """
-
     :return: dictionary of priors, type and values
     """
     priors = \
@@ -37,6 +36,10 @@ def get_priors():
     return priors
 
 
+def get_prior_list():
+    return ['mw', 'sigma', 'v_0', 'v_esc', 'rho_0']
+
+
 class StatModel:
     def __init__(self, detector_name):
         """
@@ -44,6 +47,9 @@ class StatModel:
         multiple experiments.
         :param detector_name: name of the detector (e.g. Xe)
         """
+
+        assert (type(detector_name) is str and
+                detector_name in detectors.keys()), "Invalid detector name"
         self.config = dict()
         self.config['detector'] = detector_name
         self.config['prior'] = get_priors()
@@ -51,6 +57,7 @@ class StatModel:
         self.config['v_0'] = 230
         self.config['v_esc'] = 544
         self.config['rho_0'] = 0.4
+        self.config['n_energy_bins'] = 10
         print(
             f"StatModel::\tinitialized for {detector_name} detector. See "
             f"print(stat_model) for default settings")
@@ -113,6 +120,7 @@ class StatModel:
             10 ** self.config['sigma'],
             self.config['halo_model'],
             self.config['det_params'])
+        spectrum.n_bins = self.config['n_energy_bins']
         return spectrum.get_data(poisson=self.config['poisson'])
 
     def eval_benchmark(self):
@@ -217,6 +225,7 @@ class StatModel:
                 10 ** x0,
                 10 ** x1,
                 self.config['halo_model'], self.config['det_params'])
+            spectrum.n_bins = self.config['n_energy_bins']
             return spectrum.get_data(poisson=False)
         elif len(parameter_names) == 5 or len(parameter_names) == 6:
             if not parameter_names == default_order[:len(parameter_names)]:
@@ -239,6 +248,7 @@ class StatModel:
                                                      10 ** checked_values[1],
                                                      fit_shm,
                                                      self.config['det_params'])
+            spectrum.n_bins = self.config['n_energy_bins']
             result = spectrum.get_data(poisson=False)
 
             if np.any(result['counts'] < 0):
@@ -251,10 +261,10 @@ class StatModel:
         elif len(parameter_names) > 2 and not len(parameter_names) == 5 and \
                 not len(parameter_names) == 6:
             raise NotImplementedError(
-                f"Not so quick cow-boy, before you code fitting {len(parameter_names)} "
-                f"parameters or more, first code it! You are now trying to fit "
-                f"{parameter_names}. Make sure that you are not using forcing a string "
-                f"in this part of the code)")
+                f"Not so quickly cowboy, before you code fitting "
+                f"{len(parameter_names)} parameters or more, first code it! "
+                f"You are now trying to fit {parameter_names}. Make sure that "
+                f"you are not using forcing a string in this part of the code)")
         else:
             raise NotImplementedError(
                 f"Something strange went wrong here. Trying to fit for the"

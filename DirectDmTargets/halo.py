@@ -36,6 +36,7 @@ class GenSpectrum:
         :param model: the dark matter model
         :param det: detector name
         """
+        assert type(det) is dict, "Invalid detector type. Please provide dict."
         self.mw = mw
         self.sigma_nucleon = sig
         self.dm_model = model
@@ -56,7 +57,7 @@ class GenSpectrum:
         :return: info
         """
         return f"spectrum_simple of a DM model ({self.dm_model}) in a " \
-               f"{self.detector} detector"
+               f"{self.detector['name']} detector"
 
     def get_bin_centers(self):
         return np.mean(get_bins(self.E_min, self.E_max, self.n_bins), axis=1)
@@ -67,17 +68,22 @@ class GenSpectrum:
          and Crossection)
         :return: returns the rate
         """
-        if (not type(benchmark) == dict) or (
-        not type(benchmark) == pd.DataFrame):
+        if ((not type(benchmark) is dict) or (
+                not type(benchmark) is pd.DataFrame)):
             benchmark = {'mw': benchmark[0],
                          'sigma_nucleon': benchmark[1]}
 
+        try:
+            kwargs = {'material': self.detector['name']}
+        except KeyError as e:
+            print(self.detector)
+            raise e
         rate = wr.rate_wimp_std(self.get_bin_centers(),
                                 benchmark["mw"],
                                 benchmark["sigma_nucleon"],
-                                halo_model=self.dm_model
+                                halo_model=self.dm_model,
+                                **kwargs
                                 )
-
         return rate
 
     def get_events(self):

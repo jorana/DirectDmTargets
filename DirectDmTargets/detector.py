@@ -32,7 +32,7 @@ def det_res_Ge(E):
 # Set the default benchmark for a 50 GeV WIMP with a cross-section of 1e-45 cm^2
 benchmark = {'mw': 50, 'sigma_nucleon': 1e-45}
 
-# Set up a dictonary of the different detectors
+# Set up a dictionary of the different detectors
 detectors = {
     'Xe': {'exp': 5, 'cut_eff': 0.8, 'nr_eff': 0.5, 'E_thr': 10,
            'res': det_res_Xe},
@@ -45,20 +45,8 @@ for name in detectors.keys():
     detectors[name]['exp_eff'] = (detectors[name]['exp'] *
                                   detectors[name]['cut_eff'] *
                                   detectors[name]['nr_eff'])
+    detectors[name]['name'] = name
     print(f"calculating effective efficiency for {name} detector done")
-
-
-# TODO obsolete, use the smear_signal function
-# def _smear_signal(rate, energy, func):
-#
-#     result = np.zeros(len(rate))
-#     bin_width = np.mean(np.diff(energy))
-#     sigma = func(energy)
-#     for i, E in enumerate(energy):
-#         result[i] = np.sum(
-#             bin_width * rate * (1 / (np.sqrt(2 * np.pi) * sigma)) *
-#             np.exp(-((E - energy) ** 2 / (2 * sigma ** 2))))
-#     return result
 
 
 @numba.njit

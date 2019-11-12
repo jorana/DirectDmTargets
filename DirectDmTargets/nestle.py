@@ -10,23 +10,29 @@ import nestle
 
 from .halo import *
 from .statistics import *
+from .utils import *
 
-#TODO want to make this a class dependent on MCMCStatModel ?
+
+def default_nestle_save_dir():
+    return 'nestle'
+
+
 class NestleStatModel(StatModel):
     known_parameters = ['log_mass',
                         'log_cross_section',
                         'v_0',
                         'v_esc',
                         'density']
+
     def __init__(self, *args):
         StatModel.__init__(self, *args)
         self.tol = 0.1
         self.nlive = 1024
-        self.fit_parameters = ['log_mass', 'log_cross_section']
-        self.log = {'did_run': False}
+        self.log = {'did_run': False, 'saved_in': None}
         self.config['start'] = datetime.datetime.now()  # .date().isoformat()
         self.config['notes'] = "default"
         self.result = False
+        self.set_fit_parameters(['log_mass', 'log_cross_section'])
 
     def set_fit_parameters(self, params):
         if not type(params) == list:
@@ -42,10 +48,15 @@ class NestleStatModel(StatModel):
                             f"{self.known_parameters[:len(params)]} rather than"
                             f" {params}.")
         self.fit_parameters = params
+        self.config['fit_parameters'] = self.fit_parameters
 
     def check_did_run(self):
         if not self.log['did_run']:
             self.run_nestle()
+
+    def check_did_save(self):
+        if self.log['saved_in'] is None:
+            self.save_results()
 
     def log_probability_nestle(self, parameter_vals, parameter_names):
         """
@@ -57,7 +68,6 @@ class NestleStatModel(StatModel):
         :param parameter_names: the names of the parameter_values
         :return:
         """
-
         model = self.eval_spectrum(parameter_vals, parameter_names)
 
         ll = log_likelihood(model, self.benchmark_values)
@@ -76,12 +86,8 @@ class NestleStatModel(StatModel):
             aprime = spsp.ndtr((a - m) / s)
             bprime = spsp.ndtr((b - m) / s)
             xprime = x *(bprime - aprime) + aprime
-            res =  m + s * spsp.ndtri(xprime)
+            res = m + s * spsp.ndtri(xprime)
             return res
-#             if a < res < b:
-#                 return res
-#             else:
-#                 return -np.inf
         else:
             raise TypeError(
                 f"unknown prior type '"
@@ -94,7 +100,7 @@ class NestleStatModel(StatModel):
         return self.log_probability_nestle(theta, self.known_parameters[:ndim])
 
     def _log_prior_transform_nestle(self, theta):
-        ndim = len(self.fit_parameters)
+        # ndim = len(self.fit_parameters)
         result = [self.log_prior_transform_nestle(val, self.known_parameters[i])
                   for i, val in enumerate(theta)]
         return np.array(result)
@@ -104,7 +110,6 @@ class NestleStatModel(StatModel):
         ndim = len(self.fit_parameters)
         tol = self.tol  # the stopping criterion
         try:
-            # todo
             print("run_nestle::\tstart_fit for %i parameters"%ndim)
             start = datetime.datetime.now()
             self.result = nestle.sample(self._log_probability_nestle,
@@ -119,8 +124,6 @@ class NestleStatModel(StatModel):
         except ValueError as e:
             print(
                 f"Nestle did not finish due to a ValueError. Was running with\n"
-                f"pos={self.pos.shape} nsteps = {self.nsteps}, walkers = "
-                f"{self.nwalkers}, ndim = "
                 f"{len(self.fit_parameters)} for fit parameters "
                 f"{self.fit_parameters}")
             raise e
@@ -135,13 +138,10 @@ class NestleStatModel(StatModel):
         logZnestle = self.result.logz  # value of logZ
         infogainnestle = self.result.h  # value of the information gain in nats
         logZerrnestle = np.sqrt(infogainnestle / self.nlive)  # estimate of the statistcal uncertainty on logZ
-
         # re-scale weights to have a maximum of one
         nweights = self.result.weights / np.max(self.result.weights)
-
         # get the probability of keeping a sample from the weights
         keepidx = np.where(np.random.rand(len(nweights)) < nweights)[0]
-
         # get the posterior samples
         samples_nestle = self.result.samples[keepidx, :]
         resdict = {}
@@ -168,44 +168,29 @@ class NestleStatModel(StatModel):
 
     def save_results(self, force_index=False):
         self.check_did_run()
-        base = 'results/'
-        save = 'test_nestle'
-        files = os.listdir(base)
-        files = [f for f in files if save in f]
-        if not save + '0' in files and not force_index:
-#             os.makedirs(base + save + '0')
-            index = 0
-        elif force_index is False:
-            index = max([int(f.split(save)[-1]) for f in files]) + 1
-        else:
-            index = force_index
-
-        save_dir = base + save + str(index) + '/'
-        print('save_results::\tusing ' + save_dir)
-        if force_index is False:
-            os.mkdir(save_dir)
-        else:
-            assert os.path.exists(save_dir), "specify existing directory, exit"
-            for file in os.listdir(save_dir):
-                print('save_results::\tremoving ' + save_dir + file)
-                os.remove(save_dir + file)
+        save_dir = open_save_dir(default_nestle_save_dir(), force_index)
+        fit_summary = self.get_summary()
         # save the config, chain and flattened chain
         with open(save_dir + 'config.json', 'w') as file:
-            json.dump(convert_config_to_savable(self.config), file, indent=4)
-
+            json.dump(convert_dic_to_savable(self.config), file, indent=4)
         with open(save_dir + 'res_dict.json', 'w') as file:
-            json.dump(convert_config_to_savable(self.get_summary()), file, indent=4)
-        np.save(save_dir + 'config.npy',
-                convert_config_to_savable(self.config))
-        np.save(save_dir + 'res_dict.npy',
-                convert_config_to_savable(self.get_summary()))
+            json.dump(convert_dic_to_savable(fit_summary), file, indent=4)
+        np.save(save_dir + 'config.npy', convert_dic_to_savable(self.config))
+        np.save(save_dir + 'res_dict.npy', convert_dic_to_savable(fit_summary))
         for col in self.result.keys():
             if col == 'samples' or type(col) is not dict:
                 np.save(save_dir + col + '.npy', self.result[col])
             else:
                 np.save(save_dir + col + '.npy',
-                        convert_config_to_savable(self.result[col]))
+                        convert_dic_to_savable(self.result[col]))
+        self.log['saved_in'] = save_dir
         print("save_results::\tdone_saving")
+
+    def show_corner(self, save=True):
+        self.check_did_save()
+        save_dir = self.log['saved_in']
+        combined_results = load_nestle_samples_from_file(save_dir)
+        nestle_corner(combined_results, save_dir)
 
 
 def is_savable_type(item):
@@ -215,35 +200,86 @@ def is_savable_type(item):
     return False
 
 
-def convert_config_to_savable(config):
+def convert_dic_to_savable(config):
     result = config.copy()
     for key in result.keys():
         if is_savable_type(result[key]):
             pass
         elif type(result[key]) == dict:
-            result[key] = convert_config_to_savable(result[key])
+            result[key] = convert_dic_to_savable(result[key])
         else:
             result[key] = str(result[key])
     return result
 
-def load_nestle_samples(item='latest'):
-    base = 'results/'
-    save = 'test_nestle'
+
+def load_nestle_samples(load_from=default_nestle_save_dir(), item='latest'):
+    base = get_result_folder()
+    save = load_from
     files = os.listdir(base)
     if item is 'latest':
         item = max([int(f.split(save)[-1]) for f in files if save in f])
-    result = {}
+
     load_dir = base + save + str(item) + '/'
     if not os.path.exists(load_dir):
         raise FileNotFoundError(f"Cannot find {load_dir} specified by arg: "
                                 f"{item}")
-    print("loading", load_dir)
+    return load_nestle_samples_from_file(load_dir)
 
+
+def load_nestle_samples_from_file(load_dir):
+    print("load_nestle_samples::\tloading", load_dir)
     keys = ['config', 'res_dict', 'h', 'logl', 'logvol', 'logz', 'logzerr',
             'ncall', 'niter', 'samples', 'weights']
+    result = {}
     for key in keys:
         result[key] = np.load(load_dir + key + '.npy', allow_pickle=True)
         if key is 'config' or key is 'res_dict':
             result[key] = result[key].item()
     print(f"load_nestle_samples::\tdone loading\naccess result with:\n{keys}")
     return result
+
+
+def nestle_corner(result, save = False):
+    info = "$M_\chi}$=%.2f" % 10 ** np.float(result['config']['mw'])
+    for prior_key in result['config']['prior'].keys():
+        try:
+            mean = result['config']['prior'][prior_key]['mean']
+            info += f"\n{prior_key} = {mean}"
+        except KeyError:
+            pass
+
+    nposterior, ndim = np.shape(result['samples'])
+    info += "\nnposterior = %s" % nposterior
+    for str_inf in ['detector','notes', 'start', 'fit_time', 'poisson']:
+        try:
+            info += f"\n{str_inf} = %s" % result['config'][str_inf]
+            if str_inf is 'start':
+                info = info[:-7]
+            if str_inf == 'fit_time':
+                info += 's (%.1f h)' % (result['config'][str_inf] / 3600.)
+
+        except KeyError:
+            pass
+    labels = ['log_mass',
+              'log_cross_section',
+              'v_0',
+              'v_esc',
+              'density'][:ndim]
+
+    truths = [result['config'][prior_name] for prior_name in
+              get_prior_list()[:len(result['config']['fit_parameters'])]]
+
+    fig = corner.corner(result['samples'],
+                        weights=result['weights'],
+                        labels=labels,
+                        range=[0.99999, 0.99999, 0.99999, 0.99999, 0.99999][
+                              :ndim],
+                        truths=truths,
+                        show_titles=True
+                        #                     bins=30
+                        )
+    fig.axes[1].set_title(f"Fit title", loc='left')
+    fig.axes[1].text(0, 1, info, verticalalignment='top')
+    if save:
+        plt.savefig(f"{save}corner.png", dpi=200)
+    plt.show()
