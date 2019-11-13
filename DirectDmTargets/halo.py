@@ -49,8 +49,8 @@ class GenSpectrum:
         assertion_string = "temporary assertion statement to check that the " \
                            "mass and the cross-section do not go beyond the " \
                            "boundaries of the prior."
-        assert 1 < mw < 1000, assertion_string
-        assert 1e-46 < sig < 1e-42, assertion_string
+        assert 1 <= mw <= 1000, assertion_string
+        assert 1e-46 <= sig <= 1e-42, assertion_string
 
     def __str__(self):
         """
