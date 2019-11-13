@@ -342,6 +342,9 @@ def approx_log_fact(n):
 #     return np.log(lamb) * S - loggamma(S + 1) - lamb
 
 def log_likelihood_function(nb, nr):
+    if nr == 0:
+        #TODO explain lower bound
+        nr = 1e-300
     return np.log(nr) * nb - loggamma(nb + 1) - nr
 #     return np.log(nb) * nr - loggamma(nr + 1) - nb
 
@@ -366,8 +369,8 @@ def log_likelihood(model, y):
         # https://www.wolframalpha.com/input/?i=simplify+ln%28R%5Eb+%2F+b%21+exp%28-b%29%29
         
         res_bin = log_likelihood_function(Nb, Nr)
-        if np.isnan(res_bin):
-            res_bin = 0
+#         if np.isnan(res_bin):
+#             res_bin = 0
         
         if np.isnan(res_bin):
             # TODO, return scientific notation for Nb and Nr 

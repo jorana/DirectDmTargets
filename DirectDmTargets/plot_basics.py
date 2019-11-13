@@ -76,7 +76,7 @@ def plt_ll_sigma_mass(spec_clas, vary, det='Xe', bins = 10, m = 50, sig = 1e-45)
     data = events.get_data(poisson=False)
     if vary == 'sig':        
         plt.xlabel('$\sigma$ $[cm^2]$')
-        plt.axvline(sig)
+        plt.axvline(sig, alpha =0.5, color = 'red',label ='truth' )
         var = np.linspace(0.1 * 1e-45, 10 * 1e-45, 30)
         def model(x):
             res = spec_clas(m, x, use_SHM, detectors[det])
@@ -85,8 +85,8 @@ def plt_ll_sigma_mass(spec_clas, vary, det='Xe', bins = 10, m = 50, sig = 1e-45)
         
     elif vary == 'mass':
         plt.xlabel('mass [GeV/$c^2$]')
-        plt.axvline(m)
-        plt.axvline(33, alpha =0.1, color = 'black')
+        plt.axvline(m, alpha =0.5, color = 'red',label ='truth' )
+        plt.axvline(33, alpha =0.1, color = 'black', label ='binning boundary')
         var = np.concatenate((np.linspace(1, 33, 50), 
 #                              np.linspace(33, 50, 10),
                              np.linspace(33, 300, 50)))
