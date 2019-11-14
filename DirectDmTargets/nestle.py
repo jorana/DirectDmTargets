@@ -14,7 +14,7 @@ from .utils import *
 
 
 def default_nestle_save_dir():
-    return 'nestle'
+    return 'nestle_restart'
 
 
 class NestleStatModel(StatModel):
@@ -64,9 +64,9 @@ class NestleStatModel(StatModel):
         :param parameter_names: the names of the parameter_values
         :return:
         """
-        model = self.eval_spectrum(parameter_vals, parameter_names)
+        evaluated_rate = self.eval_spectrum(parameter_vals, parameter_names)['counts']
 
-        ll = log_likelihood(model, self.benchmark_values)
+        ll = log_likelihood(self.benchmark_values, evaluated_rate)
         if np.isnan(ll):
             raise ValueError(
                 f"Returned NaN from likelihood. ll = {ll}")
@@ -249,7 +249,7 @@ def nestle_corner(result, save=False):
             pass
     nposterior, ndim = np.shape(result['samples'])
     info += "\nnposterior = %s" % nposterior
-    for str_inf in ['detector', 'notes', 'start', 'fit_time', 'poisson']:
+    for str_inf in ['detector', 'notes', 'start', 'fit_time', 'poisson', 'n_energy_bins']:
         try:
             info += f"\n{str_inf} = %s" % result['config'][str_inf]
             if str_inf is 'start':

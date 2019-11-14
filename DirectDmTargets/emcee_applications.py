@@ -12,7 +12,7 @@ from .utils import *
 
 
 def default_emcee_save_dir():
-    return 'emcee'
+    return 'emcee_restart'
 
 
 class MCMCStatModel(StatModel):

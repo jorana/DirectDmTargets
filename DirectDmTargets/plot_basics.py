@@ -68,70 +68,55 @@ def show_ll_function(npoints = 1e4, clip_val = -1e4, min_val = 0.1):
     show()
 
 
-def plt_ll_sigma_spec(det='Xe'):
+def plt_ll_sigma_mass(spec_clas, vary, det='Xe', bins = 10, m = 50, sig = 1e-45):
+    assert vary in ['mass', 'sig'], "use sig or mass"
     use_SHM = SHM()
-    events = GenSpectrum(50, 1e-45, use_SHM, detectors[det])
+    events = spec_clas(m, sig, use_SHM, detectors[det])
+    events.n_bins = bins
     data = events.get_data(poisson=False)
-    sigma_nucleon = np.linspace(0.11 * 1e-45, 10 * 1e-45, 30)
-    model = lambda x: GenSpectrum(50, x, use_SHM, detectors[det]).get_data(
-        poisson=False)
-    plr = [log_likelihood(model(x), data['counts']) for x in
-           tqdm(sigma_nucleon)]
-    plt.plot(sigma_nucleon, plr, linestyle = 'steps-mid')
-    plt.axvline(1e-45)
-    plt.xlim(sigma_nucleon[0], sigma_nucleon[-1])
+    if vary == 'sig':        
+        plt.xlabel('$\sigma$ $[cm^2]$')
+        plt.axvline(sig, alpha =0.5, color = 'red',label ='truth' )
+        var = np.linspace(0.1 * 1e-45, 10 * 1e-45, 30)
+        def model(x):
+            res = spec_clas(m, x, use_SHM, detectors[det])
+            res.n_bins = bins
+            return res.get_data(poisson=False)['counts']
+        
+    elif vary == 'mass':
+        plt.xlabel('mass [GeV/$c^2$]')
+        plt.axvline(m, alpha =0.5, color = 'red',label ='truth' )
+        plt.axvline(33, alpha =0.1, color = 'black', label ='binning boundary')
+        var = np.concatenate((np.linspace(1, 33, 50), 
+#                              np.linspace(33, 50, 10),
+                             np.linspace(33, 300, 50)))
+        def model(x):
+            res = spec_clas(x, sig, use_SHM, detectors[det])
+            res.n_bins = bins
+            return res.get_data(poisson=False)['counts']
+    plr = [log_likelihood(data['counts'], model(x)) for x in
+           tqdm(var)]
+    
+    plt.xlim(var[0], var[-1])
+    var, plr = remove_nan(var, plr), remove_nan(plr, var)
+    plt.plot(var, plr, linestyle = 'steps-mid')    
     plt.ylim(np.min(plr), np.max(plr))
+    
+
+def plt_ll_sigma_spec(det='Xe', bins = 10, m = 50, sig = 1e-45):
+    plt_ll_sigma_mass(GenSpectrum, 'sig', det= det, bins = bins, m = m, sig = sig)
 
 
-def plt_ll_mass_spec(det='Xe'):
-    use_SHM = SHM()
-    mass = np.linspace(5, 100, 100)
-    events = GenSpectrum(50, 1e-45, use_SHM, detectors[det])
-    # TODO should add the poissonian noise
-    xe_data = events.get_data(poisson=False)
-    model = lambda x: GenSpectrum(x, 1e-45, use_SHM, detectors[det]).get_data(
-        poisson=False)
-    plr = [log_likelihood(model(x), xe_data['counts']) for x in tqdm(mass)]
-
-    mass, plr = remove_nan(mass, plr), remove_nan(plr, mass)
-    assert len(mass) > 0, "empty data remains"
-
-    plt.plot(mass, plr, linestyle = 'steps-mid')
-    plt.axvline(50)
-    # plt.xlim(sigma_nucleon[0], sigma_nucleon[-1])
-
-    plt.ylim(np.min(plr), np.max(plr))
+def plt_ll_mass_spec(det='Xe', bins = 10, m = 50, sig = 1e-45):
+    plt_ll_sigma_mass(GenSpectrum, 'mass', det= det, bins = bins, m = m, sig = sig)
 
 
-def plt_ll_sigma_det(det='Xe'):
-    use_SHM = SHM()
-    events = DetectorSpectrum(50, 1e-45, use_SHM, detectors[det])
-    data = events.get_data(poisson=False)
-    sigma_nucleon = np.linspace(0.11 * 1e-45, 10 * 1e-45, 30)
-    model = lambda x: DetectorSpectrum(50, x, use_SHM, detectors[det]).get_data(
-        poisson=False)
-    plr = [log_likelihood(model(x), data['counts']) for x in
-           tqdm(sigma_nucleon)]
-    plt.plot(sigma_nucleon, plr, linestyle = 'steps-mid')
-    plt.axvline(1e-45)
-    plt.xlim(sigma_nucleon[0], sigma_nucleon[-1])
-    plt.ylim(np.min(plr), np.max(plr))
+def plt_ll_sigma_det(det='Xe', bins = 10, m = 50, sig = 1e-45):
+    plt_ll_sigma_mass(DetectorSpectrum, 'sig', det= det, bins = bins, m = m, sig = sig)
 
 
-def plt_ll_mass_det(det='Xe'):
-    use_SHM = SHM()
-    mass = np.linspace(5, 100, 100)
-    events = DetectorSpectrum(50, 1e-45, use_SHM, detectors[det])
-    # TODO should add the poissonian noise
-    data = events.get_data(poisson=False)
-    model = lambda x: DetectorSpectrum(
-        x, 1e-45, use_SHM, detectors[det]).get_data(poisson=False)
-    plr = [log_likelihood(model(x), data['counts']) for x in tqdm(mass)]
-    mass, plr = remove_nan(mass, plr), remove_nan(plr, mass)
-    assert len(mass) > 0, "empty data remains"
-    plt.plot(mass, plr, linestyle = 'steps-mid')
-    plt.axvline(50)
-    plt.ylim(np.min(plr), np.max(plr))
+def plt_ll_mass_det(det='Xe', bins = 10, m = 50, sig = 1e-45):
+    plt_ll_sigma_mass(DetectorSpectrum, 'mass', det= det, bins = bins, m = m, sig = sig)
 
 
 def plt_priors(itot=100):

@@ -1,7 +1,8 @@
 from .detector import *
 from .halo import *
 import numericalunits as nu
-
+import numpy as np
+from scipy.special import loggamma
 
 def get_priors():
     """
@@ -70,6 +71,10 @@ class StatModel:
     def __str__(self):
         return f"StatModel::for {self.config['detector']} detector. For info " \
                f"see the config file:\n{self.config}"
+    
+    def set_nbins(self, nbins):
+        self.config['n_energy_bins'] = 10
+        self.eval_benchmark()
 
     def set_benchmark(self, mw=50, sigma=-45, verbose=True):
         """
@@ -161,10 +166,10 @@ class StatModel:
                 f"= {parameter_vals, parameter_names}")
         if not np.isfinite(lp):
             return -np.inf
-        model = self.eval_spectrum(parameter_vals, parameter_names)
+        evaluated_rate = self.eval_spectrum(parameter_vals, parameter_names)['counts']
 
         # Compute the likelihood
-        ll = log_likelihood(model, self.benchmark_values)
+        ll = log_likelihood(self.benchmark_values, evaluated_rate)
         if np.isnan(lp + ll):
             raise ValueError(
                 f"Returned NaN from likelihood. lp = {lp}, ll = {ll}")
@@ -298,21 +303,50 @@ def approx_log_fact(n):
             - 1 / (1680 * (n ** 7)))
 
 
+# def log_likelihood_function(nb, nr):
+#     """return the ln(likelihood) for Nb expected events and Nr observed events
+
+#     :param nb: expected events
+#     :param nr: observed events
+#     :return: ln(likelihood)
+#     """
+#     #TODO Test if this is needed
+#     # # No need for approximating very small values of N
+#     if ((nr < 5 and nb < 5) or
+#         (nr < 1 and nb < 10)):
+#          return np.log(((nr ** nb) / np.math.gamma(nb + 1)) * np.exp(-nr))
+#     # https://www.wolframalpha.com/input/?i=simplify+ln%28R%5Eb+%2F+b%21+exp%28-R%29%29
+#     return nb * np.log(nr) - approx_log_fact(nb) - nr
+
+
+# def log_likelihood_function(nb, nr):
+#     """return the ln(likelihood) for Nb expected events and Nr observed events
+
+#     :param nb: expected events
+#     :param nr: observed events
+#     :return: ln(likelihood)
+#     """
+#     #TODO Test if this is needed
+#     # # No need for approximating very small values of N
+# #     if ((nr < 5 and nb < 5) or
+# #         (nr < 1 and nb < 10)):
+# #          return 
+#     # https://www.wolframalpha.com/input/?i=simplify+ln%28R%5Eb+%2F+b%21+exp%28-R%29%29
+#     result = nb * np.log(nr) - approx_log_fact(nb) - nr
+#     if np.isfinite(result):
+#         return result
+#     else:
+#         return np.log(((nr ** nb) / np.math.gamma(nb + 1)) * np.exp(-nr))
+        
+# def log_likelihood_function(lamb, S):
+#     return np.log(lamb) * S - loggamma(S + 1) - lamb
+
 def log_likelihood_function(nb, nr):
-    """return the ln(likelihood) for Nb expected events and Nr observed events
-
-    :param nb: expected events
-    :param nr: observed events
-    :return: ln(likelihood)
-    """
-    #TODO Test if this is needed
-    # # No need for approximating very small values of N
-    if ((nr < 5 and nb < 5) or
-        (nr < 1 and nb < 10)):
-         return np.log(((nr ** nb) / np.math.gamma(nb + 1)) * np.exp(-nr))
-    # https://www.wolframalpha.com/input/?i=simplify+ln%28R%5Eb+%2F+b%21+exp%28-R%29%29
-    return nb * np.log(nr) - approx_log_fact(nb) - nr
-
+    if nr == 0:
+        #TODO explain lower bound
+        nr = 1e-300
+    return np.log(nr) * nb - loggamma(nb + 1) - nr
+#     return np.log(nb) * nr - loggamma(nr + 1) - nb
 
 def log_likelihood(model, y):
     """
@@ -320,26 +354,29 @@ def log_likelihood(model, y):
     :param y: the number of counts in bin i
     :return: sum of the log-likelihoods of the bins
     """
-
-    assert len(y) == model.shape[
-        0], f"Data and model should be of same dimensions (now " \
-            f"{len(y), model.shape[0]})"
-    assert_str = f"please insert pd.dataframe for model ({type(model)})"
-    assert type(model) == pd.DataFrame, assert_str
+    #TODO
+#     assert len(y) == model.shape[
+#         0], f"Data and model should be of same dimensions (now " \
+#             f"{len(y), model.shape[0]})"
+#     assert_str = f"please insert pd.dataframe for model ({type(model)})"
+#     assert type(model) == pd.DataFrame, assert_str
 
     # TODO should start at 0 right?
     res = 0
     for i in range(len(y)):
         Nr = y[i]
-        Nb = model['counts'][i]
+        Nb = model[i]
         # https://www.wolframalpha.com/input/?i=simplify+ln%28R%5Eb+%2F+b%21+exp%28-b%29%29
-
+        
         res_bin = log_likelihood_function(Nb, Nr)
+#         if np.isnan(res_bin):
+#             res_bin = 0
+        
         if np.isnan(res_bin):
             # TODO, return scientific notation for Nb and Nr 
             raise ValueError(
                 f"Returned NaN in bin {i}. Below follows data dump.\n"
-                f"i = {i}, Nb, Nr = {Nb, Nr}\n"
+                f"i = {i}, Nb, Nr =" + " %.2g %.2g \n"%(Nb, Nr) +f""
                 f"res_bin {res_bin}\n"
                 f"log(Nr) = {np.log(Nr)}, Nb! = {approx_log_fact(Nb)}\n"
                 f"log_likelihood: {log_likelihood_function(Nb, Nr)}\n")
