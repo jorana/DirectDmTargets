@@ -1,3 +1,5 @@
+"""Basic functions for saving et cetera"""
+
 import numpy as np
 import os
 

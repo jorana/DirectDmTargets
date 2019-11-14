@@ -1,31 +1,25 @@
+"""Statistical model giving likelihoods for detecting a spectrum given a benchmark to compare it with."""
+
 from .detector import *
 from .halo import *
 import numericalunits as nu
 import numpy as np
 from scipy.special import loggamma
 
+
 def get_priors():
     """
     :return: dictionary of priors, type and values
     """
-    priors = \
-        {
-            'log_mass':
-                {'range': [0.1, 3], 'prior_type': 'flat'},
-            'log_cross_section':
-                {'range': [-46, -42], 'prior_type': 'flat'},
-            'density':
-                {'range': [0.001, 0.9], 'prior_type': 'gauss', 'mean': 0.4,
-                 'std': 0.1},
-            'v_0':
-                {'range': [80, 380], 'prior_type': 'gauss', 'mean': 230,
-                 'std': 30},
-            'v_esc':
-                {'range': [379, 709], 'prior_type': 'gauss', 'mean': 544,
-                 'std': 33},
-            'k':
-                {'range': [0.5, 3.5], 'prior_type': 'flat'}
-        }
+    priors = {'log_mass': {'range': [0.1, 3], 'prior_type': 'flat'},
+              'log_cross_section': {'range': [-46, -42], 'prior_type': 'flat'},
+              'density': {'range': [0.001, 0.9], 'prior_type': 'gauss',
+                          'mean': 0.4, 'std': 0.1},
+              'v_0': {'range': [80, 380], 'prior_type': 'gauss', 'mean': 230,
+                      'std': 30},
+              'v_esc': {'range': [379, 709], 'prior_type': 'gauss', 'mean': 544,
+                        'std': 33},
+              'k': {'range': [0.5, 3.5], 'prior_type': 'flat'}}
     for key in priors.keys():
         param = priors[key]
         if param['prior_type'] == 'flat':
@@ -63,6 +57,7 @@ class StatModel:
         self.config['v_esc'] = 544
         self.config['rho_0'] = 0.4
         self.config['n_energy_bins'] = 10
+        self.bench_is_set = False
         print(
             f"StatModel::\tinitialized for {detector_name} detector. See "
             f"print(stat_model) for default settings")
@@ -71,7 +66,7 @@ class StatModel:
     def __str__(self):
         return f"StatModel::for {self.config['detector']} detector. For info " \
                f"see the config file:\n{self.config}"
-    
+
     def set_nbins(self, nbins):
         self.config['n_energy_bins'] = 10
         self.eval_benchmark()
@@ -133,8 +128,12 @@ class StatModel:
         return spectrum.get_data(poisson=self.config['poisson'])
 
     def eval_benchmark(self):
-        # TODO make sure always evaluated before the log_probablity is evaluated
         self.benchmark_values = self.check_spectrum()['counts']
+        self.bench_is_set = True
+
+    def check_bench_set(self):
+        if not self.bench_is_set:
+            self.eval_benchmark()
 
     def log_probability(self, parameter_vals, parameter_names):
         """
@@ -146,6 +145,9 @@ class StatModel:
         :param parameter_names: the names of the parameter_values
         :return:
         """
+
+        self.check_bench_set()
+
         # single parameter to fit
         if type(parameter_names) == str:
             lp = self.log_prior(parameter_vals, parameter_names)
@@ -161,12 +163,14 @@ class StatModel:
         else:
             raise TypeError(
                 f"incorrect format provided. Theta should be array-like for "
-                f"single value of parameter_names or Theta should be matrix-like for "
-                f"array-like parameter_names. Theta, parameter_names (provided) "
-                f"= {parameter_vals, parameter_names}")
+                f"single value of parameter_names or Theta should be "
+                f"matrix-like for array-like parameter_names. Theta, "
+                f"parameter_names (provided) = "
+                f"{parameter_vals, parameter_names}")
         if not np.isfinite(lp):
             return -np.inf
-        evaluated_rate = self.eval_spectrum(parameter_vals, parameter_names)['counts']
+        evaluated_rate = self.eval_spectrum(parameter_vals, parameter_names)[
+            'counts']
 
         # Compute the likelihood
         ll = log_likelihood(self.benchmark_values, evaluated_rate)
@@ -280,73 +284,22 @@ class StatModel:
                 f"parameter_names = {parameter_names}")
 
 
-def log_fact(n):
-    return np.log(np.math.gamma(n + 1))
-
-
-def approx_log_fact(n):
-    """take the approximate logarithm of factorial n for large n
-
-    :param n: the number n
-     :return:  ln(n!)"""
-    assert n >= 0, f"Only take the logarithm of n>0. (n={n})"
-
-    # if n is small, there is no need for approximation
-    if n < 10:
-        # gamma equals factorial for x -> x +1 & returns results for non-int
-        return log_fact(n)
-
-    # Stirling's approx. <https://nl.wikipedia.org/wiki/Formule_van_Stirling>
-    # return n * np.log(n) - n
-    return (n * np.log(n) - n + 0.5 * np.log(2 * np.pi * n)
-            + 1 / (12 * n) - 1 / (360 * (n ** 3)) + 1 / (1260 * (n ** 5))
-            - 1 / (1680 * (n ** 7)))
-
-
-# def log_likelihood_function(nb, nr):
-#     """return the ln(likelihood) for Nb expected events and Nr observed events
-
-#     :param nb: expected events
-#     :param nr: observed events
-#     :return: ln(likelihood)
-#     """
-#     #TODO Test if this is needed
-#     # # No need for approximating very small values of N
-#     if ((nr < 5 and nb < 5) or
-#         (nr < 1 and nb < 10)):
-#          return np.log(((nr ** nb) / np.math.gamma(nb + 1)) * np.exp(-nr))
-#     # https://www.wolframalpha.com/input/?i=simplify+ln%28R%5Eb+%2F+b%21+exp%28-R%29%29
-#     return nb * np.log(nr) - approx_log_fact(nb) - nr
-
-
-# def log_likelihood_function(nb, nr):
-#     """return the ln(likelihood) for Nb expected events and Nr observed events
-
-#     :param nb: expected events
-#     :param nr: observed events
-#     :return: ln(likelihood)
-#     """
-#     #TODO Test if this is needed
-#     # # No need for approximating very small values of N
-# #     if ((nr < 5 and nb < 5) or
-# #         (nr < 1 and nb < 10)):
-# #          return 
-#     # https://www.wolframalpha.com/input/?i=simplify+ln%28R%5Eb+%2F+b%21+exp%28-R%29%29
-#     result = nb * np.log(nr) - approx_log_fact(nb) - nr
-#     if np.isfinite(result):
-#         return result
-#     else:
-#         return np.log(((nr ** nb) / np.math.gamma(nb + 1)) * np.exp(-nr))
-        
-# def log_likelihood_function(lamb, S):
-#     return np.log(lamb) * S - loggamma(S + 1) - lamb
-
 def log_likelihood_function(nb, nr):
+    """
+    return the ln(likelihood) for Nb expected events and Nr observed events
+
+    #     :param nb: expected events
+    #     :param nr: observed events
+    #     :return: ln(likelihood)
+    """
     if nr == 0:
-        #TODO explain lower bound
+        # For i~0, machine precision sets nr to 0. However, this becomes a
+        # little problematic since the Poisson log likelihood for 0 is not
+        # defined. Hence we cap it off by setting nr to 10^-300.
+        # TODO explain lower bound
         nr = 1e-300
     return np.log(nr) * nb - loggamma(nb + 1) - nr
-#     return np.log(nb) * nr - loggamma(nr + 1) - nb
+
 
 def log_likelihood(model, y):
     """
@@ -354,32 +307,21 @@ def log_likelihood(model, y):
     :param y: the number of counts in bin i
     :return: sum of the log-likelihoods of the bins
     """
-    #TODO
-#     assert len(y) == model.shape[
-#         0], f"Data and model should be of same dimensions (now " \
-#             f"{len(y), model.shape[0]})"
-#     assert_str = f"please insert pd.dataframe for model ({type(model)})"
-#     assert type(model) == pd.DataFrame, assert_str
+    # TODO
+    assert_string = f"Data and model should be of same dimensions (now " \
+                    f"{len(y)} and {len(model)})"
+    assert len(y) == len(model), assert_string
 
-    # TODO should start at 0 right?
     res = 0
     for i in range(len(y)):
         Nr = y[i]
         Nb = model[i]
-        # https://www.wolframalpha.com/input/?i=simplify+ln%28R%5Eb+%2F+b%21+exp%28-b%29%29
-        
         res_bin = log_likelihood_function(Nb, Nr)
-#         if np.isnan(res_bin):
-#             res_bin = 0
-        
         if np.isnan(res_bin):
-            # TODO, return scientific notation for Nb and Nr 
             raise ValueError(
                 f"Returned NaN in bin {i}. Below follows data dump.\n"
-                f"i = {i}, Nb, Nr =" + " %.2g %.2g \n"%(Nb, Nr) +f""
-                f"res_bin {res_bin}\n"
-                f"log(Nr) = {np.log(Nr)}, Nb! = {approx_log_fact(Nb)}\n"
-                f"log_likelihood: {log_likelihood_function(Nb, Nr)}\n")
+                f"log_likelihood: {log_likelihood_function(Nb, Nr)}\n"
+                f"i = {i}, Nb, Nr =" + " %.2g %.2g \n" % (Nb, Nr) + "")
         if not np.isfinite(res_bin):
             return -np.inf
         res += res_bin

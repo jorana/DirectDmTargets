@@ -1,4 +1,5 @@
-# Some basic functions for plotting et cetera
+"""Some basic functions for plotting et cetera. Used to for instance check that
+the likelohood function is well behaved"""
 
 import numpy as np
 import emcee
@@ -51,7 +52,7 @@ def ll_element_wise(x, y, clip_val=-1e4):
     return np.clip(r, clip_val, 0)
 
 
-def show_ll_function(npoints = 1e4, clip_val = -1e4, min_val = 0.1):
+def show_ll_function(npoints=1e4, clip_val=-1e4, min_val=0.1):
     from pylab import meshgrid, cm, imshow, contour, clabel, colorbar, axis, \
         title, show
     from matplotlib.colors import LogNorm
@@ -68,55 +69,57 @@ def show_ll_function(npoints = 1e4, clip_val = -1e4, min_val = 0.1):
     show()
 
 
-def plt_ll_sigma_mass(spec_clas, vary, det='Xe', bins = 10, m = 50, sig = 1e-45):
+def plt_ll_sigma_mass(spec_clas, vary, det='Xe', bins=10, m=50, sig=1e-45):
     assert vary in ['mass', 'sig'], "use sig or mass"
     use_SHM = SHM()
     events = spec_clas(m, sig, use_SHM, detectors[det])
     events.n_bins = bins
     data = events.get_data(poisson=False)
-    if vary == 'sig':        
+    if vary == 'sig':
         plt.xlabel('$\sigma$ $[cm^2]$')
-        plt.axvline(sig, alpha =0.5, color = 'red',label ='truth' )
+        plt.axvline(sig, alpha=0.5, color='red', label='truth')
         var = np.linspace(0.1 * 1e-45, 10 * 1e-45, 30)
+
         def model(x):
             res = spec_clas(m, x, use_SHM, detectors[det])
             res.n_bins = bins
             return res.get_data(poisson=False)['counts']
-        
+
     elif vary == 'mass':
         plt.xlabel('mass [GeV/$c^2$]')
-        plt.axvline(m, alpha =0.5, color = 'red',label ='truth' )
-        plt.axvline(33, alpha =0.1, color = 'black', label ='binning boundary')
-        var = np.concatenate((np.linspace(1, 33, 50), 
-#                              np.linspace(33, 50, 10),
-                             np.linspace(33, 300, 50)))
+        plt.axvline(m, alpha=0.5, color='red', label='truth')
+        plt.axvline(33, alpha=0.1, color='black', label='binning boundary')
+        var = np.concatenate((np.linspace(1, 33, 50),
+                              np.linspace(33, 300, 50)))
+
         def model(x):
             res = spec_clas(x, sig, use_SHM, detectors[det])
             res.n_bins = bins
             return res.get_data(poisson=False)['counts']
     plr = [log_likelihood(data['counts'], model(x)) for x in
            tqdm(var)]
-    
+
     plt.xlim(var[0], var[-1])
     var, plr = remove_nan(var, plr), remove_nan(plr, var)
-    plt.plot(var, plr, linestyle = 'steps-mid')    
+    plt.plot(var, plr, linestyle='steps-mid')
     plt.ylim(np.min(plr), np.max(plr))
-    
-
-def plt_ll_sigma_spec(det='Xe', bins = 10, m = 50, sig = 1e-45):
-    plt_ll_sigma_mass(GenSpectrum, 'sig', det= det, bins = bins, m = m, sig = sig)
 
 
-def plt_ll_mass_spec(det='Xe', bins = 10, m = 50, sig = 1e-45):
-    plt_ll_sigma_mass(GenSpectrum, 'mass', det= det, bins = bins, m = m, sig = sig)
+def plt_ll_sigma_spec(det='Xe', bins=10, m=50, sig=1e-45):
+    plt_ll_sigma_mass(GenSpectrum, 'sig', det=det, bins=bins, m=m, sig=sig)
 
 
-def plt_ll_sigma_det(det='Xe', bins = 10, m = 50, sig = 1e-45):
-    plt_ll_sigma_mass(DetectorSpectrum, 'sig', det= det, bins = bins, m = m, sig = sig)
+def plt_ll_mass_spec(det='Xe', bins=10, m=50, sig=1e-45):
+    plt_ll_sigma_mass(GenSpectrum, 'mass', det=det, bins=bins, m=m, sig=sig)
 
 
-def plt_ll_mass_det(det='Xe', bins = 10, m = 50, sig = 1e-45):
-    plt_ll_sigma_mass(DetectorSpectrum, 'mass', det= det, bins = bins, m = m, sig = sig)
+def plt_ll_sigma_det(det='Xe', bins=10, m=50, sig=1e-45):
+    plt_ll_sigma_mass(DetectorSpectrum, 'sig', det=det, bins=bins, m=m, sig=sig)
+
+
+def plt_ll_mass_det(det='Xe', bins=10, m=50, sig=1e-45):
+    plt_ll_sigma_mass(DetectorSpectrum, 'mass', det=det, bins=bins, m=m,
+                      sig=sig)
 
 
 def plt_priors(itot=100):
@@ -134,15 +137,16 @@ def plt_priors(itot=100):
         plt.show()
 
 
-# No detector resolution
-def plot_spectrum(data, color = 'blue', label = 'label', linestyle = 'none', plot_error = True):
+def plot_spectrum(data, color='blue', label='label', linestyle='none',
+                  plot_error=True):
     plt.errorbar(data['bin_centers'], data['counts'],
-                xerr=(data['bin_left'] - data['bin_right'])/2,
-                yerr = np.sqrt(data['counts']) if plot_error else np.zeros(len(data['counts'])),
-                color = color,
-                linestyle = linestyle,
-                capsize = 2,
-                marker = 'o',
-                label = label,
-                markersize=2
-                )
+                 xerr=(data['bin_left'] - data['bin_right']) / 2,
+                 yerr=np.sqrt(data['counts']) if plot_error else np.zeros(
+                     len(data['counts'])),
+                 color=color,
+                 linestyle=linestyle,
+                 capsize=2,
+                 marker='o',
+                 label=label,
+                 markersize=2
+                 )

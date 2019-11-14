@@ -1,4 +1,4 @@
-__version__ = '0.1.0'
+__version__ = '0.1.1'
 
 from .halo import *
 from .plot_basics import *
@@ -7,5 +7,3 @@ from .detector import *
 # from .plot_basics import *
 from .emcee_applications import *
 from .nestle import *
-
-

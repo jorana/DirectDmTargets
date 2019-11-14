@@ -1,3 +1,6 @@
+"""Do a likelihood fit. The class NestleStatModel is used for fitting applying
+the baseyan alogorithm nestle"""
+
 import datetime
 import json
 import multiprocessing
@@ -64,7 +67,8 @@ class NestleStatModel(StatModel):
         :param parameter_names: the names of the parameter_values
         :return:
         """
-        evaluated_rate = self.eval_spectrum(parameter_vals, parameter_names)['counts']
+        evaluated_rate = self.eval_spectrum(parameter_vals, parameter_names)[
+            'counts']
 
         ll = log_likelihood(self.benchmark_values, evaluated_rate)
         if np.isnan(ll):
@@ -90,13 +94,11 @@ class NestleStatModel(StatModel):
                 f"{self.config['prior'][x_name]['prior_type']}', choose either "
                 f"gauss or flat")
 
-    # TODO build in reduncancy for incorrect order of parameters
     def _log_probability_nestle(self, theta):
-        ndim = len(self.fit_parameters)
+        ndim = len(theta)
         return self.log_probability_nestle(theta, self.known_parameters[:ndim])
 
     def _log_prior_transform_nestle(self, theta):
-        # ndim = len(self.fit_parameters)
         result = [self.log_prior_transform_nestle(val, self.known_parameters[i])
                   for i, val in enumerate(theta)]
         return np.array(result)
@@ -105,6 +107,8 @@ class NestleStatModel(StatModel):
         method = 'multi'  # use MutliNest algorithm
         ndim = len(self.fit_parameters)
         tol = self.tol  # the stopping criterion
+        assert_str = f"Unknown configuration of fit pars: {self.fit_parameters}"
+        assert self.fit_parameters == self.known_parameters[:ndim], assert_str
         try:
             print("run_nestle::\tstart_fit for %i parameters" % ndim)
             start = datetime.datetime.now()
@@ -117,7 +121,7 @@ class NestleStatModel(StatModel):
             end = datetime.datetime.now()
             dt = end - start
             print("run_nestle::\tfit_done in %i s (%.1f h)" % (
-            dt.seconds, dt.seconds / 3600.))
+                dt.seconds, dt.seconds / 3600.))
         except ValueError as e:
             print(
                 f"Nestle did not finish due to a ValueError. Was running with\n"
@@ -131,11 +135,11 @@ class NestleStatModel(StatModel):
             self.config['fit_time'] = -1
 
     def get_summary(self):
+        # taken from
+        # mattpitkin.github.io/samplers-demo/pages/samplers-samplers-everywhere/#Nestle
         self.check_did_run()
-        logZnestle = self.result.logz  # value of logZ
-        infogainnestle = self.result.h  # value of the information gain in nats
-        logZerrnestle = np.sqrt(
-            infogainnestle / self.nlive)  # estimate of the statistcal uncertainty on logZ
+        # estimate of the statistical uncertainty on logZ
+        logZerrnestle = np.sqrt(self.result.h / self.nlive)
         # re-scale weights to have a maximum of one
         nweights = self.result.weights / np.max(self.result.weights)
         # get the probability of keeping a sample from the weights
@@ -143,18 +147,12 @@ class NestleStatModel(StatModel):
         # get the posterior samples
         samples_nestle = self.result.samples[keepidx, :]
         resdict = {}
-        # resdict['mnestle_mu'] = np.mean(samples_nestle[:, 0])  # mean of m samples
-        # resdict['mnestle_sig'] = np.std(samples_nestle[:, 0])  # standard deviation of m samples
-        # resdict['cnestle_mu'] = np.mean(samples_nestle[:, 1])  # mean of c samples
-        # resdict['cnestle_sig'] = np.std(samples_nestle[:, 1])  # standard deviation of c samples
-        # resdict['ccnestle'] = np.corrcoef(samples_nestle.T)[0, 1]  # correlation coefficient between parameters
-        resdict['nestle_nposterior'] = len(
-            samples_nestle)  # number of posterior samples
+        # estimate of the statistcal uncertainty on logZ
+        resdict['nestle_nposterior'] = len(samples_nestle)
         resdict['nestle_time'] = self.config['fit_time']  # run time
-        resdict['nestle_logZ'] = logZnestle  # log marginalised likelihood
+        resdict['nestle_logZ'] = self.result.logz  # log marginalised likelihood
         resdict['nestle_logZerr'] = logZerrnestle  # uncertainty on log(Z)
         resdict['summary'] = self.result.summary()
-        resdict['N_posterior_samples '] = len(samples_nestle)
         p, cov = nestle.mean_and_cov(self.result.samples, self.result.weights)
         for i, key in enumerate(self.fit_parameters):
             resdict[key + "_fit_res"] = \
@@ -249,7 +247,8 @@ def nestle_corner(result, save=False):
             pass
     nposterior, ndim = np.shape(result['samples'])
     info += "\nnposterior = %s" % nposterior
-    for str_inf in ['detector', 'notes', 'start', 'fit_time', 'poisson', 'n_energy_bins']:
+    for str_inf in ['detector', 'notes', 'start', 'fit_time', 'poisson',
+                    'n_energy_bins']:
         try:
             info += f"\n{str_inf} = %s" % result['config'][str_inf]
             if str_inf is 'start':

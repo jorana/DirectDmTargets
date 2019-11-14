@@ -1,3 +1,6 @@
+"""For a given detector get a WIMPrate for a given detector (not taking into
+account any detector effects"""
+
 import numpy as np
 import pandas as pd
 import wimprates as wr
@@ -43,8 +46,8 @@ class GenSpectrum:
         self.detector = det
 
         self.n_bins = 10
-        self.E_min = 0 #keV
-        self.E_max = 100 #keV
+        self.E_min = 0  # keV
+        self.E_max = 100  # keV
 
         assertion_string = "temporary assertion statement to check that the " \
                            "mass and the cross-section do not go beyond the " \

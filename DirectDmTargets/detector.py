@@ -1,3 +1,5 @@
+"""Introduce detector effects into the expected detection spectrum"""
+
 import numba
 import numpy as np
 import pandas as pd

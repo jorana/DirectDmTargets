@@ -1,3 +1,6 @@
+"""Do a likelihood fit. The class MCMCStatModel is used for fitting applying
+the MCMC alogorithm emcee"""
+
 import datetime
 import json
 import multiprocessing
@@ -118,7 +121,8 @@ class MCMCStatModel(StatModel):
         self.log['did_run'] = True
         try:
             dt = end - start
-            print("run_emcee::\tfit_done in %i s (%.1f h)"%(dt.seconds, dt.seconds/3600.))
+            print("run_emcee::\tfit_done in %i s (%.1f h)" % (
+                dt.seconds, dt.seconds / 3600.))
             self.config['fit_time'] = dt.seconds
         except NameError:
             self.config['fit_time'] = -1
