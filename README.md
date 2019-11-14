@@ -11,11 +11,17 @@ https://github.com/JelleAalbers/multihist.git
 
 # Installation
  - Works both on Windows and Linux. To install:
+ 
 ``git clone https://github.com/jorana/wimprates``
+
 ``pip install -e wimprates``
+
 ``git clone https://github.com/jorana/DD_DM_targets.git``
+
 ``cd DD_DM_targets``
+
 ``pip install -r requirements.txt``
+
 ``python setup.py install``
 
 
