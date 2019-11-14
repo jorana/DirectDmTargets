@@ -9,7 +9,15 @@ Install wimprates from source (since pip gives a too low version):
 Also install multihist from source
 https://github.com/JelleAalbers/multihist.git
 
-## Requirements ##
+# Installation
+- git clone https://github.com/jorana/wimprates
+- pip install -e wimprates
+- git clone https://github.com/jorana/DD_DM_targets.git
+- cd DD_DM_targets
+- pip install -r requirements.txt
+- python setup.py install
+
+# You may also do something like:
  - make a new conda env:
 
 ``conda create -n DD_DM numpy scipy git python=3.7 matplotlib pandas ipython jupyter numba nestle``
@@ -27,5 +35,3 @@ https://github.com/JelleAalbers/multihist.git
 ``jupyter contrib nbextension install`` (--user may be needed)
 
 ``jupyter nbextension enable spellchecker/main``
-
-
