@@ -38,9 +38,9 @@ benchmark = {'mw': 50, 'sigma_nucleon': 1e-45}
 detectors = {
     'Xe': {'exp': 5, 'cut_eff': 0.8, 'nr_eff': 0.5, 'E_thr': 10,
            'res': det_res_Xe},
-    'Ar': {'exp': 3, 'cut_eff': 0.8, 'nr_eff': 0.9, 'E_thr': 10,
+    'Ar': {'exp': 10, 'cut_eff': 0.8, 'nr_eff': 0.9, 'E_thr': 30,
            'res': det_res_Ar},
-    'Ge': {'exp': 10, 'cut_eff': 0.8, 'nr_eff': 0.8, 'E_thr': 30,
+    'Ge': {'exp': 3, 'cut_eff': 0.8, 'nr_eff': 0.8, 'E_thr': 10,
            'res': det_res_Ge}}
 # And calculate the effective exposure for each
 for name in detectors.keys():
