@@ -7,19 +7,30 @@ import numpy as np
 from scipy.special import loggamma
 
 
-def get_priors():
+def get_priors(priors_from="Evans_2019"):
     """
     :return: dictionary of priors, type and values
     """
-    priors = {'log_mass': {'range': [0.1, 3], 'prior_type': 'flat'},
-              'log_cross_section': {'range': [-46, -42], 'prior_type': 'flat'},
-              'density': {'range': [0.001, 0.9], 'prior_type': 'gauss',
-                          'mean': 0.4, 'std': 0.1},
-              'v_0': {'range': [80, 380], 'prior_type': 'gauss', 'mean': 230,
-                      'std': 30},
-              'v_esc': {'range': [379, 709], 'prior_type': 'gauss', 'mean': 544,
-                        'std': 33},
-              'k': {'range': [0.5, 3.5], 'prior_type': 'flat'}}
+    if priors_from is "Pato_2010":
+        priors = {'log_mass': {'range': [0.1, 3], 'prior_type': 'flat'},
+                  'log_cross_section': {'range': [-46, -42], 'prior_type': 'flat'},
+                  'density': {'range': [0.001, 0.9], 'prior_type': 'gauss',
+                              'mean': 0.4, 'std': 0.1},
+                  'v_0': {'range': [80, 380], 'prior_type': 'gauss', 'mean': 230,
+                          'std': 30},
+                  'v_esc': {'range': [379, 709], 'prior_type': 'gauss', 'mean': 544,
+                            'std': 33},
+                  'k': {'range': [0.5, 3.5], 'prior_type': 'flat'}}
+    if priors_from is "Evans_2019":
+        priors = {'log_mass': {'range': [0.1, 3], 'prior_type': 'flat'},
+                  'log_cross_section': {'range': [-46, -42], 'prior_type': 'flat'},
+                  'density': {'range': [0.001, 0.9], 'prior_type': 'gauss',
+                              'mean': 0.55, 'std': 0.17},
+                  'v_0': {'range': [80, 380], 'prior_type': 'gauss', 'mean': 233,
+                          'std': 3},
+                  'v_esc': {'range': [379, 709], 'prior_type': 'gauss', 'mean': 528,
+                            'std': 24.5},
+                  'k': {'range': [0.5, 3.5], 'prior_type': 'flat'}}
     for key in priors.keys():
         param = priors[key]
         if param['prior_type'] == 'flat':
@@ -53,9 +64,9 @@ class StatModel:
         self.config['detector'] = detector_name
         self.config['prior'] = get_priors()
         self.config['poisson'] = False
-        self.config['v_0'] = 230
-        self.config['v_esc'] = 544
-        self.config['rho_0'] = 0.4
+        self.config['v_0'] = 233#230
+        self.config['v_esc'] = 528#544
+        self.config['rho_0'] = 0.55#0.4
         self.config['n_energy_bins'] = 10
         self.bench_is_set = False
         print(
