@@ -17,7 +17,7 @@ from .utils import *
 
 
 def default_nestle_save_dir():
-    return 'nestle_restart'
+    return 'nestle'
 
 
 class NestleStatModel(StatModel):
@@ -47,6 +47,7 @@ class NestleStatModel(StatModel):
                             f"{self.known_parameters[:len(params)]} rather than"
                             f" {params}.")
         self.fit_parameters = params
+        #TODO this is note set into the config correctly
         self.config['fit_parameters'] = self.fit_parameters
 
     def check_did_run(self):

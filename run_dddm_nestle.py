@@ -61,6 +61,7 @@ stats = dddm.NestleStatModel(args.target)
 stats.config['poisson'] = args.poisson
 stats.config['notes'] = args.notes
 stats.config['n_energy_bins'] = args.bins
+#TODO change to set_fit_parameters
 stats.fit_parameters = stats.known_parameters[:args.nparams]
 stats.set_benchmark(mw=args.mw, sigma=args.cross_section)
 stats.eval_benchmark()

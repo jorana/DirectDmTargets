@@ -10,3 +10,4 @@ emcee
 corner 
 numericalunits
 multihist
+seaborn
