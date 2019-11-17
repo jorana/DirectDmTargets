@@ -64,6 +64,7 @@ class StatModel:
         self.config['detector'] = detector_name
         self.config['prior'] = get_priors()
         self.config['poisson'] = False
+        # TODO, get priors from config['prior']
         self.config['v_0'] = 233#230
         self.config['v_esc'] = 528#544
         self.config['rho_0'] = 0.55#0.4
