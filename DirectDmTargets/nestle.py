@@ -47,8 +47,6 @@ class NestleStatModel(StatModel):
                             f"{self.known_parameters[:len(params)]} rather than"
                             f" {params}.")
         self.fit_parameters = params
-        #TODO this is note set into the config correctly
-        self.config['fit_parameters'] = self.fit_parameters
 
     def check_did_run(self):
         if not self.log['did_run']:
@@ -166,6 +164,8 @@ class NestleStatModel(StatModel):
         return resdict
 
     def save_results(self, force_index=False):
+        # save fit parameters to config
+        self.config['fit_parameters'] = self.fit_parameters
         self.check_did_run()
         save_dir = open_save_dir(default_nestle_save_dir(), force_index)
         fit_summary = self.get_summary()

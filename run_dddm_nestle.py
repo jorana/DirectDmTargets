@@ -53,6 +53,10 @@ parser.add_argument('-nparams',
                     type=int,
                     default=2,
                     help="Number of parameters to fit")
+parser.add_argument('-priors_from',
+                    type=str,
+                    default="Pato_2010",
+                    help="Obtain priors from paper <priors_from>")
 args = parser.parse_args()
 
 print(f"run_dddm_nestle.py::\tstart for mw = {args.mw}, sigma = "
@@ -61,6 +65,7 @@ stats = dddm.NestleStatModel(args.target)
 stats.config['poisson'] = args.poisson
 stats.config['notes'] = args.notes
 stats.config['n_energy_bins'] = args.bins
+stats.set_prior(args.priors_from)
 #TODO change to set_fit_parameters
 stats.fit_parameters = stats.known_parameters[:args.nparams]
 stats.set_benchmark(mw=args.mw, sigma=args.cross_section)

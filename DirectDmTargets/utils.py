@@ -39,13 +39,15 @@ def open_save_dir(save_dir, force_index=False):
     if not save + '0' in files and not force_index:
         index = 0
     elif force_index is False:
-        # TODO make another check since slit does not work for short names.
-        try:
-            index = max([int(f.split(save)[-1]) for f in files]) + 1
-        except ValueError:
-            # TODO: makeshift solution
-            index = max([int(f.split(save)[-1]) for f in files
-                       if len(f.split(save)[-1]) < 3]) + 1
+        index = 0
+        for f in files:
+            try:
+                index = max(int(f.split(save)[-1]) + 1, index)
+            except ValueError:
+                # this means that f.split(save)[-1] is not an integer, thus,
+                # that folder uses a different naming convention and we can
+                # ignore it.
+                pass
     else:
         index = force_index
     save_dir = base + save + str(index) + '/'

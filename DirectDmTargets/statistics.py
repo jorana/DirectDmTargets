@@ -13,24 +13,29 @@ def get_priors(priors_from="Evans_2019"):
     """
     if priors_from is "Pato_2010":
         priors = {'log_mass': {'range': [0.1, 3], 'prior_type': 'flat'},
-                  'log_cross_section': {'range': [-46, -42], 'prior_type': 'flat'},
+                  'log_cross_section': {'range': [-46, -42],
+                                        'prior_type': 'flat'},
                   'density': {'range': [0.001, 0.9], 'prior_type': 'gauss',
                               'mean': 0.4, 'std': 0.1},
-                  'v_0': {'range': [80, 380], 'prior_type': 'gauss', 'mean': 230,
-                          'std': 30},
-                  'v_esc': {'range': [379, 709], 'prior_type': 'gauss', 'mean': 544,
-                            'std': 33},
+                  'v_0': {'range': [80, 380], 'prior_type': 'gauss',
+                          'mean': 230, 'std': 30},
+                  'v_esc': {'range': [379, 709], 'prior_type': 'gauss',
+                            'mean': 544, 'std': 33},
                   'k': {'range': [0.5, 3.5], 'prior_type': 'flat'}}
-    if priors_from is "Evans_2019":
+    elif priors_from is "Evans_2019":
         priors = {'log_mass': {'range': [0.1, 3], 'prior_type': 'flat'},
-                  'log_cross_section': {'range': [-46, -42], 'prior_type': 'flat'},
+                  'log_cross_section': {'range': [-46, -42],
+                                        'prior_type': 'flat'},
                   'density': {'range': [0.001, 0.9], 'prior_type': 'gauss',
                               'mean': 0.55, 'std': 0.17},
-                  'v_0': {'range': [80, 380], 'prior_type': 'gauss', 'mean': 233,
-                          'std': 3},
-                  'v_esc': {'range': [379, 709], 'prior_type': 'gauss', 'mean': 528,
-                            'std': 24.5},
+                  'v_0': {'range': [80, 380], 'prior_type': 'gauss',
+                          'mean': 233, 'std': 3},
+                  'v_esc': {'range': [379, 709], 'prior_type': 'gauss',
+                            'mean': 528, 'std': 24.5},
                   'k': {'range': [0.5, 3.5], 'prior_type': 'flat'}}
+    else:
+        raise NotImplementedError(f"Taking priors from {priors_from} is not "
+                                  f"implemented")
     for key in priors.keys():
         param = priors[key]
         if param['prior_type'] == 'flat':
@@ -62,14 +67,10 @@ class StatModel:
                 detector_name in detectors.keys()), "Invalid detector name"
         self.config = dict()
         self.config['detector'] = detector_name
-        self.config['prior'] = get_priors()
         self.config['poisson'] = False
-        # TODO, get priors from config['prior']
-        self.config['v_0'] = 233#230
-        self.config['v_esc'] = 528#544
-        self.config['rho_0'] = 0.55#0.4
         self.config['n_energy_bins'] = 10
         self.bench_is_set = False
+        self.set_prior("Pato_2010")
         print(
             f"StatModel::\tinitialized for {detector_name} detector. See "
             f"print(stat_model) for default settings")
@@ -78,6 +79,14 @@ class StatModel:
     def __str__(self):
         return f"StatModel::for {self.config['detector']} detector. For info " \
                f"see the config file:\n{self.config}"
+
+    def read_priors_mean(self):
+        for prior_name in ['v_0', 'v_esc', 'rho_0']:
+            self.config[prior_name] = self.config['prior'][prior_name]['mean']
+
+    def set_prior(self, priors_from):
+        self.config['prior'] = get_priors(priors_from)
+        self.read_priors_mean()
 
     def set_nbins(self, nbins):
         self.config['n_energy_bins'] = 10
@@ -308,7 +317,6 @@ def log_likelihood_function(nb, nr):
         # For i~0, machine precision sets nr to 0. However, this becomes a
         # little problematic since the Poisson log likelihood for 0 is not
         # defined. Hence we cap it off by setting nr to 10^-300.
-        # TODO explain lower bound
         nr = 1e-300
     return np.log(nr) * nb - loggamma(nb + 1) - nr
 
@@ -319,7 +327,6 @@ def log_likelihood(model, y):
     :param y: the number of counts in bin i
     :return: sum of the log-likelihoods of the bins
     """
-    # TODO
     assert_string = f"Data and model should be of same dimensions (now " \
                     f"{len(y)} and {len(model)})"
     assert len(y) == len(model), assert_string

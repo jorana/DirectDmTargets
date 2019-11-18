@@ -157,6 +157,8 @@ class MCMCStatModel(StatModel):
         corner.corner(flat_samples, labels=self.fit_parameters, truths=truths)
 
     def save_results(self, force_index=False):
+        # save fit parameters to config
+        self.config['fit_parameters'] = self.fit_parameters
         if not self.log['did_run']:
             self.run_emcee()
         # open a folder where to save to results
@@ -194,3 +196,60 @@ def load_chain_emcee(load_from=default_emcee_save_dir(), item='latest'):
             result[key] = result[key].item()
     print(f"done loading\naccess result with:\n{keys}")
     return result
+
+def emcee_plots(result, save=False, plot_walkers = True):
+    if not type(save) is bool:
+        assert os.path.exists(save), f"invalid path '{save}'"
+        if not save[-1] == "/":
+            save += "/"
+    info = "$M_\chi}$=%.2f" % 10 ** np.float(result['config']['mw'])
+    for prior_key in result['config']['prior'].keys():
+        try:
+            mean = result['config']['prior'][prior_key]['mean']
+            info += f"\n{prior_key} = {mean}"
+        except KeyError:
+            pass
+    nsteps, nwalkers, ndim = np.shape(result['full_chain'])
+
+    for str_inf in ['notes', 'start', 'fit_time', 'poisson', 'nwalkers', 'nsteps',
+                    'n_energy_bins']:
+        try:
+            info += f"\n{str_inf} = %s" % result['config'][str_inf]
+            if str_inf is 'start':
+                info = info[:-7]
+            if str_inf == 'fit_time':
+                info += 's (%.1f h)' % (result['config'][str_inf] / 3600.)
+
+        except KeyError:
+            pass
+    info += "\nnwalkers = %s" % nwalkers
+    info += "\nnsteps = %s" % nsteps
+    labels = get_param_list()[:ndim]
+    truths = [result['config'][prior_name] for prior_name in
+              get_prior_list()[:ndim]]
+    fig = corner.corner(
+        result['flat_chain'],
+        labels=labels,
+        range=[0.99999, 0.99999, 0.99999, 0.99999, 0.99999][:ndim],
+        truths=truths,
+        show_titles=True)
+    fig.axes[1].set_title(f"{result['config']['detector']}", loc='left')
+    fig.axes[1].text(0, 1, info, verticalalignment='top')
+    if save:
+        plt.savefig(f"{save}corner.png", dpi=200)
+    plt.show()
+
+    if plot_walkers:
+        fig, axes = plt.subplots(len(labels), figsize=(10, 5), sharex=True)
+        for i in range(len(labels)):
+            ax = axes[i]
+            ax.plot(result['full_chain'][:, :, i], "k", alpha=0.3)
+            ax.axhline(truths[i])
+            ax.set_xlim(0, len(result['full_chain']))
+            ax.set_ylabel(labels[i])
+            ax.yaxis.set_label_coords(-0.1, 0.5)
+
+        axes[-1].set_xlabel("step number")
+        if save:
+            plt.savefig(f"{save}flat_chain.png", dpi=200)
+        plt.show()
