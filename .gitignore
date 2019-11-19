@@ -16,3 +16,4 @@ notebooks/.ipynb_checkpoints*
 .idea*
 .eggs/*
 DirectDmTargets.egg-info/*
+DirectDmTargets/archive.py
