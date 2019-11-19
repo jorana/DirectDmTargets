@@ -11,7 +11,7 @@ def get_priors(priors_from="Evans_2019"):
     """
     :return: dictionary of priors, type and values
     """
-    if priors_from is "Pato_2010":
+    if priors_from == "Pato_2010":
         priors = {'log_mass': {'range': [0.1, 3], 'prior_type': 'flat'},
                   'log_cross_section': {'range': [-46, -42],
                                         'prior_type': 'flat'},
@@ -22,7 +22,7 @@ def get_priors(priors_from="Evans_2019"):
                   'v_esc': {'range': [379, 709], 'prior_type': 'gauss',
                             'mean': 544, 'std': 33},
                   'k': {'range': [0.5, 3.5], 'prior_type': 'flat'}}
-    elif priors_from is "Evans_2019":
+    elif priors_from == "Evans_2019":
         priors = {'log_mass': {'range': [0.1, 3], 'prior_type': 'flat'},
                   'log_cross_section': {'range': [-46, -42],
                                         'prior_type': 'flat'},
@@ -81,7 +81,7 @@ class StatModel:
                f"see the config file:\n{self.config}"
 
     def read_priors_mean(self):
-        for prior_name in ['v_0', 'v_esc', 'rho_0']:
+        for prior_name in ['v_0', 'v_esc', 'density']:
             self.config[prior_name] = self.config['prior'][prior_name]['mean']
 
     def set_prior(self, priors_from):
@@ -122,7 +122,7 @@ class StatModel:
             'halo_model'] = halo_model if halo_model != 'default' else SHM(
             v_0=self.config['v_0'] * nu.km / nu.s,
             v_esc=self.config['v_esc'] * nu.km / nu.s,
-            rho_dm=self.config['rho_0'] * nu.GeV / nu.c0 ** 2 / nu.cm ** 3
+            rho_dm=self.config['density'] * nu.GeV / nu.c0 ** 2 / nu.cm ** 3
         )
         self.config[
             'spectrum_class'] = spec if spec != 'default' else DetectorSpectrum
