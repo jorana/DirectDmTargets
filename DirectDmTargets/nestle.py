@@ -260,8 +260,17 @@ def nestle_corner(result, save=False):
         except KeyError:
             pass
     labels = get_param_list()[:ndim]
-    truths = [result['config'][prior_name] for prior_name in
-              get_prior_list()[:ndim]]
+    #TODO remove duplicates like rho_0 and density
+    try:
+        truths = [result['config'][prior_name] for prior_name in
+                  get_prior_list()[:ndim]]
+    except KeyError:
+        truths = []
+        for prior_name in get_prior_list()[:ndim]:
+            if prior_name != "rho_0": 
+                truths.append(result['config'][prior_name])
+            else:
+                truths.append(result['config']['density'])
     fig = corner.corner(
         result['samples'],
         weights=result['weights'],
