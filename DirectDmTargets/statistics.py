@@ -105,7 +105,13 @@ class StatModel:
     def read_priors_mean(self):
         for prior_name in ['v_0', 'v_esc', 'density']:
             self.config[prior_name] = self.config['prior'][prior_name]['mean']
-
+    
+    def insert_prior_manually(self, input_priors):
+        print(f'Inserting {priors} as priors. For the right format check '
+              f'DirectDmTargets/statistics.py. I assume your format is right.')
+        self.config['prior'] = input_priors
+        self.read_priors_mean()
+        
     def set_prior(self, priors_from):
         self.config['prior'] = get_priors(priors_from)
         self.read_priors_mean()

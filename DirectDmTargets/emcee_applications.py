@@ -15,7 +15,7 @@ from .utils import *
 
 
 def default_emcee_save_dir():
-    return 'emcee_17nov'
+    return 'emcee'
 
 
 class MCMCStatModel(StatModel):

@@ -17,7 +17,7 @@ from .utils import *
 
 
 def default_nestle_save_dir():
-    return 'nestle_17nov'
+    return 'nestle'
 
 
 class NestleStatModel(StatModel):
