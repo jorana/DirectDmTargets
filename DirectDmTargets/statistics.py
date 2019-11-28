@@ -70,7 +70,7 @@ def get_priors(priors_from="Evans_2019"):
 
 
 def get_prior_list():
-    return ['mw', 'sigma', 'v_0', 'v_esc', 'rho_0']
+    return ['mw', 'sigma', 'v_0', 'v_esc', 'density']
 
 
 def get_param_list():
