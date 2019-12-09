@@ -13,51 +13,36 @@ def get_priors(priors_from="Evans_2019"):
     """
     if priors_from == "Pato_2010":
         priors = {'log_mass': {'range': [0.1, 3], 'prior_type': 'flat'},
-                  'log_cross_section': {'range': [-46, -42],
-                                        'prior_type': 'flat'},
-                  'density': {'range': [0.001, 0.9], 'prior_type': 'gauss',
-                              'mean': 0.4, 'std': 0.1},
-                  'v_0': {'range': [80, 380], 'prior_type': 'gauss',
-                          'mean': 230, 'std': 30},
-                  'v_esc': {'range': [379, 709], 'prior_type': 'gauss',
-                            'mean': 544, 'std': 33},
+                  'log_cross_section': {'range': [-46, -42], 'prior_type': 'flat'},
+                  'density': {'range': [0.001, 0.9], 'prior_type': 'gauss', 'mean': 0.4, 'std': 0.1},
+                  'v_0': {'range': [80, 380], 'prior_type': 'gauss', 'mean': 230, 'std': 30},
+                  'v_esc': {'range': [379, 709], 'prior_type': 'gauss', 'mean': 544, 'std': 33},
                   'k': {'range': [0.5, 3.5], 'prior_type': 'flat'}}
     elif priors_from == "Evans_2019":
-        priors = {'log_mass': {'range': [0.1, 3], 'prior_type': 'flat'},
-                  'log_cross_section': {'range': [-46, -42],
-                                        'prior_type': 'flat'},
-                  'density': {'range': [0.001, 0.9], 'prior_type': 'gauss',
-                              'mean': 0.55, 'std': 0.17},
-                  'v_0': {'range': [80, 380], 'prior_type': 'gauss',
-                          'mean': 233, 'std': 3},
-                  'v_esc': {'range': [379, 709], 'prior_type': 'gauss',
-                            'mean': 528, 'std': 24.5},
-                  'k': {'range': [0.5, 3.5], 'prior_type': 'flat'}}
+        pass
     elif priors_from == "Evans_2019_constraint":
         priors = {'log_mass': {'range': [0.1, 3], 'prior_type': 'flat'},
-                  'log_cross_section': {'range': [-46, -42],
-                                        'prior_type': 'flat'},
-                  'density': {'range': [0.001, 0.9], 'prior_type': 'gauss',
-                              'mean': 0.55, 'std': 0.1},
-                  'v_0': {'range': [80, 380], 'prior_type': 'gauss',
-                          'mean': 233, 'std': 3},
-                  'v_esc': {'range': [379, 709], 'prior_type': 'gauss',
-                            'mean': 528, 'std': 24.5},
+                  'log_cross_section': {'range': [-46, -42], 'prior_type': 'flat'},
+                  'density': {'range': [0.001, 0.9], 'prior_type': 'gauss', 'mean': 0.55, 'std': 0.17},
+                  'v_0': {'range': [80, 380], 'prior_type': 'gauss', 'mean': 233, 'std': 3},
+                  'v_esc': {'range': [379, 709], 'prior_type': 'gauss', 'mean': 528, 'std': 24.5},
+                  'k': {'range': [0.5, 3.5], 'prior_type': 'flat'}}
+        priors = {'log_mass': {'range': [0.1, 3], 'prior_type': 'flat'},
+                  'log_cross_section': {'range': [-46, -42], 'prior_type': 'flat'},
+                  'density': {'range': [0.001, 0.9], 'prior_type': 'gauss', 'mean': 0.55, 'std': 0.1},
+                  'v_0': {'range': [80, 380], 'prior_type': 'gauss', 'mean': 233, 'std': 3},
+                  'v_esc': {'range': [379, 709], 'prior_type': 'gauss', 'mean': 528, 'std': 24.5},
                   'k': {'range': [0.5, 3.5], 'prior_type': 'flat'}}
     elif priors_from == "realistic":
         priors = {'log_mass': {'range': [0.01, 4], 'prior_type': 'flat'},
-                  'log_cross_section': {'range': [-49, -44],
-                                        'prior_type': 'flat'},
-                  'density': {'range': [0.001, 0.9], 'prior_type': 'gauss',
-                              'mean': 0.55, 'std': 0.1},
-                  'v_0': {'range': [80, 380], 'prior_type': 'gauss',
-                          'mean': 233, 'std': 3},
-                  'v_esc': {'range': [379, 709], 'prior_type': 'gauss',
-                            'mean': 528, 'std': 24.5},
+                  'log_cross_section': {'range': [-49, -44], 'prior_type': 'flat'},
+                  'density': {'range': [0.001, 0.9], 'prior_type': 'gauss', 'mean': 0.55, 'std': 0.1},
+                  'v_0': {'range': [80, 380], 'prior_type': 'gauss', 'mean': 233, 'std': 3},
+                  'v_esc': {'range': [379, 709], 'prior_type': 'gauss', 'mean': 528, 'std': 24.5},
                   'k': {'range': [0.5, 3.5], 'prior_type': 'flat'}}
     else:
-        raise NotImplementedError(f"Taking priors from {priors_from} is not "
-                                  f"implemented")
+        raise NotImplementedError(f"Taking priors from {priors_from} is not implemented")
+
     for key in priors.keys():
         param = priors[key]
         if param['prior_type'] == 'flat':
@@ -80,8 +65,7 @@ def get_param_list():
 class StatModel:
     def __init__(self, detector_name):
         """
-        Statistical model used for Bayesian interference of detection in
-        multiple experiments.
+        Statistical model used for Bayesian interference of detection in multiple experiments.
         :param detector_name: name of the detector (e.g. Xe)
         """
 
@@ -94,20 +78,18 @@ class StatModel:
         self.bench_is_set = False
         self.set_prior("Pato_2010")
         print(
-            f"StatModel::\tinitialized for {detector_name} detector. See "
-            f"print(stat_model) for default settings")
+            f"StatModel::\tinitialized for {detector_name} detector. See print(stat_model) for default settings")
         self.set_default()
 
     def __str__(self):
-        return f"StatModel::for {self.config['detector']} detector. For info " \
-               f"see the config file:\n{self.config}"
+        return f"StatModel::for {self.config['detector']} detector. For info see the config file:\n{self.config}"
 
     def read_priors_mean(self):
         for prior_name in ['v_0', 'v_esc', 'density']:
             self.config[prior_name] = self.config['prior'][prior_name]['mean']
     
     def insert_prior_manually(self, input_priors):
-        print(f'Inserting {priors} as priors. For the right format check '
+        print(f'Inserting {input_priors} as priors. For the right format check '
               f'DirectDmTargets/statistics.py. I assume your format is right.')
         self.config['prior'] = input_priors
         self.read_priors_mean()
@@ -122,13 +104,11 @@ class StatModel:
 
     def set_benchmark(self, mw=50, sigma=-45, verbose=True):
         """
-        Set up the benchmark used in this statistical model. Likelihood of other
-        models can be evaluated for this 'truth'
+        Set up the benchmark used in this statistical model. Likelihood of
+        other models can be evaluated for this 'truth'
 
-        :param mw: mass of benchmark wimp in GeV. log10(mass) will be saved to
-        config
-        :param sigma: cross-secontion of wimp in cm^2. log10(sigma) will be
-        saved to config
+        :param mw: mass of benchmark wimp in GeV. log10(mass) will be saved to config
+        :param sigma: cross-secontion of wimp in cm^2. log10(sigma) will be saved to config
         :param verbose: bool, if True add print statements
         """
         if verbose:
@@ -146,14 +126,13 @@ class StatModel:
         :param spec: class used to generate the response of the spectrum in the
         detector
         """
-        self.config[
-            'halo_model'] = halo_model if halo_model != 'default' else SHM(
+        self.config['halo_model'] = halo_model if halo_model != 'default' else SHM(
             v_0=self.config['v_0'] * nu.km / nu.s,
             v_esc=self.config['v_esc'] * nu.km / nu.s,
             rho_dm=self.config['density'] * nu.GeV / nu.c0 ** 2 / nu.cm ** 3
         )
-        self.config[
-            'spectrum_class'] = spec if spec != 'default' else DetectorSpectrum
+        self.config['spectrum_class'] = spec if spec != 'default' else DetectorSpectrum
+
         if halo_model != 'default' or spec != 'default':
             print("StatModel::\tre-evaluate benchmark")
             self.eval_benchmark()
@@ -187,10 +166,7 @@ class StatModel:
     def log_probability(self, parameter_vals, parameter_names):
         """
 
-        :param parameter_vals: the values of the model/benchmark considered as
-        the truth
-        # :param parameter_values: the values of the parameters that are being
-        varied
+        :param parameter_vals: the values of the model/benchmark considered as the truth
         :param parameter_names: the names of the parameter_values
         :return:
         """
@@ -218,14 +194,12 @@ class StatModel:
                 f"{parameter_vals, parameter_names}")
         if not np.isfinite(lp):
             return -np.inf
-        evaluated_rate = self.eval_spectrum(parameter_vals, parameter_names)[
-            'counts']
+        evaluated_rate = self.eval_spectrum(parameter_vals, parameter_names)['counts']
 
         # Compute the likelihood
         ll = log_likelihood(self.benchmark_values, evaluated_rate)
         if np.isnan(lp + ll):
-            raise ValueError(
-                f"Returned NaN from likelihood. lp = {lp}, ll = {ll}")
+            raise ValueError(f"Returned NaN from likelihood. lp = {lp}, ll = {ll}")
         return lp + ll
 
     def log_prior(self, value, variable_name):
@@ -248,10 +222,8 @@ class StatModel:
             m, s = self.config['prior'][variable_name]['param']
             return log_gauss(a, b, m, s, value)
         else:
-            raise TypeError(
-                f"unknown prior type "
-                f"'{self.config['prior'][variable_name]['prior_type']}'"
-                f", choose either gauss or flat")
+            raise TypeError(f"unknown prior type '{self.config['prior'][variable_name]['prior_type']}',"
+                            f" choose either gauss or flat")
 
     def eval_spectrum(self, values, parameter_names):
         """
@@ -264,20 +236,17 @@ class StatModel:
         :param parameter_names: names of parameters
         :return: a spectrum as specified by the parameter_names
         """
-        default_order = ['log_mass', 'log_cross_section', 'v_0', 'v_esc',
-                         'density', 'k']
+        default_order = ['log_mass', 'log_cross_section', 'v_0', 'v_esc', 'density', 'k']
         if type(parameter_names) is str:
             raise NotImplementedError(
                 f"Trying to fit a single parameter ({parameter_names}), such a "
                 f"feature is not implemented.")
         if len(parameter_names) == 2:
             x0, x1 = check_shape(values)
-            if (parameter_names[0] is 'log_mass'
-                    and parameter_names[1] is 'log_cross_section'):
+            if (parameter_names[0] is 'log_mass' and parameter_names[1] is 'log_cross_section'):
                 # This is the right order
                 pass
-            elif (parameter_names[1] is 'log_mass'
-                  and parameter_names[0] is 'log_cross_section'):
+            elif (parameter_names[1] is 'log_mass' and parameter_names[0] is 'log_cross_section'):
                 x0, x1 = x1, x0
             else:
                 raise NotImplementedError(
@@ -286,7 +255,8 @@ class StatModel:
             spectrum = self.config['spectrum_class'](
                 10 ** x0,
                 10 ** x1,
-                self.config['halo_model'], self.config['det_params'])
+                self.config['halo_model'],
+                self.config['det_params'])
             spectrum.n_bins = self.config['n_energy_bins']
             return spectrum.get_data(poisson=False)
         elif len(parameter_names) == 5 or len(parameter_names) == 6:
@@ -410,9 +380,8 @@ def remove_nan(x, maskable=False):
     :return: x where x is well defined (not NaN or inf)
     """
     if type(maskable) is not bool:
-        assert len(x) == len(maskable), (f"match length maskable "
-                                         f"({len(maskable)}) to length array "
-                                         f"({len(x)})")
+        assert_string = f"match length maskable ({len(maskable)}) to length array ({len(x)})"
+        assert len(x) == len(maskable), assert_string
     if type(maskable) is bool and maskable is False:
         mask = ~not_nan_inf(x)
         return masking(x, mask)

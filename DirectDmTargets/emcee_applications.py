@@ -19,11 +19,7 @@ def default_emcee_save_dir():
 
 
 class MCMCStatModel(StatModel):
-    known_parameters = ['log_mass',
-                        'log_cross_section',
-                        'v_0',
-                        'v_esc',
-                        'density']
+    known_parameters = ['log_mass', 'log_cross_section', 'v_0', 'v_esc', 'density']
 
     def __init__(self, *args):
         StatModel.__init__(self, *args)
@@ -47,10 +43,9 @@ class MCMCStatModel(StatModel):
                                           f"known parameters try any of "
                                           f"{self.known_parameters}")
         if not params == self.known_parameters[:len(params)]:
-            raise NameError(f"The parameters are not input in the correct order"
-                            f". Please insert "
-                            f"{self.known_parameters[:len(params)]} rather than"
-                            f" {params}.")
+            err_message = f"The parameters are not input in the correct order. " \
+                          f"Please insert {self.known_parameters[:len(params)]} rather than {params}."
+            raise NameError(err_message)
         self.fit_parameters = params
 
     def set_pos_full_prior(self, use_pos=None):

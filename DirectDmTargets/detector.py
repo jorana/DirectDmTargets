@@ -32,17 +32,12 @@ def det_res_Ge(E):
 
 
 # Set the default benchmark for a 50 GeV WIMP with a cross-section of 1e-45 cm^2
-benchmark = {'mw': 50, 'sigma_nucleon': 1e-45}
+benchmark = {'mw': 50., 'sigma_nucleon': 1e-45}
 
 # Set up a dictionary of the different detectors
-detectors = {
-    'Xe': {'exp': 5, 'cut_eff': 0.8, 'nr_eff': 0.5, 'E_thr': 10,
-           'res': det_res_Xe},
-    'Ge': {'exp': 3, 'cut_eff': 0.8, 'nr_eff': 0.9, 'E_thr': 10,
-           'res': det_res_Ge},
-    'Ar': {'exp': 10, 'cut_eff': 0.8, 'nr_eff': 0.8, 'E_thr': 30,
-           'res': det_res_Ar}
-    }
+detectors = {'Xe': {'exp': 5., 'cut_eff': 0.8, 'nr_eff': 0.5, 'E_thr': 10., 'res': det_res_Xe},
+             'Ge': {'exp': 3., 'cut_eff': 0.8, 'nr_eff': 0.9, 'E_thr': 10., 'res': det_res_Ge},
+             'Ar': {'exp': 10., 'cut_eff': 0.8, 'nr_eff': 0.8, 'E_thr': 30., 'res': det_res_Ar}}
 # And calculate the effective exposure for each
 for name in detectors.keys():
     detectors[name]['exp_eff'] = (detectors[name]['exp'] *

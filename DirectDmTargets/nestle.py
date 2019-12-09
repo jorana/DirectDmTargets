@@ -1,5 +1,4 @@
-"""Do a likelihood fit. The class NestleStatModel is used for fitting applying
-the baseyan alogorithm nestle"""
+"""Do a likelihood fit. The class NestleStatModel is used for fitting applying the bayesian alogorithm nestle"""
 
 import datetime
 import json
@@ -38,14 +37,12 @@ class NestleStatModel(StatModel):
             raise TypeError("Set the parameter names in a list of strings")
         for param in params:
             if param not in self.known_parameters:
-                raise NotImplementedError(f"{param} does not match any of the "
-                                          f"known parameters try any of "
-                                          f"{self.known_parameters}")
+                err_message = f"{param} does not match any of the known parameters try any of {self.known_parameters}"
+                raise NotImplementedError(err_message)
         if not params == self.known_parameters[:len(params)]:
-            raise NameError(f"The parameters are not input in the correct order"
-                            f". Please insert "
-                            f"{self.known_parameters[:len(params)]} rather than"
-                            f" {params}.")
+            err_message = f"The parameters are not input in the correct order. Please" \
+                          f" insert {self.known_parameters[:len(params)]} rather than {params}."
+            raise NameError(err_message)
         self.fit_parameters = params
 
     def check_did_run(self):
@@ -59,10 +56,8 @@ class NestleStatModel(StatModel):
     def log_probability_nestle(self, parameter_vals, parameter_names):
         """
 
-        :param parameter_vals: the values of the model/benchmark considered as
-        the truth
-        # :param parameter_values: the values of the parameters that are being
-        varied
+        :param parameter_vals: the values of the model/benchmark considered as the truth
+        # :param parameter_values: the values of the parameters that are being varied
         :param parameter_names: the names of the parameter_values
         :return:
         """
@@ -88,18 +83,16 @@ class NestleStatModel(StatModel):
             res = m + s * spsp.ndtri(xprime)
             return res
         else:
-            raise TypeError(
-                f"unknown prior type '"
-                f"{self.config['prior'][x_name]['prior_type']}', choose either "
-                f"gauss or flat")
+            err_message = f"unknown prior type '{self.config['prior'][x_name]['prior_type']}', " \
+                          f"choose either gauss or flat"
+            raise TypeError(err_message)
 
     def _log_probability_nestle(self, theta):
         ndim = len(theta)
         return self.log_probability_nestle(theta, self.known_parameters[:ndim])
 
     def _log_prior_transform_nestle(self, theta):
-        result = [self.log_prior_transform_nestle(val, self.known_parameters[i])
-                  for i, val in enumerate(theta)]
+        result = [self.log_prior_transform_nestle(val, self.known_parameters[i]) for i, val in enumerate(theta)]
         return np.array(result)
 
     def run_nestle(self):
@@ -119,13 +112,10 @@ class NestleStatModel(StatModel):
                                         dlogz=tol)
             end = datetime.datetime.now()
             dt = end - start
-            print("run_nestle::\tfit_done in %i s (%.1f h)" % (
-                dt.seconds, dt.seconds / 3600.))
+            print("run_nestle::\tfit_done in %i s (%.1f h)" % (dt.seconds, dt.seconds / 3600.))
         except ValueError as e:
-            print(
-                f"Nestle did not finish due to a ValueError. Was running with\n"
-                f"{len(self.fit_parameters)} for fit parameters "
-                f"{self.fit_parameters}")
+            print(f"Nestle did not finish due to a ValueError. Was running with"
+                  f"\n{len(self.fit_parameters)} for fit ""parameters " f"{self.fit_parameters}")
             raise e
         self.log['did_run'] = True
         try:
@@ -154,8 +144,7 @@ class NestleStatModel(StatModel):
         resdict['summary'] = self.result.summary()
         p, cov = nestle.mean_and_cov(self.result.samples, self.result.weights)
         for i, key in enumerate(self.fit_parameters):
-            resdict[key + "_fit_res"] = \
-                ("{0:5.2f} +/- {1:5.2f}".format(p[i], np.sqrt(cov[i, i])))
+            resdict[key + "_fit_res"] = ("{0:5.2f} +/- {1:5.2f}".format(p[i], np.sqrt(cov[i, i])))
             print('\t', key, resdict[key + "_fit_res"])
             if "log_" in key:
                 resdict[key[4:] + "_fit_res"] = "%.3g +/- %.2g" % (
@@ -193,8 +182,7 @@ class NestleStatModel(StatModel):
 
 
 def is_savable_type(item):
-    if type(item) in [list, np.array, np.ndarray, int, str, np.int, np.float,
-                      bool, np.float64]:
+    if type(item) in [list, np.array, np.ndarray, int, str, np.int, np.float, bool, np.float64]:
         return True
     return False
 
@@ -248,8 +236,7 @@ def nestle_corner(result, save=False):
             pass
     nposterior, ndim = np.shape(result['samples'])
     info += "\nnposterior = %s" % nposterior
-    for str_inf in ['detector', 'notes', 'start', 'fit_time', 'poisson',
-                    'n_energy_bins']:
+    for str_inf in ['detector', 'notes', 'start', 'fit_time', 'poisson', 'n_energy_bins']:
         try:
             info += f"\n{str_inf} = %s" % result['config'][str_inf]
             if str_inf is 'start':
@@ -262,8 +249,7 @@ def nestle_corner(result, save=False):
     labels = get_param_list()[:ndim]
     #TODO remove duplicates like rho_0 and density
     try:
-        truths = [result['config'][prior_name] for prior_name in
-                  get_prior_list()[:ndim]]
+        truths = [result['config'][prior_name] for prior_name in get_prior_list()[:ndim]]
     except KeyError:
         truths = []
         for prior_name in get_prior_list()[:ndim]:
