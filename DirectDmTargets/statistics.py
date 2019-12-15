@@ -19,14 +19,13 @@ def get_priors(priors_from="Evans_2019"):
                   'v_esc': {'range': [379, 709], 'prior_type': 'gauss', 'mean': 544, 'std': 33},
                   'k': {'range': [0.5, 3.5], 'prior_type': 'flat'}}
     elif priors_from == "Evans_2019":
-        pass
-    elif priors_from == "Evans_2019_constraint":
         priors = {'log_mass': {'range': [0.1, 3], 'prior_type': 'flat'},
                   'log_cross_section': {'range': [-46, -42], 'prior_type': 'flat'},
                   'density': {'range': [0.001, 0.9], 'prior_type': 'gauss', 'mean': 0.55, 'std': 0.17},
                   'v_0': {'range': [80, 380], 'prior_type': 'gauss', 'mean': 233, 'std': 3},
                   'v_esc': {'range': [379, 709], 'prior_type': 'gauss', 'mean': 528, 'std': 24.5},
                   'k': {'range': [0.5, 3.5], 'prior_type': 'flat'}}
+    elif priors_from == "Evans_2019_constraint":
         priors = {'log_mass': {'range': [0.1, 3], 'prior_type': 'flat'},
                   'log_cross_section': {'range': [-46, -42], 'prior_type': 'flat'},
                   'density': {'range': [0.001, 0.9], 'prior_type': 'gauss', 'mean': 0.55, 'std': 0.1},
@@ -36,6 +35,14 @@ def get_priors(priors_from="Evans_2019"):
     elif priors_from == "realistic":
         priors = {'log_mass': {'range': [0.01, 4], 'prior_type': 'flat'},
                   'log_cross_section': {'range': [-49, -44], 'prior_type': 'flat'},
+                  'density': {'range': [0.001, 0.9], 'prior_type': 'gauss', 'mean': 0.55, 'std': 0.1},
+                  'v_0': {'range': [80, 380], 'prior_type': 'gauss', 'mean': 233, 'std': 3},
+                  'v_esc': {'range': [379, 709], 'prior_type': 'gauss', 'mean': 528, 'std': 24.5},
+                  'k': {'range': [0.5, 3.5], 'prior_type': 'flat'}}
+    elif priors_from == "migdal":
+        priors = {'log_mass': {'range': [-2, 1], 'prior_type': 'flat'},
+                  'log_cross_section': {'range': [-40, -25], 'prior_type': 'flat'},
+                  # see Evans_2019_constraint
                   'density': {'range': [0.001, 0.9], 'prior_type': 'gauss', 'mean': 0.55, 'std': 0.1},
                   'v_0': {'range': [80, 380], 'prior_type': 'gauss', 'mean': 233, 'std': 3},
                   'v_esc': {'range': [379, 709], 'prior_type': 'gauss', 'mean': 528, 'std': 24.5},
@@ -70,7 +77,7 @@ class StatModel:
         """
 
         assert (type(detector_name) is str and
-                detector_name in detectors.keys()), "Invalid detector name"
+                detector_name in experiment.keys()), "Invalid detector name"
         self.config = dict()
         self.config['detector'] = detector_name
         self.config['poisson'] = False
@@ -87,13 +94,13 @@ class StatModel:
     def read_priors_mean(self):
         for prior_name in ['v_0', 'v_esc', 'density']:
             self.config[prior_name] = self.config['prior'][prior_name]['mean']
-    
+
     def insert_prior_manually(self, input_priors):
         print(f'Inserting {input_priors} as priors. For the right format check '
               f'DirectDmTargets/statistics.py. I assume your format is right.')
         self.config['prior'] = input_priors
         self.read_priors_mean()
-        
+
     def set_prior(self, priors_from):
         self.config['prior'] = get_priors(priors_from)
         self.read_priors_mean()
@@ -126,11 +133,24 @@ class StatModel:
         :param spec: class used to generate the response of the spectrum in the
         detector
         """
-        self.config['halo_model'] = halo_model if halo_model != 'default' else SHM(
+        #TODO ugly if statement
+        if 'migd' in self.config['detector']:
+            model = VerneSHM(
+                log_mass=self.config['mw'],
+                log_cross_section=self.config['sigma'],
+                location=experiment[self.config['detector']]['location'],
+                v_0=self.config['v_0'],
+                v_esc=self.config['v_esc'],
+                rho_dm=self.config['density'])
+
+            self.config['halo_model'] = halo_model if halo_model != 'default' else model
+        else:
+            self.config['halo_model'] = halo_model if halo_model != 'default' else SHM(
             v_0=self.config['v_0'] * nu.km / nu.s,
             v_esc=self.config['v_esc'] * nu.km / nu.s,
             rho_dm=self.config['density'] * nu.GeV / nu.c0 ** 2 / nu.cm ** 3
-        )
+            )
+
         self.config['spectrum_class'] = spec if spec != 'default' else DetectorSpectrum
 
         if halo_model != 'default' or spec != 'default':
@@ -138,7 +158,7 @@ class StatModel:
             self.eval_benchmark()
 
     def set_det_params(self):
-        self.config['det_params'] = detectors[self.config['detector']]
+        self.config['det_params'] = experiment[self.config['detector']]
 
     def set_default(self):
         self.set_benchmark(verbose=False)

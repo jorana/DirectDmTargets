@@ -192,7 +192,8 @@ def load_chain_emcee(load_from=default_emcee_save_dir(), item='latest'):
     print(f"done loading\naccess result with:\n{keys}")
     return result
 
-def emcee_plots(result, save=False, plot_walkers = True):
+
+def emcee_plots(result, save=False, plot_walkers=True):
     if not type(save) is bool:
         assert os.path.exists(save), f"invalid path '{save}'"
         if not save[-1] == "/":

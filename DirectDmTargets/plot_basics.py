@@ -72,7 +72,7 @@ def show_ll_function(npoints=1e4, clip_val=-1e4, min_val=0.1):
 def plt_ll_sigma_mass(spec_clas, vary, det='Xe', bins=10, m=50, sig=1e-45):
     assert vary in ['mass', 'sig'], "use sig or mass"
     use_SHM = SHM()
-    events = spec_clas(m, sig, use_SHM, detectors[det])
+    events = spec_clas(m, sig, use_SHM, experiment[det])
     events.n_bins = bins
     data = events.get_data(poisson=False)
     if vary == 'sig':
@@ -81,7 +81,7 @@ def plt_ll_sigma_mass(spec_clas, vary, det='Xe', bins=10, m=50, sig=1e-45):
         var = np.linspace(0.1 * 1e-45, 10 * 1e-45, 30)
 
         def model(x):
-            res = spec_clas(m, x, use_SHM, detectors[det])
+            res = spec_clas(m, x, use_SHM, experiment[det])
             res.n_bins = bins
             return res.get_data(poisson=False)['counts']
 
@@ -93,7 +93,7 @@ def plt_ll_sigma_mass(spec_clas, vary, det='Xe', bins=10, m=50, sig=1e-45):
                               np.linspace(33, 300, 50)))
 
         def model(x):
-            res = spec_clas(x, sig, use_SHM, detectors[det])
+            res = spec_clas(x, sig, use_SHM, experiment[det])
             res.n_bins = bins
             return res.get_data(poisson=False)['counts']
     plr = [log_likelihood(data['counts'], model(x)) for x in

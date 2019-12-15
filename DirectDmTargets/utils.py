@@ -7,6 +7,12 @@ import os
 def get_result_folder():
     return 'results/'
 
+#TODO UGLY
+def get_verne_folder():
+    return '../../verne/'
+
+if not os.path.exists(get_verne_folder()):
+    raise FileNotFoundError(f"no folder at {get_verne_folder}")
 
 if not os.path.exists(get_result_folder()):
     os.mkdir(get_result_folder())
@@ -60,3 +66,4 @@ def open_save_dir(save_dir, force_index=False):
             print('open_save_dir::\tremoving ' + save_dir + file)
             os.remove(save_dir + file)
     return save_dir
+
