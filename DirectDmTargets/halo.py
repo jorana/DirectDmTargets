@@ -182,17 +182,27 @@ class VerneSHM:
        """
     def __init__(self, v_0=None, v_esc=None, rho_dm=None, log_cross_section = None,
                  log_mass = None, location = None):
-        self.v_0 = 230 if v_0 is None else v_0
-        self.v_esc = 544 if v_esc is None else v_esc
-        self.rho_dm = 0.3 if rho_dm is None else rho_dm
+        self.v_0_nodim = 230 if v_0 is None else v_0
+        self.v_esc_nodim = 544 if v_esc is None else v_esc
+        self.rho_dm_nodim = 0.3 if rho_dm is None else rho_dm
+
+        self.v_0 = self.v_0_nodim * nu.km/nu.s
+        self.v_esc = self.v_esc_nodim * nu.km/nu.s
+        self.rho_dm = self.rho_dm_nodim * nu.GeV / nu.c0 ** 2 / nu.cm ** 3
+
         self.log_cross_section = -35 if log_cross_section is None else log_cross_section
         self.log_mass = 0 if log_mass is None else log_mass
         self.location = "XENON" if location is None else location
         self.fname = 'f_params_%s_%i_%i_%.2f_%.1f_%.2f'%(
             self.location,
-            self.v_0, self.v_esc, self.rho_dm,
+            self.v_0_nodim, self.v_esc_nodim, self.rho_dm_nodim,
             self.log_cross_section, self.log_mass)
         # self.load_f()
+        assert_str = "double check these paramters"
+        for i, param in enumerate([self.v_esc_nodim, self.v_0_nodim, self.rho_dm_nodim]):
+            ref_val = [230, 544, 0.3][i]
+            assert abs((ref_val-param)/ref_val) < 5, assert_str
+        self.itp_func = None
 
     def load_f(self):
         '''
@@ -205,12 +215,15 @@ class VerneSHM:
         if not os.path.exists(file_name):
             pyfile = '/src/CalcVelDist.py'
             args = f'-m_x {10**self.log_mass} -sigma_p {10**self.log_cross_section} -loc {self.location} ' \
-                   f'-path "{get_verne_folder()}/src/" -v_0 {self.v_0} -v_esc {self.v_esc} ' \
-                   f'-save_as "{file_name}"'
+                   f'-path "{get_verne_folder()}/src/" -v_0 {self.v_0_nodim} -v_esc {self.v_esc_nodim} ' \
+                   f'-save_as "{file_name}" ' \
+                   f'-n_gamma 2' # Set N_gamma low for faster computation (only two angles)
+
             cmd = f'python "{get_verne_folder()}"{pyfile} {args}'
             print(f'generating spectrum, this can take a minute. Execute:\n{cmd}')
             os.system(cmd)
-
+        # else:
+            # print(f'Using {file_name} for the velocity distribution')
         df = pd.read_csv(file_name)
         x, y = df.keys()
         # # interpolation = interp1d(df[x] * (nu.km /nu.s), df[y] * (nu.s/nu.km))
@@ -225,13 +238,17 @@ class VerneSHM:
         def velocity_dist(v_, t_):
             try:
                 return interpolation(v_)
-            except ValueError:
-                print(v_)
+            except ValueError as e:
+                print(f"Value error for v is {v_}")
+                raise e
                 # exit(-1)
 
-        return velocity_dist
+        self.itp_func = velocity_dist
 
     def velocity_dist(self, v, t):
         # in units of per velocity,
         # v is in units of velocity
-        return self.load_f()(v, t)
+        # che
+        if self.itp_func == None:
+            self.load_f()
+        return self.itp_func(v, t)
