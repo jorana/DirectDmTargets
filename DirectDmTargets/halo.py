@@ -210,20 +210,26 @@ class VerneSHM:
         :return:
         '''
         folder = get_verne_folder() + 'results/veldists/'
+
+        low_n_gamma = True
+        if low_n_gamma:
+            self.fname = 'tmp_' + self.fname
+
         file_name = folder + self.fname + '_avg' + '.csv'
 
         if not os.path.exists(file_name):
             pyfile = '/src/CalcVelDist.py'
             args = f'-m_x {10**self.log_mass} -sigma_p {10**self.log_cross_section} -loc {self.location} ' \
                    f'-path "{get_verne_folder()}/src/" -v_0 {self.v_0_nodim} -v_esc {self.v_esc_nodim} ' \
-                   f'-save_as "{file_name}" ' \
-                   f'-n_gamma 2' # Set N_gamma low for faster computation (only two angles)
+                   f'-save_as "{file_name}" '
+            if low_n_gamma:
+                args += f' -n_gamma 2' # Set N_gamma low for faster computation (only two angles)
 
             cmd = f'python "{get_verne_folder()}"{pyfile} {args}'
-            print(f'generating spectrum, this can take a minute. Execute:\n{cmd}')
+            print(f'No spectrum found at:\n{file_name}\nGenerating spectrum, this can take a minute. Execute:\n{cmd}')
             os.system(cmd)
-        # else:
-            # print(f'Using {file_name} for the velocity distribution')
+        else:
+            print(f'Using {file_name} for the velocity distribution')
         df = pd.read_csv(file_name)
         x, y = df.keys()
         # # interpolation = interp1d(df[x] * (nu.km /nu.s), df[y] * (nu.s/nu.km))
@@ -244,6 +250,7 @@ class VerneSHM:
                 # exit(-1)
 
         self.itp_func = velocity_dist
+
 
     def velocity_dist(self, v, t):
         # in units of per velocity,
