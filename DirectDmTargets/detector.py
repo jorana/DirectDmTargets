@@ -150,7 +150,7 @@ experiment = {
         'material': 'Ge',
         'type': 'migdal',
         # TODO 100 kg yr (for 56 + 44 Ge in Table I.)
-        'exp': 100 / 0.1,
+        'exp': 100 * 1.e-3,
         # https://www.slac.stanford.edu/exp/cdms/ScienceResults/Publications/PhysRevD.95.082002.pdf
         'cut_eff': 0.8,
         'nr_eff': 0.9,
