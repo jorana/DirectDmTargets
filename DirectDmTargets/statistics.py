@@ -288,10 +288,20 @@ class StatModel:
 
             checked_values = check_shape(values)
             if len(parameter_names) == 5:
-                fit_shm = SHM(
-                    v_0=checked_values[2] * nu.km / nu.s,
-                    v_esc=checked_values[3] * nu.km / nu.s,
-                    rho_dm=checked_values[4] * nu.GeV / nu.c0 ** 2 / nu.cm ** 3)
+                if 'migd' in self.config['detector']:
+                    fit_shm = VerneSHM(
+                        log_mass=self.config['mw'],
+                        log_cross_section=self.config['sigma'],
+                        location=experiment[self.config['detector']]['location'],
+                        v_0=self.config['v_0'],
+                        v_esc=self.config['v_esc'],
+                        rho_dm=self.config['density'])
+                else:
+                    fit_shm = SHM(
+                        v_0=checked_values[2] * nu.km / nu.s,
+                        v_esc=checked_values[3] * nu.km / nu.s,
+                        rho_dm=checked_values[4] * nu.GeV / nu.c0 ** 2 / nu.cm ** 3)
+
             if len(parameter_names) == 6:
                 raise NotImplementedError(
                     f"Currently not yet ready to fit for {parameter_names}")
