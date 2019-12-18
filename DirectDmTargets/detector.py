@@ -32,7 +32,7 @@ def det_res_Ge(E):
 
 
 def det_res_CDMS(E):
-    # https: // arxiv.org / pdf / 1808.09098.pdf
+    # From https: // arxiv.org / pdf / 1808.09098.pdf
     """
         :param E: recoil energy (in keV)
         :return: detector resolution for Ge detector
@@ -198,15 +198,13 @@ def smear_signal(rate, energy, sigma, bin_width):
     for i in range(len(energy)):
         res = 0
         for j in range(len(rate)):
-            res = res + (
-                    bin_width *
-                    rate[j] *
-                    (1 / (np.sqrt(2 * np.pi) * sigma[j])) *
-                    np.exp(
-                        -((energy[i] - energy[j]) ** 2 / (2 * sigma[j] ** 2)))
-            )
+            # see formula (5) in https://arxiv.org/abs/1012.3458
+            res = res + (bin_width * rate[j] *
+                         (1 / (np.sqrt(2 * np.pi) * sigma[j])) *
+                         np.exp(-((energy[i] - energy[j]) ** 2 / (2 * sigma[j] ** 2)))
+                        )
         result.append(res)
-    return result
+    return np.array(result)
 
 
 class DetectorSpectrum(GenSpectrum):
@@ -216,7 +214,9 @@ class DetectorSpectrum(GenSpectrum):
         # numerical integration is performed in compute_detected_spectrum, this
         # number is multiplied here.
         self.rebin_factor = 10
-        self.add_background = self.experiment['type'] == 'migdal'
+        # TODO
+        #  add background here
+        self.add_background = False # self.experiment['type'] == 'migdal'
 
     def __str__(self):
         return (f"DetectorSpectrum class inherited from GenSpectrum.\nSmears "
@@ -256,14 +256,19 @@ class DetectorSpectrum(GenSpectrum):
         # in.
         self.n_bins_result = self.n_bins
         self.n_bins = self.n_bins * self.rebin_factor
+        # get the spectrum
         rates = self.spectrum_simple([self.mw, self.sigma_nucleon])
+        # if this option is set to true, add a background component
         if self.add_background:
             rates += self.experiment['bg_func'](self.E_min, self.E_max, self.n_bins)
         energies = self.get_bin_centers()
+
+        # Set the rate to zero for energies smaller than the threshold
         rates = self.above_threshold(rates, energies)
         result_bins = get_bins(self.E_min, self.E_max, self.n_bins_result)
         sigma = self.experiment['res'](energies)
         bin_width = np.mean(np.diff(energies))
+        # Smear (using numerical integration) the rates with the detector resolution
         events = np.array(smear_signal(rates, energies, sigma, bin_width))
         # re-bin final result to the desired number of bins
         events = self.chuck_integration(events, energies, result_bins)

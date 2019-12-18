@@ -1,5 +1,12 @@
 """Do a likelihood fit. The class MCMCStatModel is used for fitting applying
-the MCMC alogorithm emcee"""
+the MCMC alogorithm emcee.
+
+MCMC is:
+    slower than the nestle package; and
+    harder to use since one has to choose the 'right' initial parameters
+
+Nevertheless, the walkers give great insight in how the likelihood-function is
+felt by the steps that the walkers make"""
 
 import datetime
 import json

@@ -70,7 +70,7 @@ def get_param_list():
 
 
 class StatModel:
-    def __init__(self, detector_name):
+    def __init__(self, detector_name, verbose=False):
         """
         Statistical model used for Bayesian interference of detection in multiple experiments.
         :param detector_name: name of the detector (e.g. Xe)
@@ -82,16 +82,22 @@ class StatModel:
         self.config['detector'] = detector_name
         self.config['poisson'] = False
         self.config['n_energy_bins'] = 10
+        self.verbose = verbose
+        if self.verbose:
+            print(f'StatModel::\tVERBOSE ENABLED')
+            if self.verbose>1:
+                print(f'StatModel::\tSUPERVERBOSE ENABLED\n\t\tprepare for the ride, here comes all my output!')
         self.bench_is_set = False
         self.set_prior("Pato_2010")
-        print(
-            f"StatModel::\tinitialized for {detector_name} detector. See print(stat_model) for default settings")
+        print(f"StatModel::\tinitialized for {detector_name} detector. See print(stat_model) for default settings")
         self.set_default()
 
     def __str__(self):
         return f"StatModel::for {self.config['detector']} detector. For info see the config file:\n{self.config}"
 
     def read_priors_mean(self):
+        if self.verbose:
+            print(f'StatModel::\treading priors')
         for prior_name in ['v_0', 'v_esc', 'density']:
             self.config[prior_name] = self.config['prior'][prior_name]['mean']
 
@@ -102,14 +108,18 @@ class StatModel:
         self.read_priors_mean()
 
     def set_prior(self, priors_from):
+        if self.verbose:
+            print(f'StatModel::\tset_prior')
         self.config['prior'] = get_priors(priors_from)
         self.read_priors_mean()
 
-    def set_nbins(self, nbins):
-        self.config['n_energy_bins'] = 10
+    def set_nbins(self, nbins=10):
+        if self.verbose:
+            print(f'StatModel::\tsetting nbins to {nbins}')
+        self.config['n_energy_bins'] = nbins
         self.eval_benchmark()
 
-    def set_benchmark(self, mw=50, sigma=-45, verbose=True):
+    def set_benchmark(self, mw=50, sigma=-45,verbose=False):
         """
         Set up the benchmark used in this statistical model. Likelihood of
         other models can be evaluated for this 'truth'
@@ -118,7 +128,7 @@ class StatModel:
         :param sigma: cross-secontion of wimp in cm^2. log10(sigma) will be saved to config
         :param verbose: bool, if True add print statements
         """
-        if verbose:
+        if self.verbose or verbose:
             print(f"StatModel::\ttaking log10 of mass of {mw}")
         self.config['mw'] = np.log10(mw)
         self.config['sigma'] = sigma
@@ -135,6 +145,8 @@ class StatModel:
         """
         #TODO ugly if statement
         if 'migd' in self.config['detector']:
+            if self.verbose:
+                print(f'StatModel::\tsetting model to VERNE model')
             model = VerneSHM(
                 log_mass=self.config['mw'],
                 log_cross_section=self.config['sigma'],
@@ -144,7 +156,11 @@ class StatModel:
                 rho_dm=self.config['density'])
 
             self.config['halo_model'] = halo_model if halo_model != 'default' else model
+            if self.verbose:
+                print(f'StatModel::\tmodel is set to: {self.config["halo_model"]}')
         else:
+            if self.verbose:
+                print(f'StatModel::\tSetting model to SHM')
             self.config['halo_model'] = halo_model if halo_model != 'default' else SHM(
             v_0=self.config['v_0'] * nu.km / nu.s,
             v_esc=self.config['v_esc'] * nu.km / nu.s,
@@ -158,15 +174,31 @@ class StatModel:
             self.eval_benchmark()
 
     def set_det_params(self):
+        if self.verbose:
+            print(f'StatModel::\treading detector parameters')
         self.config['det_params'] = experiment[self.config['detector']]
 
     def set_default(self):
+        if self.verbose:
+            print(f'StatModel::\tinitializing')
         self.set_benchmark(verbose=False)
+        if self.verbose:
+            print(f'StatModel::\tset_benchmark\tdone')
         self.set_models()
+        if self.verbose:
+            print(f'StatModel::\tset_models\tdone')
         self.set_det_params()
+        if self.verbose:
+            print(f'StatModel::\tset_det_params\tdone')
         self.eval_benchmark()
+        if self.verbose:
+            print(f'StatModel::\tevaluate benchmark\tdone\n\tall ready to go!')
 
     def check_spectrum(self):
+        if self.verbose:
+            print(f"StatModel::\tevaluating{self.config['spectrum_class']} for mw = {10 ** self.config['mw']}, "
+                  f"sig = {10 ** self.config['sigma']}, halo model = {self.config['halo_model']} and "
+                  f"detector = {self.config['det_params']}")
         spectrum = self.config['spectrum_class'](
             10 ** self.config['mw'],
             10 ** self.config['sigma'],
@@ -176,11 +208,15 @@ class StatModel:
         return spectrum.get_data(poisson=self.config['poisson'])
 
     def eval_benchmark(self):
+        if self.verbose:
+            print(f'StatModel::\tpreparing for running, setting the benchmark')
         self.benchmark_values = self.check_spectrum()['counts']
         self.bench_is_set = True
 
     def check_bench_set(self):
         if not self.bench_is_set:
+            if self.verbose:
+                print(f'StatModel::\tbechmark not set->doing so now')
             self.eval_benchmark()
 
     def log_probability(self, parameter_vals, parameter_names):
@@ -190,7 +226,8 @@ class StatModel:
         :param parameter_names: the names of the parameter_values
         :return:
         """
-
+        if self.verbose:
+            print(f'StatModel::\tEngines running full! Lets get some probabilities')
         self.check_bench_set()
 
         # single parameter to fit
@@ -214,12 +251,16 @@ class StatModel:
                 f"{parameter_vals, parameter_names}")
         if not np.isfinite(lp):
             return -np.inf
+        if self.verbose:
+            print(f'StatModel::\tloading rate for given paramters')
         evaluated_rate = self.eval_spectrum(parameter_vals, parameter_names)['counts']
 
         # Compute the likelihood
         ll = log_likelihood(self.benchmark_values, evaluated_rate)
         if np.isnan(lp + ll):
             raise ValueError(f"Returned NaN from likelihood. lp = {lp}, ll = {ll}")
+        if self.verbose:
+            print(f'StatModel::\tlikelihood evaluated')
         return lp + ll
 
     def log_prior(self, value, variable_name):
@@ -234,6 +275,8 @@ class StatModel:
         # For each of the priors read from the config file how the prior looks
         # like. Get the boundaries (and mean (m) and width (s) for gausian
         # distributions).
+        if self.verbose:
+            print(f'StatModel::\tevaluating priors')
         if self.config['prior'][variable_name]['prior_type'] == 'flat':
             a, b = self.config['prior'][variable_name]['param']
             return log_flat(a, b, value)
@@ -256,6 +299,8 @@ class StatModel:
         :param parameter_names: names of parameters
         :return: a spectrum as specified by the parameter_names
         """
+        if self.verbose > 1:
+            print(f'StatModel::\tSUPERVERBOSE\tevaluate spectrum')
         default_order = ['log_mass', 'log_cross_section', 'v_0', 'v_esc', 'density', 'k']
         if type(parameter_names) is str:
             raise NotImplementedError(
@@ -272,12 +317,18 @@ class StatModel:
                 raise NotImplementedError(
                     f"Trying to fit two parameters ({parameter_names}), this "
                     f"is not implemented.")
+            if self.verbose:
+                print(f"StatModel::\tevaluating{self.config['spectrum_class']} for mw = {10 ** x0}, "
+                      f"sig = {10 ** x1}, halo model = {self.config['halo_model']} and "
+                      f"detector = {self.config['det_params']}")
             spectrum = self.config['spectrum_class'](
                 10 ** x0,
                 10 ** x1,
                 self.config['halo_model'],
                 self.config['det_params'])
             spectrum.n_bins = self.config['n_energy_bins']
+            if self.verbose > 1:
+                print(f"StatModel::\tSUPERVERBOSE\tAlright spectrum loaded!")
             return spectrum.get_data(poisson=False)
         elif len(parameter_names) == 5 or len(parameter_names) == 6:
             if not parameter_names == default_order[:len(parameter_names)]:
@@ -289,14 +340,18 @@ class StatModel:
             checked_values = check_shape(values)
             if len(parameter_names) == 5:
                 if 'migd' in self.config['detector']:
+                    if self.verbose>1:
+                        print(f"StatModel::\tSUPERVERBOSE\tSetting spectrum to Verne in likelihood code")
                     fit_shm = VerneSHM(
-                        log_mass=self.config['mw'],
-                        log_cross_section=self.config['sigma'],
-                        location=experiment[self.config['detector']]['location'],
-                        v_0=self.config['v_0'],
-                        v_esc=self.config['v_esc'],
-                        rho_dm=self.config['density'])
+                        log_mass= checked_values[0], #self.config['mw'],
+                        log_cross_section= checked_values[1], #self.config['sigma'],
+                        location= experiment[self.config['detector']]['location'],
+                        v_0=checked_values[2], #self.config['v_0'],
+                        v_esc=checked_values[3], #self.config['v_esc'],
+                        rho_dm=checked_values[4]) #self.config['density'])
                 else:
+                    if self.verbose>1:
+                        print(f"StatModel::\tSUPERVERBOSE\tUsing SHM in likelihood code")
                     fit_shm = SHM(
                         v_0=checked_values[2] * nu.km / nu.s,
                         v_esc=checked_values[3] * nu.km / nu.s,
@@ -312,6 +367,8 @@ class StatModel:
                                                      self.config['det_params'])
             spectrum.n_bins = self.config['n_energy_bins']
             result = spectrum.get_data(poisson=False)
+            if self.verbose > 1:
+                print(f"StatModel::\tSUPERVERBOSE\twe have results!")
 
             if np.any(result['counts'] < 0):
                 error_message = (f"statistics.py::Finding negative rates. Presumably v_esc"
@@ -336,6 +393,8 @@ class StatModel:
                     result['counts'][mask] = 0
                 else:
                     raise ValueError(error_message)
+            if self.verbose > 1:
+                print(f"StatModel::\tSUPERVERBOSE\treturning results")
             return result
         elif len(parameter_names) > 2 and not len(parameter_names) == 5 and \
                 not len(parameter_names) == 6:

@@ -4,8 +4,16 @@ import numpy as np
 import os
 
 
-def get_result_folder():
-    return 'results/'
+def get_result_folder(current_folder = '.'):
+    folder = 'results/'
+    return folder
+    #TODO
+    # for i in range(10):
+    #     if os.path.exists(current_folder + folder):
+    #         return current_folder + folder
+    #     else:
+    #         folder = '../' + folder
+    # raise FileNotFoundError(f'No folder was found between {current_folder} and {folder}')
 
 #TODO UGLY
 def get_verne_folder():

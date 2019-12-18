@@ -184,6 +184,7 @@ class SHM:
 
 class VerneSHM:
     """
+    # TODO
            class used to pass a halo model to the rate computation
            must contain:
            :param v_esc -- escape velocity

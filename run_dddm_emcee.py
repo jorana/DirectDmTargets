@@ -16,6 +16,9 @@ assert wr.__version__ != '0.2.2'
 # 
 print("run_dddm_emcee.py::\tstart")
 
+#TODO:
+verbose = True
+
 parser = argparse.ArgumentParser(description="Running a fit for a certain set "
                                              "of parameters")
 parser.add_argument('-mw',
@@ -62,7 +65,10 @@ args = parser.parse_args()
 
 print(f"run_dddm_emcee.py::\tstart for mw = {args.mw}, sigma = "
       f"{args.cross_section}. Fitting {args.nparams} parameters")
-stats = dddm.MCMCStatModel(args.target)
+if verbose:
+    stats = dddm.MCMCStatModel(args.target, 10)
+else:
+    stats = dddm.MCMCStatModel(args.target)
 stats.config['poisson'] = args.poisson
 stats.config['notes'] = args.notes
 stats.config['n_energy_bins'] = args.bins
