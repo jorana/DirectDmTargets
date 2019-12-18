@@ -8,7 +8,7 @@ import numericalunits as nu
 from .utils import get_verne_folder
 import os
 from scipy.interpolate import interp1d
-VBOUND = 10000 * (nu.km /nu.s)
+VBOUND = 10e10 * (nu.km /nu.s)
 
 def bin_edges(a, b, n):
     """
@@ -261,7 +261,7 @@ class VerneSHM:
                 # result[mask] = 0
                 return result
             except ValueError as e:
-                print(f"Value error for v is {v_}")
+                print(f"Value error for v is {v_}, {v_ / (nu.km /nu.s)}")
                 raise e
                 # exit(-1)
 

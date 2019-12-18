@@ -9,7 +9,10 @@ def get_result_folder():
 
 #TODO UGLY
 def get_verne_folder():
-    return '../../verne/'
+    folder = '../../verne/'
+    if not os.path.exists(folder):
+        folder = '../verne/'
+    return folder
 
 if not os.path.exists(get_verne_folder()):
     raise FileNotFoundError(f"no folder at {get_verne_folder}")
