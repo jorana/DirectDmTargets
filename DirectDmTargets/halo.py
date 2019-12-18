@@ -8,7 +8,8 @@ import numericalunits as nu
 from .utils import get_verne_folder
 import os
 from scipy.interpolate import interp1d
-VBOUND = 10e10 * (nu.km /nu.s)
+# VBOUND_MIN = 0 * (nu.km /nu.s)
+# VBOUND_MAX = 1000 * (nu.km /nu.s)
 
 def bin_edges(a, b, n):
     """
@@ -248,22 +249,43 @@ class VerneSHM:
         # df[x] * (nu.km / nu.s)
         # df[y]
 
-        df.loc[len(df)] = [-VBOUND, 0]
-        df.loc[len(df)+1] = [+VBOUND, 0]
-        df.sort_values(by=[x])
-        interpolation = interp1d(df[x] * (nu.km /nu.s), df[y] * (nu.s/nu.km))
+        interpolation = interp1d(df[x] * (nu.km/nu.s), df[y] * (nu.s/nu.km))
 
         def velocity_dist(v_, t_):
-            try:
-                result = interpolation(v_)
-                # Due to numerical artifacts rates may become unphysical. Set negative rates to 0.
-                # mask = result < 0
-                # result[mask] = 0
-                return result
-            except ValueError as e:
-                print(f"Value error for v is {v_}, {v_ / (nu.km /nu.s)}")
-                raise e
-                # exit(-1)
+            v_bound_low = df[x].min() * (nu.km/nu.s)
+            v_bound_high = df[x].max() * (nu.km/nu.s)
+            if np.iterable(v_):
+                # return zero unless within interpolation range
+                if not type(v_) == np.ndarray:
+                    v_ = np.ndarray(v_)
+                res = np.zeros(len(v_))
+                mask = (v_ > v_bound_low) & (v_ < v_bound_high)
+                res[mask] = interpolation(v_[mask])
+                return res
+            else:
+                if (v_ < v_bound_low) or (v_ > v_bound_high):
+                    # return zero if outside interpolation range
+                    return 0
+                else:
+                    return interpolation(v_)
+            # try:
+            #     result = interpolation(v_)
+            #     # Due to numerical artifacts rates may become unphysical. Set negative rates to 0.
+            #     # mask = result < 0
+            #     # result[mask] = 0
+            #     return result
+            # except ValueError as e:
+            #     if np.iterable(v_):
+            #         df.loc[len(df)] = [-VBOUND, 0]
+            #         df.loc[len(df) + 1] = [+VBOUND, 0]
+            #         df.sort_values(by=[x])
+            #         interpolation = interp1d(df[x] * (nu.km / nu.s), df[y] * (nu.s / nu.km))
+            #         return interpolation(v_)
+            #     else:
+            #         return 0
+            #     print(f"Value error for v is {v_} = *units: {v_ / (nu.km /nu.s)}")
+            #     raise e
+            #     # exit(-1)
 
         self.itp_func = velocity_dist
 
