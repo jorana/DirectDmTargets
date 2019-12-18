@@ -249,25 +249,26 @@ class VerneSHM:
         # df[x] * (nu.km / nu.s)
         # df[y]
 
-        interpolation = interp1d(df[x] * (nu.km/nu.s), df[y] * (nu.s/nu.km))
+        interpolation = interp1d(df[x] * (nu.km/nu.s), df[y] * (nu.s/nu.km), bounds_error=False, fill_value=0)
 
         def velocity_dist(v_, t_):
-            v_bound_low = df[x].min() * (nu.km/nu.s)
-            v_bound_high = df[x].max() * (nu.km/nu.s)
-            if np.iterable(v_):
-                # return zero unless within interpolation range
-                if not type(v_) == np.ndarray:
-                    v_ = np.ndarray(v_)
-                res = np.zeros(len(v_))
-                mask = (v_ > v_bound_low) & (v_ < v_bound_high)
-                res[mask] = interpolation(v_[mask])
-                return res
-            else:
-                if (v_ < v_bound_low) or (v_ > v_bound_high):
-                    # return zero if outside interpolation range
-                    return 0
-                else:
-                    return interpolation(v_)
+            return interpolation(v_)
+            # v_bound_low = df[x].min() * (nu.km/nu.s)
+            # v_bound_high = df[x].max() * (nu.km/nu.s)
+            # if np.iterable(v_):
+            #     # return zero unless within interpolation range
+            #     if not type(v_) == np.ndarray:
+            #         v_ = np.ndarray(v_)
+            #     res = np.zeros(len(v_))
+            #     mask = (v_ > v_bound_low) & (v_ < v_bound_high)
+            #     res[mask] = interpolation(v_[mask])
+            #     return res
+            # else:
+            #     if (v_ < v_bound_low) or (v_ > v_bound_high):
+            #         # return zero if outside interpolation range
+            #         return 0
+            #     else:
+            #         return interpolation(v_)
             # try:
             #     result = interpolation(v_)
             #     # Due to numerical artifacts rates may become unphysical. Set negative rates to 0.
