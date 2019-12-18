@@ -314,11 +314,28 @@ class StatModel:
             result = spectrum.get_data(poisson=False)
 
             if np.any(result['counts'] < 0):
-                raise ValueError(
-                    f"statistics.py::Finding negative rates. Presumably v_esc"
+                error_message = (f"statistics.py::Finding negative rates. Presumably v_esc"
                     f" is too small ({values[3]})\nFull dump of parameters:\n"
                     f"{parameter_names} = {values}.\nIf this occurs, one or "
                     f"more priors might not be constrained correctly.")
+                # TODO should this be temporary? It's bad that we get negative rates e.g. for:
+                #  energies = np.linspace(0.1, 3.5, 10) *  nu.keV
+                #  Shield_SHM = dddm.VerneSHM(location="XENON",
+                #               log_mass=-5.06863087e-01,
+                #               log_cross_section=-3.23810744e+01,
+                #               v_0=2.33211211e+02,
+                #               v_esc=5.42044480e+02,
+                #               rho_dm=5.72576689e-01)
+                #  dr = wr.rate_migdal(energies,
+                #                      1 * nu.GeV / nu.c0 ** 2,
+                #                      1e-35 * nu.cm ** 2,
+                #                     halo_model = Shield_SHM)
+                if 'migd' in self.config['detector']:
+                    print(error_message)
+                    mask = result['counts'] < 0
+                    result['counts'][mask] = 0
+                else:
+                    raise ValueError(error_message)
             return result
         elif len(parameter_names) > 2 and not len(parameter_names) == 5 and \
                 not len(parameter_names) == 6:

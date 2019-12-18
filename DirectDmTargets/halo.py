@@ -143,7 +143,19 @@ class GenSpectrum:
         bins = get_bins(self.E_min, self.E_max, self.n_bins)
         result['bin_left'] = bins[:, 0]
         result['bin_right'] = bins[:, 1]
+        result = self.set_negative_to_zero(result)
         return result
+
+    @staticmethod
+    def set_negative_to_zero(result):
+        mask = result['counts'] < 0
+        if np.any(mask):
+            print('\n\n----\nWARNING::\nfinding negative rates. Doing hard override!!\n----\n\n')
+            result['counts'][mask] = 0
+            return result
+        else:
+            return result
+
 
 
 class SHM:
@@ -243,7 +255,11 @@ class VerneSHM:
 
         def velocity_dist(v_, t_):
             try:
-                return interpolation(v_)
+                result = interpolation(v_)
+                # Due to numerical artifacts rates may become unphysical. Set negative rates to 0.
+                # mask = result < 0
+                # result[mask] = 0
+                return result
             except ValueError as e:
                 print(f"Value error for v is {v_}")
                 raise e
