@@ -9,12 +9,17 @@ Install wimprates from source (since pip gives a too low version):
 Also install multihist from source
 https://github.com/JelleAalbers/multihist.git
 
+Install verne from source:
+<https://github.com/jorana/verne> originally from <https://github.com/bradkav/verne>
+
 # Installation
  - Works both on Windows and Linux. To install:
  
 ``git clone https://github.com/jorana/wimprates``
 
 ``pip install -e wimprates``
+
+``git clone https://github.com/jorana/verne.git``
 
 ``git clone https://github.com/jorana/DD_DM_targets.git``
 
@@ -23,6 +28,7 @@ https://github.com/JelleAalbers/multihist.git
 ``pip install -r requirements.txt``
 
 ``python setup.py install``
+
 
 
 
