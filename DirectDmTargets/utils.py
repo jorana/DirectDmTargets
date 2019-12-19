@@ -4,7 +4,8 @@ import numpy as np
 import os
 from datetime import datetime
 
-def check_folder_for_file(file_path, max_iterations = 10):
+
+def check_folder_for_file(file_path, max_iterations=10):
     '''
 
     :param file_path: path with one or more subfolders
@@ -31,6 +32,7 @@ def check_folder_for_file(file_path, max_iterations = 10):
 
         assert os.path.exists(last_folder), assert_str
 
+
 def now():
     '''
 
@@ -39,10 +41,10 @@ def now():
     return datetime.now().isoformat(timespec='minutes')
 
 
-def get_result_folder(current_folder = '.'):
+def get_result_folder(current_folder='.'):
     folder = 'results/'
     return folder
-    #TODO
+    # TODO
     # for i in range(10):
     #     if os.path.exists(current_folder + folder):
     #         return current_folder + folder
@@ -50,12 +52,14 @@ def get_result_folder(current_folder = '.'):
     #         folder = '../' + folder
     # raise FileNotFoundError(f'No folder was found between {current_folder} and {folder}')
 
-#TODO UGLY
+
+# TODO UGLY
 def get_verne_folder():
     folder = '../../verne/'
     if not os.path.exists(folder):
         folder = '../verne/'
     return folder
+
 
 if not os.path.exists(get_verne_folder()):
     raise FileNotFoundError(f"no folder at {get_verne_folder}")
@@ -112,4 +116,3 @@ def open_save_dir(save_dir, force_index=False):
             print('open_save_dir::\tremoving ' + save_dir + file)
             os.remove(save_dir + file)
     return save_dir
-

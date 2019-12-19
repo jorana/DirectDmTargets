@@ -73,7 +73,6 @@ def migdal_background_XENON1T(e_min, e_max, nbins):
     return np.full(nbins, bg_rate * conv_units)
 
 
-
 @numba.jit(nopython=True)
 def migdal_background_CDMS(e_min, e_max, nbins):
     '''
@@ -88,7 +87,6 @@ def migdal_background_CDMS(e_min, e_max, nbins):
     for i in range(nbins):
         res.append(
             CDMS_background_functions(bins[i]) * conv_units)
-
 
     return np.array(res)
 
@@ -155,7 +153,7 @@ experiment = {
         'cut_eff': 0.8,
         'nr_eff': 0.9,
         'E_thr': 70. / 1e3,  # Assume similar to CDMSlite https://arxiv.org/pdf/1808.09098.pdf
-        "location":"SUF",
+        "location": "SUF",
         'res': det_res_CDMS,
         'bg_func': migdal_background_CDMS},
     'Ar_migd': {
@@ -166,7 +164,7 @@ experiment = {
         'nr_eff': 0.8,
         # TODO otherwise no results at all, but they really don't have a 5 keV threshold
         'E_thr': 3.,
-        "location" : "XENON",
+        "location": "XENON",
         'res': det_res_DarkSide,
         'bg_func': migdal_background_Darkside}}
 
@@ -202,7 +200,7 @@ def smear_signal(rate, energy, sigma, bin_width):
             res = res + (bin_width * rate[j] *
                          (1 / (np.sqrt(2 * np.pi) * sigma[j])) *
                          np.exp(-((energy[i] - energy[j]) ** 2 / (2 * sigma[j] ** 2)))
-                        )
+                         )
         result.append(res)
     return np.array(result)
 
@@ -216,7 +214,7 @@ class DetectorSpectrum(GenSpectrum):
         self.rebin_factor = 10
         # TODO
         #  add background here
-        self.add_background = False # self.experiment['type'] == 'migdal'
+        self.add_background = False  # self.experiment['type'] == 'migdal'
 
     def __str__(self):
         return (f"DetectorSpectrum class inherited from GenSpectrum.\nSmears "

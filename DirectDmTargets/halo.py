@@ -8,6 +8,8 @@ import numericalunits as nu
 from .utils import get_verne_folder, check_folder_for_file
 import os
 from scipy.interpolate import interp1d
+
+
 # VBOUND_MIN = 0 * (nu.km /nu.s)
 # VBOUND_MAX = 1000 * (nu.km /nu.s)
 
@@ -96,7 +98,7 @@ class GenSpectrum:
                                     **kwargs
                                     )
         elif self.experiment['type'] == 'migdal':
-            #TODO this is nasty, we have to circumvent this hardcode
+            # TODO this is nasty, we have to circumvent this hardcode
             convert_units = (nu.keV * (1000 * nu.kg) * nu.year)
             rate = convert_units * wr.rate_migdal(
                 self.get_bin_centers() * nu.keV,
@@ -158,17 +160,16 @@ class GenSpectrum:
             return result
 
 
-
 class SHM:
     """
         class used to pass a halo model to the rate computation
         must contain:
-        :param v_esc -- escape velocity
+        :param v_esc -- escape velocity (multiplied by units)
+        :param rho_dm -- density in mass/volume of dark matter at the Earth (multiplied by units)
+        The standard halo model also allows variation of v_0
+        :param v_0 -- v0 of the velocity distribution (multiplied by units)
         :function velocity_dist -- function taking v,t giving normalised
         velocity distribution in earth rest-frame.
-        :param rho_dm -- density in mass/volume of dark matter at the Earth
-        The standard halo model also allows variation of v_0
-        :param v_0
     """
 
     def __init__(self, v_0=None, v_esc=None, rho_dm=None):
@@ -182,40 +183,56 @@ class SHM:
         # v is in units of velocity
         return wr.observed_speed_dist(v, t, self.v_0, self.v_esc)
 
+
 class VerneSHM:
     """
-    # TODO
-           class used to pass a halo model to the rate computation
-           must contain:
-           :param v_esc -- escape velocity
-           :function velocity_dist -- function taking v,t giving normalised
-           velocity distribution in earth rest-frame.
-           :param rho_dm -- density in mass/volume of dark matter at the Earth
-           The standard halo model also allows variation of v_0
-           :param v_0
+        class used to pass a halo model to the rate computation based on the
+        earth shielding effect as calculated by Verne
+        must contain:
+        :param v_esc -- escape velocity (multiplied by units)
+        :param rho_dm -- density in mass/volume of dark matter at the Earth (multiplied by units)
+        The standard halo model also allows variation of v_0
+        :param v_0 -- v0 of the velocity distribution (multiplied by units)
+        :function velocity_dist -- function taking v,t giving normalised
+        velocity distribution in earth rest-frame.
        """
-    def __init__(self, v_0=None, v_esc=None, rho_dm=None, log_cross_section = None,
-                 log_mass = None, location = None):
-        self.v_0_nodim = 230 if v_0 is None else v_0
-        self.v_esc_nodim = 544 if v_esc is None else v_esc
-        self.rho_dm_nodim = 0.3 if rho_dm is None else rho_dm
 
-        self.v_0 = self.v_0_nodim * nu.km/nu.s
-        self.v_esc = self.v_esc_nodim * nu.km/nu.s
+    def __init__(self, v_0=None, v_esc=None, rho_dm=None,
+                 log_cross_section=None, log_mass=None, location=None):
+        # This may seem somewhat counterintuitive. But we want to use similar
+        # input as to SHM (see above) to that end, we here divide the input by
+        # the respective units
+        self.v_0_nodim = 230 if v_0 is None else v_0 / (nu.km / nu.s)
+        self.v_esc_nodim = 544 if v_esc is None else v_esc / (nu.km / nu.s)
+        self.rho_dm_nodim = 0.3 if rho_dm is None else rho_dm / (nu.GeV / nu.c0 ** 2 / nu.cm ** 3)
+
+        # Here we keep the units dimentionfull as these paramters are requested
+        # by wimprates and therefore must have dimensions
+        self.v_0 = self.v_0_nodim * nu.km / nu.s
+        self.v_esc = self.v_esc_nodim * nu.km / nu.s
         self.rho_dm = self.rho_dm_nodim * nu.GeV / nu.c0 ** 2 / nu.cm ** 3
 
+        # in contrast to the SHM, the earth shielding does need the mass and
+        # cross-section to calculate the rates.
         self.log_cross_section = -35 if log_cross_section is None else log_cross_section
         self.log_mass = 0 if log_mass is None else log_mass
         self.location = "XENON" if location is None else location
-        self.fname = 'f_params/loc_%s/v0_%i/v_esc%i/rho_%.2f/sig_%.1f_mx_%.2f'%(
+
+        # Combine the parameters into a single naming convention. This is were
+        # we will save/read the velocity distributuion (from).
+        self.fname = 'f_params/loc_%s/v0_%i/vesc_%i/rho_%.2f/sig_%.1f_mx_%.2f' % (
             self.location,
             self.v_0_nodim, self.v_esc_nodim, self.rho_dm_nodim,
             self.log_cross_section, self.log_mass)
-        # self.load_f()
-        assert_str = "double check these paramters"
+
+        # TODO
+        #  Temporary check that these parameters are in a reasonable range.
+        assert_str = "double check these parameters"
         for i, param in enumerate([self.v_esc_nodim, self.v_0_nodim, self.rho_dm_nodim]):
             ref_val = [230, 544, 0.3][i]
-            assert abs((ref_val-param)/ref_val) < 5, assert_str
+            # values should be comparable to the reference value
+            assert (abs((ref_val - param) / ref_val) < 5 and
+                    abs((ref_val - param) / param) < 5), assert_str + f'\nparameter is {param} vs. ref val of {ref_val}'
         self.itp_func = None
 
     def load_f(self):
@@ -223,79 +240,54 @@ class VerneSHM:
         load the velocity distribution. If there is no velocity distribution shaved, load one.
         :return:
         '''
-        folder = get_verne_folder() + 'results/veldists/'
 
+        # set up folders and names
+        folder = get_verne_folder() + 'results/veldists/'
+        # TODO
+        #  This is a statement to get the data faster.
         low_n_gamma = True
         if low_n_gamma:
             self.fname = 'tmp_' + self.fname
-
         file_name = folder + self.fname + '_avg' + '.csv'
         check_folder_for_file(folder + self.fname)
+
+        # if no data available here, we need to make it
         if not os.path.exists(file_name):
             pyfile = '/src/CalcVelDist.py'
-            args = f'-m_x {10**self.log_mass} -sigma_p {10**self.log_cross_section} -loc {self.location} ' \
-                   f'-path "{get_verne_folder()}/src/" -v_0 {self.v_0_nodim} -v_esc {self.v_esc_nodim} ' \
+            args = f'-m_x {10 ** self.log_mass} ' \
+                   f'-sigma_p {10 ** self.log_cross_section} ' \
+                   f'-loc {self.location} ' \
+                   f'-path "{get_verne_folder()}/src/" ' \
+                   f'-v_0 {self.v_0_nodim} ' \
+                   f'-v_esc {self.v_esc_nodim} ' \
                    f'-save_as "{file_name}" '
             if low_n_gamma:
-                args += f' -n_gamma 2' # Set N_gamma low for faster computation (only two angles)
+                # Set N_gamma low for faster computation (only two angles)
+                args += f' -n_gamma 2'
 
             cmd = f'python "{get_verne_folder()}"{pyfile} {args}'
-            print(f'No spectrum found at:\n{file_name}\nGenerating spectrum, this can take a minute. Execute:\n{cmd}')
+            print(f'No spectrum found at:\n{file_name}\nGenerating spectrum, '
+                  f'this can take a minute. Execute:\n{cmd}')
             os.system(cmd)
         else:
             print(f'Using {file_name} for the velocity distribution')
+
+        # Alright now load the data and interpolate that. This is the output that wimprates need
         df = pd.read_csv(file_name)
         x, y = df.keys()
-        # # interpolation = interp1d(df[x] * (nu.km /nu.s), df[y] * (nu.s/nu.km))
-        # df[x] * (nu.km / nu.s)
-        # df[y]
+        interpolation = interp1d(df[x] * (nu.km / nu.s), df[y] * (nu.s / nu.km), bounds_error=False, fill_value=0)
 
-        interpolation = interp1d(df[x] * (nu.km/nu.s), df[y] * (nu.s/nu.km), bounds_error=False, fill_value=0)
-
+        # Wimprates needs to have a two-parameter function. However since we
+        # ignore time for now. We make this makeshift transition from a one
+        # parameter function to a two parameter function
         def velocity_dist(v_, t_):
             return interpolation(v_)
-            # v_bound_low = df[x].min() * (nu.km/nu.s)
-            # v_bound_high = df[x].max() * (nu.km/nu.s)
-            # if np.iterable(v_):
-            #     # return zero unless within interpolation range
-            #     if not type(v_) == np.ndarray:
-            #         v_ = np.ndarray(v_)
-            #     res = np.zeros(len(v_))
-            #     mask = (v_ > v_bound_low) & (v_ < v_bound_high)
-            #     res[mask] = interpolation(v_[mask])
-            #     return res
-            # else:
-            #     if (v_ < v_bound_low) or (v_ > v_bound_high):
-            #         # return zero if outside interpolation range
-            #         return 0
-            #     else:
-            #         return interpolation(v_)
-            # try:
-            #     result = interpolation(v_)
-            #     # Due to numerical artifacts rates may become unphysical. Set negative rates to 0.
-            #     # mask = result < 0
-            #     # result[mask] = 0
-            #     return result
-            # except ValueError as e:
-            #     if np.iterable(v_):
-            #         df.loc[len(df)] = [-VBOUND, 0]
-            #         df.loc[len(df) + 1] = [+VBOUND, 0]
-            #         df.sort_values(by=[x])
-            #         interpolation = interp1d(df[x] * (nu.km / nu.s), df[y] * (nu.s / nu.km))
-            #         return interpolation(v_)
-            #     else:
-            #         return 0
-            #     print(f"Value error for v is {v_} = *units: {v_ / (nu.km /nu.s)}")
-            #     raise e
-            #     # exit(-1)
 
         self.itp_func = velocity_dist
-
 
     def velocity_dist(self, v, t):
         # in units of per velocity,
         # v is in units of velocity
-        # che
         if self.itp_func == None:
             self.load_f()
         return self.itp_func(v, t)

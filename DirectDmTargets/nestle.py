@@ -148,7 +148,7 @@ class NestleStatModel(StatModel):
             end = datetime.now()
             dt = end - start
             print(f"run_nestle::\t{now()}\n\tfit_done in %i s (%.1f h)" % (dt.seconds, dt.seconds / 3600.))
-            if self.verbose>1:
+            if self.verbose > 1:
                 print(f"NestleStatModel::\t{now()}\n\tSUPERVERBOSE\tWe're back!")
         except ValueError as e:
             print(f"Nestle did not finish due to a ValueError. Was running with"
@@ -164,7 +164,8 @@ class NestleStatModel(StatModel):
 
     def get_summary(self):
         if self.verbose:
-            print(f"NestleStatModel::\t{now()}\n\tgetting the summary (or at least trying) let's first see if I did run")
+            print(
+                f"NestleStatModel::\t{now()}\n\tgetting the summary (or at least trying) let's first see if I did run")
         # taken from
         # mattpitkin.github.io/samplers-demo/pages/samplers-samplers-everywhere/#Nestle
         self.check_did_run()
@@ -238,6 +239,7 @@ class NestleStatModel(StatModel):
         if self.verbose:
             print(f"NestleStatModel::\t{now()}\n\tEnjoy the plot. Maybe you do want to"
                   f" save it too?")
+
 
 def is_savable_type(item):
     if type(item) in [list, np.array, np.ndarray, int, str, np.int, np.float, bool, np.float64]:

@@ -7,6 +7,7 @@ import numpy as np
 from scipy.special import loggamma
 from .utils import now
 
+
 def get_priors(priors_from="Evans_2019"):
     """
     :return: dictionary of priors, type and values
@@ -82,14 +83,17 @@ class StatModel:
         self.config['detector'] = detector_name
         self.config['poisson'] = False
         self.config['n_energy_bins'] = 10
+        self.config['earth_shielding'] = experiment[detector_name]['type'] == 'migdal'
         self.verbose = verbose
         if self.verbose:
             print(f'StatModel::\t{now()}\n\tVERBOSE ENABLED')
-            if self.verbose>1:
-                print(f'StatModel::\t{now()}\n\tSUPERVERBOSE ENABLED\n\tprepare for the ride, here comes all my output!')
+            if self.verbose > 1:
+                print(f'StatModel::\t{now()}\n\tSUPERVERBOSE ENABLED\n\t'
+                      f'prepare for the ride, here comes all my output!')
         self.bench_is_set = False
         self.set_prior("Pato_2010")
-        print(f"StatModel::\t{now()}\n\tinitialized for {detector_name} detector. See print(stat_model) for default settings")
+        print(f"StatModel::\t{now()}\n\tinitialized for {detector_name} detector."
+              f"See print(stat_model) for default settings")
         self.set_default()
 
     def __str__(self):
@@ -119,7 +123,7 @@ class StatModel:
         self.config['n_energy_bins'] = nbins
         self.eval_benchmark()
 
-    def set_benchmark(self, mw=50, sigma=-45,verbose=False):
+    def set_benchmark(self, mw=50, sigma=-45, verbose=False):
         """
         Set up the benchmark used in this statistical model. Likelihood of
         other models can be evaluated for this 'truth'
@@ -143,17 +147,17 @@ class StatModel:
         :param spec: class used to generate the response of the spectrum in the
         detector
         """
-        #TODO ugly if statement
-        if 'migd' in self.config['detector']:
+
+        if self.config['earth_shielding']:
             if self.verbose:
                 print(f'StatModel::\t{now()}\n\tsetting model to VERNE model')
             model = VerneSHM(
                 log_mass=self.config['mw'],
                 log_cross_section=self.config['sigma'],
                 location=experiment[self.config['detector']]['location'],
-                v_0=self.config['v_0'],
-                v_esc=self.config['v_esc'],
-                rho_dm=self.config['density'])
+                v_0=self.config['v_0'] * nu.km / nu.s,
+                v_esc=self.config['v_esc'] * nu.km / nu.s,
+                rho_dm=self.config['density'] * nu.GeV / nu.c0 ** 2 / nu.cm ** 3)
 
             self.config['halo_model'] = halo_model if halo_model != 'default' else model
             if self.verbose:
@@ -162,9 +166,9 @@ class StatModel:
             if self.verbose:
                 print(f'StatModel::\t{now()}\n\tSetting model to SHM')
             self.config['halo_model'] = halo_model if halo_model != 'default' else SHM(
-            v_0=self.config['v_0'] * nu.km / nu.s,
-            v_esc=self.config['v_esc'] * nu.km / nu.s,
-            rho_dm=self.config['density'] * nu.GeV / nu.c0 ** 2 / nu.cm ** 3
+                v_0=self.config['v_0'] * nu.km / nu.s,
+                v_esc=self.config['v_esc'] * nu.km / nu.s,
+                rho_dm=self.config['density'] * nu.GeV / nu.c0 ** 2 / nu.cm ** 3
             )
 
         self.config['spectrum_class'] = spec if spec != 'default' else DetectorSpectrum
@@ -317,22 +321,21 @@ class StatModel:
                 x0, x1 = x1, x0
             else:
                 raise NotImplementedError(
-                    f"Trying to fit two parameters ({parameter_names}), this "
-                    f"is not implemented.")
+                    f"Trying to fit two parameters ({parameter_names}), this is not implemented.")
             if self.verbose:
                 print(f"StatModel::\t{now()}\n\tevaluating{self.config['spectrum_class']} for mw = {10 ** x0}, "
                       f"sig = {10 ** x1}, halo model = {self.config['halo_model']} and "
                       f"detector = {self.config['det_params']}")
-            if 'migd' in self.config['detector']:
+            if self.config['earth_shielding']:
                 if self.verbose > 1:
                     print(f"StatModel::\t{now()}\n\tSUPERVERBOSE\tSetting spectrum to Verne in likelihood code")
                 fit_shm = VerneSHM(
                     log_mass=x0,  # self.config['mw'],
                     log_cross_section=x1,  # self.config['sigma'],
                     location=experiment[self.config['detector']]['location'],
-                    v_0=self.config['v_0'],
-                    v_esc=self.config['v_esc'],
-                    rho_dm=self.config['density'])
+                    v_0=self.config['v_0'] * nu.km / nu.s,
+                    v_esc=self.config['v_esc'] * nu.km / nu.s,
+                    rho_dm=self.config['density'] * nu.GeV / nu.c0 ** 2 / nu.cm ** 3)
             else:
                 fit_shm = self.config['halo_model']
             spectrum = self.config['spectrum_class'](
@@ -353,18 +356,18 @@ class StatModel:
 
             checked_values = check_shape(values)
             if len(parameter_names) == 5:
-                if 'migd' in self.config['detector']:
-                    if self.verbose>1:
+                if self.config['earth_shielding']:
+                    if self.verbose > 1:
                         print(f"StatModel::\t{now()}\n\tSUPERVERBOSE\tSetting spectrum to Verne in likelihood code")
                     fit_shm = VerneSHM(
-                        log_mass= checked_values[0], #self.config['mw'],
-                        log_cross_section= checked_values[1], #self.config['sigma'],
-                        location= experiment[self.config['detector']]['location'],
-                        v_0=checked_values[2], #self.config['v_0'],
-                        v_esc=checked_values[3], #self.config['v_esc'],
-                        rho_dm=checked_values[4]) #self.config['density'])
+                        log_mass=checked_values[0],  # self.config['mw'],
+                        log_cross_section=checked_values[1],  # self.config['sigma'],
+                        location=experiment[self.config['detector']]['location'],
+                        v_0=checked_values[2] * nu.km / nu.s,  # self.config['v_0'],
+                        v_esc=checked_values[3] * nu.km / nu.s,  # self.config['v_esc'],
+                        rho_dm=checked_values[4] * nu.GeV / nu.c0 ** 2 / nu.cm ** 3)  # self.config['density'])
                 else:
-                    if self.verbose>1:
+                    if self.verbose > 1:
                         print(f"StatModel::\t{now()}\n\tSUPERVERBOSE\tUsing SHM in likelihood code")
                     fit_shm = SHM(
                         v_0=checked_values[2] * nu.km / nu.s,
@@ -386,9 +389,9 @@ class StatModel:
 
             if np.any(result['counts'] < 0):
                 error_message = (f"statistics.py::Finding negative rates. Presumably v_esc"
-                    f" is too small ({values[3]})\nFull dump of parameters:\n"
-                    f"{parameter_names} = {values}.\nIf this occurs, one or "
-                    f"more priors might not be constrained correctly.")
+                                 f" is too small ({values[3]})\nFull dump of parameters:\n"
+                                 f"{parameter_names} = {values}.\nIf this occurs, one or "
+                                 f"more priors might not be constrained correctly.")
                 # TODO should this be temporary? It's bad that we get negative rates e.g. for:
                 #  energies = np.linspace(0.1, 3.5, 10) *  nu.keV
                 #  Shield_SHM = dddm.VerneSHM(location="XENON",
