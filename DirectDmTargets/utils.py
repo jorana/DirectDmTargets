@@ -2,6 +2,41 @@
 
 import numpy as np
 import os
+from datetime import datetime
+
+def check_folder_for_file(file_path, max_iterations = 10):
+    '''
+
+    :param file_path: path with one or more subfolders
+    :param max_iterations: max number of lower lying subfolders
+    '''
+    last_folder = "/".join(file_path.split("/")[:-1])
+    if os.path.exists(last_folder):
+        # Folder does exist. No need do anything.
+        return
+    else:
+        base_dir = file_path.split("/")[0]
+
+        assert_str = f"check_save_folder::\tstarting from a folder " \
+                     f"({base_dir}) that cannot be found"
+        assert os.path.exists(base_dir), assert_str
+        # Start from 1 (since that is basedir) go until second to last since that is the file name
+        for sub_dir in file_path.split("/")[1:max_iterations]:
+            this_dir = base_dir + "/" + sub_dir
+            if not os.path.exists(this_dir):
+                print(f'check_save_folder::\tmaking {this_dir}')
+                os.mkdir(this_dir)
+            base_dir = this_dir
+        assert_str = f'check_save_folder::\tsomething failed. Cannot find {file_path}'
+
+        assert os.path.exists(last_folder), assert_str
+
+def now():
+    '''
+
+    :return: datetime.datetime string with day, hour, minutes
+    '''
+    return datetime.now().isoformat(timespec='minutes')
 
 
 def get_result_folder(current_folder = '.'):

@@ -8,7 +8,7 @@ MCMC is:
 Nevertheless, the walkers give great insight in how the likelihood-function is
 felt by the steps that the walkers make"""
 
-import datetime
+from datetime import datetime
 import json
 import multiprocessing
 import os
@@ -38,7 +38,7 @@ class MCMCStatModel(StatModel):
         self.log = {'sampler': False, 'did_run': False, 'pos': False}
         self.remove_frac = 0.2
         self.thin = 15
-        self.config['start'] = datetime.datetime.now()  # .date().isoformat()
+        self.config['start'] = datetime.now()  # .date().isoformat()
         self.config['notes'] = "default"
 
     def set_fit_parameters(self, params):
@@ -110,9 +110,9 @@ class MCMCStatModel(StatModel):
         if not self.log['pos']:
             self.set_pos()
         try:
-            start = datetime.datetime.now()
+            start = datetime.now()
             self.sampler.run_mcmc(self.pos, self.nsteps, progress=False)
-            end = datetime.datetime.now()
+            end = datetime.now()
         except ValueError as e:
             print(f"MCMC did not finish due to a ValueError. Was running with\n"
                   f"pos={self.pos.shape} nsteps = {self.nsteps}, walkers = "

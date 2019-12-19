@@ -5,7 +5,7 @@ import numpy as np
 import pandas as pd
 import wimprates as wr
 import numericalunits as nu
-from .utils import get_verne_folder
+from .utils import get_verne_folder, check_folder_for_file
 import os
 from scipy.interpolate import interp1d
 # VBOUND_MIN = 0 * (nu.km /nu.s)
@@ -207,7 +207,7 @@ class VerneSHM:
         self.log_cross_section = -35 if log_cross_section is None else log_cross_section
         self.log_mass = 0 if log_mass is None else log_mass
         self.location = "XENON" if location is None else location
-        self.fname = 'f_params_%s_%i_%i_%.2f_%.1f_%.2f'%(
+        self.fname = 'f_params/loc_%s/v0_%i/v_esc%i/rho_%.2f/sig_%.1f_mx_%.2f'%(
             self.location,
             self.v_0_nodim, self.v_esc_nodim, self.rho_dm_nodim,
             self.log_cross_section, self.log_mass)
@@ -230,7 +230,7 @@ class VerneSHM:
             self.fname = 'tmp_' + self.fname
 
         file_name = folder + self.fname + '_avg' + '.csv'
-
+        check_folder_for_file(folder + self.fname)
         if not os.path.exists(file_name):
             pyfile = '/src/CalcVelDist.py'
             args = f'-m_x {10**self.log_mass} -sigma_p {10**self.log_cross_section} -loc {self.location} ' \
