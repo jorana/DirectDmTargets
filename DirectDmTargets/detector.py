@@ -34,9 +34,9 @@ def det_res_Ge(E):
 def det_res_CDMS(E):
     # From https: // arxiv.org / pdf / 1808.09098.pdf
     """
-        :param E: recoil energy (in keV)
-        :return: detector resolution for Ge detector
-        """
+    :param E: recoil energy (in keV)
+    :return: detector resolution for Ge detector
+    """
     sigma_e = 10. / 1e3  # eV to keV
     param_a = 5.0e-3  # dimensionless
     param_b = 0.85 / 1e3  # eV to keV
@@ -58,9 +58,8 @@ def det_res_DarkSide(E):
 
 def migdal_background_XENON1T(e_min, e_max, nbins):
     '''
-     :param nbins: number of bins
+    :param nbins: number of bins
     :return: detector resolution for Ge detector
-
     '''
     # TODO really ugly
     # background in XENON1T
@@ -76,9 +75,8 @@ def migdal_background_XENON1T(e_min, e_max, nbins):
 @numba.jit(nopython=True)
 def migdal_background_CDMS(e_min, e_max, nbins):
     '''
-     :param E: recoil energy (in keV)
+    :param E: recoil energy (in keV)
     :return: detector resolution for Ge detector
-
     '''
     bins = np.linspace(e_min, e_max, nbins)
     # res = [CDMS_background_functions(bin) for bin in bins]

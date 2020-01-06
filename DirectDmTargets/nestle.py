@@ -133,7 +133,7 @@ class NestleStatModel(StatModel):
         assert_str = f"Unknown configuration of fit pars: {self.fit_parameters}"
         assert self.fit_parameters == self.known_parameters[:ndim], assert_str
         try:
-            print("run_nestle::\t{now()}\n\tstart_fit for %i parameters" % ndim)
+            print(f"run_nestle::\t{now()}\n\tstart_fit for %i parameters" % ndim)
             if self.verbose:
                 print(f"NestleStatModel::\t{now()}\n\tbeyond this point, there is nothing "
                       f"I can say, you'll have to wait for my lower level "
