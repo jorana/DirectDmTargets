@@ -60,14 +60,24 @@ parser.add_argument('-priors_from',
                     type=str,
                     default="Pato_2010",
                     help="Obtain priors from paper <priors_from>")
+parser.add_argument('-verbose',
+                    type=float,
+                    default=0,
+                    help="Set to 0 (no print statements), 1 (some print statements) or >1 (a lot of print statements). Set the level of print statements while fitting.")
+parser.add_argument('-shielding',
+                    type=str,
+                    default="default",
+                    help="yes / no / default, override internal determination if we need to take into account earth shielding.")
+
 args = parser.parse_args()
 
 print(f"run_dddm_nestle.py::\tstart for mw = {args.mw}, sigma = "
       f"{args.cross_section}. Fitting {args.nparams} parameters")
-if verbose:
-    stats = dddm.NestleStatModel(args.target, 10)
-else:
-    stats = dddm.NestleStatModel(args.target)
+stats = dddm.NestleStatModel(args.target, args.verbose)
+if args.shielding != "default":
+    yes_or_no = {"yes" : True, "no" : False}
+    stats.config['earth_shielding'] = yes_or_no[args.shielding]
+    stats.set_models()
 stats.config['poisson'] = args.poisson
 stats.config['notes'] = args.notes
 stats.config['n_energy_bins'] = args.bins
