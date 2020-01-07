@@ -274,7 +274,7 @@ def load_nestle_samples(load_from=default_nestle_save_dir(), item='latest'):
 
 
 def load_nestle_samples_from_file(load_dir):
-    print("load_nestle_samples::\t{now()}\n\tloading", load_dir)
+    print(f"load_nestle_samples::\t{now()}\n\tloading", load_dir)
     keys = ['config', 'res_dict', 'h', 'logl', 'logvol', 'logz', 'logzerr',
             'ncall', 'niter', 'samples', 'weights']
     result = {}

@@ -174,7 +174,7 @@ class StatModel:
         self.config['spectrum_class'] = spec if spec != 'default' else DetectorSpectrum
 
         if halo_model != 'default' or spec != 'default':
-            print("StatModel::\t{now()}\n\tre-evaluate benchmark")
+            print(f"StatModel::\t{now()}\n\tre-evaluate benchmark")
             self.eval_benchmark()
 
     def set_det_params(self):
