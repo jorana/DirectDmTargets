@@ -51,8 +51,8 @@ class GenSpectrum:
         :param det: detector name
         """
         assert type(det) is dict, "Invalid detector type. Please provide dict."
-        self.mw = mw
-        self.sigma_nucleon = sig
+        self.mw = mw # note that this is not in log scale!
+        self.sigma_nucleon = sig # note that this is not in log scale!
         self.dm_model = model
         self.experiment = det
 
@@ -103,6 +103,11 @@ class GenSpectrum:
                                     **kwargs
                                     )
         elif self.experiment['type'] == 'migdal':
+            # TODO
+            #  This integration takes a long time, hence, we will lower the
+            #  default precision of the scipy dblquad integration
+            migdal_integration_kwargs = dict(epsabs=1e-4,
+                                             epsrel=1e-4)
             # TODO this is nasty, we have to circumvent this hardcode
             convert_units = (nu.keV * (1000 * nu.kg) * nu.year)
             rate = convert_units * wr.rate_migdal(
@@ -114,6 +119,7 @@ class GenSpectrum:
                 #
                 halo_model=self.dm_model,
                 material=self.experiment['material'],
+                **migdal_integration_kwargs
             )
         else:
             raise NotImplementedError(f'No type of matching {self.experiment["type"]} interactions.')
@@ -286,6 +292,7 @@ class VerneSHM:
         # Wimprates needs to have a two-parameter function. However since we
         # ignore time for now. We make this makeshift transition from a one
         # parameter function to a two parameter function
+
         def velocity_dist(v_, t_):
             return interpolation(v_)
 
