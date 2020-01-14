@@ -9,6 +9,7 @@ from .utils import get_verne_folder, check_folder_for_file
 import os
 from scipy.interpolate import interp1d
 import sys
+from .context import *
 
 # # be able to load from the verne folder using this work around.
 # sys.path.insert(1, get_verne_folder()+'/src/')
@@ -261,7 +262,8 @@ class VerneSHM:
         '''
 
         # set up folders and names
-        folder = get_verne_folder() + 'results/veldists/'
+#         folder = get_verne_folder() + 'results/veldists/'
+        folder = context['verne_files']
         # TODO
         #  This is a statement to get the data faster, i.e. take a short-cut (we
         #  only compute 2 angles and take the average)

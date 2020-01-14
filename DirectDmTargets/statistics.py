@@ -6,6 +6,7 @@ import numericalunits as nu
 import numpy as np
 from scipy.special import loggamma
 from .utils import now, get_result_folder
+from .context import *
 import types
 
 def get_priors(priors_from="Evans_2019"):
@@ -249,7 +250,8 @@ class StatModel:
         assert 'DetectorSpectrum' in str(self.config['spectrum_class']), "Input detector spectrum"
 
         # Name the file according to the main parameters. Note that for each of the main parameters
-        file_name = 'spectra/nbin-%i/model-%s/mw-%.2f/log_s-%.2f/rho-%.2f/v_0-%.1f/v_esc-%i/poisson_%i/spectrum'%(
+                      
+        file_name = context['specta_files'] + '/nbin-%i/model-%s/mw-%.2f/log_s-%.2f/rho-%.2f/v_0-%.1f/v_esc-%i/poisson_%i/spectrum'%(
             self.config['n_energy_bins'] if nbin is None else nbin,
             str(self.config['halo_model']) if model is None else str(model),
             10 ** self.config['mw'] if mw is None else 10**mw,
@@ -269,7 +271,7 @@ class StatModel:
             file_name = file_name + '_' + str(self.config['det_params'][key])
         file_name = file_name.replace(' ', '_')
         file_name = file_name + '.csv'
-        file_path = get_result_folder() + '/' + file_name
+        file_path = file_name #get_result_folder() + '/' + file_name
         data_at_path = os.path.exists(file_path)
 
         if data_at_path:

@@ -17,13 +17,18 @@ def check_folder_for_file(file_path, max_iterations=10):
         # Folder does exist. No need do anything.
         return
     else:
-        base_dir = file_path.split("/")[0]
-
-        assert_str = f"check_save_folder::\tstarting from a folder " \
-                     f"({base_dir}) that cannot be found"
-        assert os.path.exists(base_dir), assert_str
+        
+        if file_path[0] == '/':
+            base_dir = '/' + file_path.split("/")[1]
+            start_i = 2
+        else:
+            base_dir = file_path.split("/")[0]
+            start_i = 1
+            assert_str = f"check_save_folder::\tstarting from a folder " \
+                         f"({base_dir}) that cannot be found"
+            assert os.path.exists(base_dir), assert_str
         # Start from 1 (since that is basedir) go until second to last since that is the file name
-        for sub_dir in file_path.split("/")[1:max_iterations]:
+        for sub_dir in file_path.split("/")[start_i:max_iterations]:
             this_dir = base_dir + "/" + sub_dir
             if not os.path.exists(this_dir):
                 print(f'check_save_folder::\tmaking {this_dir}')
