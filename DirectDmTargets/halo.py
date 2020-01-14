@@ -189,6 +189,9 @@ class SHM:
         self.rho_dm = (0.3 * nu.GeV / nu.c0 ** 2 / nu.cm ** 3
                        if rho_dm is None else rho_dm)
 
+    def __str__(self):
+        return 'shm'
+
     def velocity_dist(self, v, t):
         # in units of per velocity,
         # v is in units of velocity
@@ -245,6 +248,11 @@ class VerneSHM:
             assert (abs((ref_val - param) / ref_val) < 5 and
                     abs((ref_val - param) / param) < 5), assert_str + f'\nparameter is {param} vs. ref val of {ref_val}'
         self.itp_func = None
+    # TODO
+    #  def __str__(self):
+
+    def __str__(self):
+        return 'shielded_shm'
 
     def load_f(self):
         '''

@@ -5,8 +5,8 @@ from .halo import *
 import numericalunits as nu
 import numpy as np
 from scipy.special import loggamma
-from .utils import now
-
+from .utils import now, get_result_folder
+import types
 
 def get_priors(priors_from="Evans_2019"):
     """
@@ -37,7 +37,7 @@ def get_priors(priors_from="Evans_2019"):
         priors = {'log_mass': {'range': [0.01, 4], 'prior_type': 'flat'},
                   'log_cross_section': {'range': [-49, -44], 'prior_type': 'flat'},
                   'density': {'range': [0.001, 0.9], 'prior_type': 'gauss', 'mean': 0.55, 'std': 0.1},
-                  'v_0': {'range': [80, 380], 'prior_type': 'gauss', 'mean': 233, 'std': 3},
+                  'v_0': {'range': [80, 380], 'prior_type': 'gauss', 'mean': 233 , 'std': 3},
                   'v_esc': {'range': [379, 709], 'prior_type': 'gauss', 'mean': 528, 'std': 24.5},
                   'k': {'range': [0.5, 3.5], 'prior_type': 'flat'}}
     elif priors_from == "migdal":
@@ -84,6 +84,7 @@ class StatModel:
         self.config['poisson'] = False
         self.config['n_energy_bins'] = 10
         self.config['earth_shielding'] = experiment[detector_name]['type'] == 'migdal'
+        self.config['save_intermediate'] = True if self.config['earth_shielding'] else False
         self.verbose = verbose
         if self.verbose:
             print(f'StatModel::\t{now()}\n\tVERBOSE ENABLED')
@@ -198,6 +199,101 @@ class StatModel:
         if self.verbose:
             print(f'StatModel::\t{now()}\n\tevaluate benchmark\tdone\n\tall ready to go!')
 
+    # def config_to_name(self):
+    #     def load_f(self):
+    #         '''
+    #         load the velocity distribution. If there is no velocity distribution shaved, load one.
+    #         :return:
+    #         '''
+    #
+    #         # set up folders and names
+    #         folder = get_verne_folder() + 'results/veldists/'
+    #         # TODO
+    #         #  This is a statement to get the data faster, i.e. take a short-cut (we
+    #         #  only compute 2 angles and take the average)
+    #         low_n_gamma = False
+    #         if low_n_gamma:
+    #             self.fname = 'tmp_' + self.fname
+    #         file_name = folder + self.fname + '_avg' + '.csv'
+    #         check_folder_for_file(folder + self.fname)
+    #
+    #         # if no data available here, we need to make it
+    #         if not os.path.exists(file_name):
+    #             pyfile = '/src/CalcVelDist.py'
+    #             args = f'-m_x {10 ** self.log_mass} ' \
+    #                    f'-sigma_p {10 ** self.log_cross_section} ' \
+    #                    f'-loc {self.location} ' \
+    #                    f'-path "{get_verne_folder()}/src/" ' \
+    #                    f'-v_0 {self.v_0_nodim} ' \
+    #                    f'-v_esc {self.v_esc_nodim} ' \
+    #                    f'-save_as "{file_name}" '
+    #             if low_n_gamma:
+    #                 # Set N_gamma low for faster computation (only two angles)
+    #                 args += f' -n_gamma 2'
+    #
+    #             cmd = f'python "{get_verne_folder()}"{pyfile} {args}'
+    #             print(f'No spectrum found at:\n{file_name}\nGenerating spectrum, '
+    #                   f'this can take a minute. Execute:\n{cmd}')
+    #             os.system(cmd)
+    #         else:
+    #             print(f'Using {file_name} for the velocity distribution')
+
+
+    def find_intermediate_result(self,  nbin=None, model=None, mw=None, sigma=None,
+                                 rho=None, v_0=None, v_esc=None,
+                                 poisson=None, det_conf=None):
+        '''
+        :return: exists (bool), the name, and if exists the spectrum
+        '''
+
+        assert 'DetectorSpectrum' in str(self.config['spectrum_class']), "Input detector spectrum"
+
+        # Name the file according to the main parameters. Note that for each of the main parameters
+        file_name = 'spectra/nbin-%i/model-%s/mw-%.2f/log_s-%.2f/rho-%.2f/v_0-%.1f/v_esc-%i/poisson_%i/spectrum'%(
+            self.config['n_energy_bins'] if nbin is None else nbin,
+            str(self.config['halo_model']) if model is None else str(model),
+            10 ** self.config['mw'] if mw is None else 10**mw,
+            self.config['sigma'] if sigma is None else sigma,
+            self.config['density'] if rho is None else rho,
+            self.config['v_0'] if v_0 is None else v_0,
+            self.config['v_esc'] if v_esc is None else v_esc,
+            int(self.config['poisson'] if poisson is None else poisson)
+        )
+
+        # Add all other parameters that are in the detector config
+        if det_conf is None:
+            det_conf = self.config['det_params']
+        for key in det_conf.keys():
+            if type(self.config['det_params'][key]) == types.FunctionType:
+                continue
+            file_name = file_name + '_' + str(self.config['det_params'][key])
+        file_name = file_name.replace(' ', '_')
+        file_name = file_name + '.csv'
+        file_path = get_result_folder() + '/' + file_name
+        data_at_path = os.path.exists(file_path)
+
+        if data_at_path:
+            binned_spectrum = pd.read_csv(file_path)
+        else:
+            binned_spectrum = None
+            check_folder_for_file(file_path, max_iterations=20)
+
+        if self.verbose:
+            print(f"StatModel::\t{now()}\n\tdata at {file_path} = {data_at_path}")
+        return data_at_path, file_path, binned_spectrum
+
+    def save_intermediate_result(self, binned_spectrum, spectrum_file):
+        '''
+        Save evaluated binned spectrum according to naming convention
+        :param binned_spectrum: evaluated spectrum
+        :param spectrum_file: name where to save the evaluated spectrum
+        :return:
+        '''
+        if self.verbose:
+            print(f"StatModel::\t{now()}\n\tsaving spectrum at {spectrum_file}")
+        binned_spectrum.to_csv(spectrum_file, index=False)
+
+
     def check_spectrum(self):
         if self.verbose:
             print(f"StatModel::\t{now()}\n\tevaluating\n\t\t{self.config['spectrum_class']}"
@@ -205,13 +301,26 @@ class StatModel:
                   f"\n\tsig = {10 ** self.config['sigma']}, "
                   f"\n\thalo model = \n\t\t{self.config['halo_model']} and "
                   f"\n\tdetector = \n\t\t{self.config['det_params']}")
+        if self.config['save_intermediate']:
+            if self.verbose:
+                print(f"StatModel::\t{now()}\n\tlooking for intermediate results")
+            interm_exists, interm_file, interm_spec = self.find_intermediate_result()
+            if interm_exists:
+                return interm_spec
+        # Initialize the spectrum class if:
+        # A) we are not saving intermediate results
+        # B) we haven't yet computed the desired intermediate spectrum
         spectrum = self.config['spectrum_class'](
             10 ** self.config['mw'],
             10 ** self.config['sigma'],
             self.config['halo_model'],
             self.config['det_params'])
         spectrum.n_bins = self.config['n_energy_bins']
-        return spectrum.get_data(poisson=self.config['poisson'])
+        binned_spectrum = spectrum.get_data(poisson=self.config['poisson'])
+
+        if self.config['save_intermediate']:
+            self.save_intermediate_result(binned_spectrum, interm_file)
+        return binned_spectrum
 
     def eval_benchmark(self):
         if self.verbose:
@@ -312,8 +421,28 @@ class StatModel:
             raise NotImplementedError(
                 f"Trying to fit a single parameter ({parameter_names}), such a "
                 f"feature is not implemented.")
+        if self.config['save_intermediate']:
+            if self.verbose:
+                print(f"StatModel::\teval_spectrum\tload results from intermediate file")
+            checked_values = check_shape(values)
+            spec_class = VerneSHM() if self.config['earth_shielding'] else self.config['halo_model']()
+            interm_exists, interm_file, interm_spec = self.find_intermediate_result(
+                nbin=self.config['n_energy_bins'],
+                model=str(spec_class),
+                mw=checked_values[0],
+                sigma=checked_values[1],
+                v_0=checked_values[2] if len(checked_values) > 2 else self.config['v_0'],
+                v_esc=checked_values[3] if len(checked_values) > 3 else self.config['v_esc'],
+                rho=checked_values[4] if len(checked_values) > 4 else self.config['density'],
+                poisson=False,
+                det_conf=self.config['det_params']
+            )
+            if interm_exists:
+                return interm_spec
+            elif self.verbose:
+                print(f"StatModel::\teval_spectrum\tNo file found, proceed and save intermediate result later")
         if len(parameter_names) == 2:
-            x0, x1 = check_shape(values)
+            x0, x1 = checked_values
             if (parameter_names[0] is 'log_mass' and parameter_names[1] is 'log_cross_section'):
                 # This is the right order
                 pass
@@ -338,6 +467,7 @@ class StatModel:
                     rho_dm=self.config['density'] * nu.GeV / nu.c0 ** 2 / nu.cm ** 3)
             else:
                 fit_shm = self.config['halo_model']
+
             spectrum = self.config['spectrum_class'](
                 10 ** x0,
                 10 ** x1,
@@ -346,7 +476,10 @@ class StatModel:
             spectrum.n_bins = self.config['n_energy_bins']
             if self.verbose > 1:
                 print(f"StatModel::\t{now()}\n\tSUPERVERBOSE\tAlright spectrum set. Evaluate now!")
-            return spectrum.get_data(poisson=False)
+            binned_spectrum = spectrum.get_data(poisson=False)
+            if self.config['save_intermediate']:
+                self.save_intermediate_result(binned_spectrum, interm_file)
+            return binned_spectrum
         elif len(parameter_names) == 5 or len(parameter_names) == 6:
             if not parameter_names == default_order[:len(parameter_names)]:
                 raise NameError(
@@ -383,11 +516,11 @@ class StatModel:
                                                      fit_shm,
                                                      self.config['det_params'])
             spectrum.n_bins = self.config['n_energy_bins']
-            result = spectrum.get_data(poisson=False)
+            binned_spectrum = spectrum.get_data(poisson=False)
             if self.verbose > 1:
                 print(f"StatModel::\t{now()}\n\tSUPERVERBOSE\twe have results!")
 
-            if np.any(result['counts'] < 0):
+            if np.any(binned_spectrum['counts'] < 0):
                 error_message = (f"statistics.py::Finding negative rates. Presumably v_esc"
                                  f" is too small ({values[3]})\nFull dump of parameters:\n"
                                  f"{parameter_names} = {values}.\nIf this occurs, one or "
@@ -406,15 +539,16 @@ class StatModel:
                 #                     halo_model = Shield_SHM)
                 if 'migd' in self.config['detector']:
                     print(error_message)
-                    mask = result['counts'] < 0
-                    result['counts'][mask] = 0
+                    mask = binned_spectrum['counts'] < 0
+                    binned_spectrum['counts'][mask] = 0
                 else:
                     raise ValueError(error_message)
             if self.verbose > 1:
                 print(f"StatModel::\t{now()}\n\tSUPERVERBOSE\treturning results")
-            return result
-        elif len(parameter_names) > 2 and not len(parameter_names) == 5 and \
-                not len(parameter_names) == 6:
+            if self.config['save_intermediate']:
+                self.save_intermediate_result(binned_spectrum, interm_file)
+            return binned_spectrum
+        elif len(parameter_names) > 2 and not len(parameter_names) == 5 and not len(parameter_names) == 6:
             raise NotImplementedError(
                 f"Not so quickly cowboy, before you code fitting "
                 f"{len(parameter_names)} parameters or more, first code it! "

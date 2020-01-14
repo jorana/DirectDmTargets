@@ -12,6 +12,7 @@ def check_folder_for_file(file_path, max_iterations=10):
     :param max_iterations: max number of lower lying subfolders
     '''
     last_folder = "/".join(file_path.split("/")[:-1])
+    max_iterations = np.min([max_iterations, len(file_path.split("/"))-1])
     if os.path.exists(last_folder):
         # Folder does exist. No need do anything.
         return
@@ -28,7 +29,7 @@ def check_folder_for_file(file_path, max_iterations=10):
                 print(f'check_save_folder::\tmaking {this_dir}')
                 os.mkdir(this_dir)
             base_dir = this_dir
-        assert_str = f'check_save_folder::\tsomething failed. Cannot find {file_path}'
+        assert_str = f'check_save_folder::\tsomething failed. Cannot find {last_folder}'
 
         assert os.path.exists(last_folder), assert_str
 
@@ -43,6 +44,10 @@ def now():
 
 def get_result_folder(current_folder='.'):
     folder = 'results/'
+    if not os.path.exists(folder):
+        folder = '../' + folder
+    if not os.path.exists(folder):
+        raise FileNotFoundError(f'Could not find {folder}')
     return folder
     # TODO
     # for i in range(10):
@@ -58,14 +63,16 @@ def get_verne_folder():
     folder = '../../verne/'
     if not os.path.exists(folder):
         folder = '../verne/'
+    if not os.path.exists(folder):
+        raise FileNotFoundError(f'Could not find {folder}')
     return folder
 
 
 if not os.path.exists(get_verne_folder()):
     raise FileNotFoundError(f"no folder at {get_verne_folder}")
 
-if not os.path.exists(get_result_folder()):
-    os.mkdir(get_result_folder())
+# if not os.path.exists(get_result_folder()):
+#     os.mkdir(get_result_folder())
 
 
 def is_savable_type(item):

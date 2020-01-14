@@ -298,4 +298,5 @@ class DetectorSpectrum(GenSpectrum):
         result['bin_left'] = bins[:, 0]
         result['bin_right'] = bins[:, 1]
         result = self.set_negative_to_zero(result)
+
         return result
