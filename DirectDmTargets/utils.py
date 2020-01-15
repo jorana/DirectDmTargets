@@ -5,7 +5,7 @@ import os
 from datetime import datetime
 
 
-def check_folder_for_file(file_path, max_iterations=10):
+def check_folder_for_file(file_path, max_iterations=30):
     '''
 
     :param file_path: path with one or more subfolders
@@ -29,6 +29,10 @@ def check_folder_for_file(file_path, max_iterations=10):
             assert os.path.exists(base_dir), assert_str
         # Start from 1 (since that is basedir) go until second to last since that is the file name
         for sub_dir in file_path.split("/")[start_i:max_iterations]:
+            # TODO
+            if ".csv" in sub_dir:
+                print("Error in this code, manually breaking but one should not end up here")
+                break
             this_dir = base_dir + "/" + sub_dir
             if not os.path.exists(this_dir):
                 print(f'check_save_folder::\tmaking {this_dir}')
@@ -36,7 +40,12 @@ def check_folder_for_file(file_path, max_iterations=10):
             base_dir = this_dir
         assert_str = f'check_save_folder::\tsomething failed. Cannot find {last_folder}'
 
-        assert os.path.exists(last_folder), assert_str
+        if not os.path.exists(last_folder):
+            print(file_path)
+            print(base_dir)
+            print(max_iterations)
+            print(last_folder)
+            assert False, assert_str
 
 
 def now():
