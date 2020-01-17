@@ -433,10 +433,10 @@ class StatModel:
             raise NotImplementedError(
                 f"Trying to fit a single parameter ({parameter_names}), such a "
                 f"feature is not implemented.")
+        checked_values = check_shape(values)
         if self.config['save_intermediate']:
             if self.verbose:
                 print(f"StatModel::\teval_spectrum\tload results from intermediate file")
-            checked_values = check_shape(values)
             spec_class = VerneSHM() if self.config['earth_shielding'] else self.config['halo_model']
             interm_exists, interm_file, interm_spec = self.find_intermediate_result(
                 nbin=self.config['n_energy_bins'],

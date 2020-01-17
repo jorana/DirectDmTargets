@@ -11,10 +11,11 @@ if 'stbc' in host or 'nikhef' in host:
                'verne_files' : '/dcache/xenon/jorana/dddm/verne/'}
 elif 'local' in host:
     # TODO
-    context = {'software_dir' : '../',
-               'results_dir' : get_results_folder() + '/dcache/jorana/dddm/results/',
-               'specta_files' : get_results_folder()  + '/spectra/',
-               'verne_files' : get_verne_folder()}
+    context = {'software_dir': '../',
+               'results_dir': '/mnt/c/Users/Joran/dddm_data/results/',
+               'specta_files': '/mnt/c/Users/Joran/dddm_data/spectra/',
+               'verne_files': '/mnt/c/Users/Joran/dddm_data/verne/'
+               }
 else:
     # TODO
     context = {'software_dir' : '/data/xenon/joranang/software/DD_DM_targets/',
