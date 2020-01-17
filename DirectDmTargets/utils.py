@@ -36,7 +36,11 @@ def check_folder_for_file(file_path, max_iterations=30):
             this_dir = base_dir + "/" + sub_dir
             if not os.path.exists(this_dir):
                 print(f'check_save_folder::\tmaking {this_dir}')
-                os.mkdir(this_dir)
+                try:
+                    os.mkdir(this_dir)
+                except FileExistsError:
+                    print("This is strange. We got a FileExistsError for a path to be made, maybe another instance has created this path too")
+                    pass
             base_dir = this_dir
         assert_str = f'check_save_folder::\tsomething failed. Cannot find {last_folder}'
 

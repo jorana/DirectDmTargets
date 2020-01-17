@@ -149,7 +149,7 @@ class StatModel:
         :param spec: class used to generate the response of the spectrum in the
         detector
         """
-
+        
         if self.config['earth_shielding']:
             if self.verbose:
                 print(f'StatModel::\t{now()}\n\tsetting model to VERNE model')
@@ -172,9 +172,15 @@ class StatModel:
                 v_esc=self.config['v_esc'] * nu.km / nu.s,
                 rho_dm=self.config['density'] * nu.GeV / nu.c0 ** 2 / nu.cm ** 3
             )
+        if self.config['earth_shielding']:
+            self.config['save_intermediate'] = True
+        else:
+            self.config['save_intermediate'] = False
+        if self.verbose:
+            print(f'StatModel::\t{now()}\n\tsave_intermediate:\n\t\t{self.config["save_intermediate"]}')
 
         self.config['spectrum_class'] = spec if spec != 'default' else DetectorSpectrum
-
+        
         if halo_model != 'default' or spec != 'default':
             print(f"StatModel::\t{now()}\n\tre-evaluate benchmark")
             self.eval_benchmark()
@@ -293,7 +299,11 @@ class StatModel:
         '''
         if self.verbose:
             print(f"StatModel::\t{now()}\n\tsaving spectrum at {spectrum_file}")
-        binned_spectrum.to_csv(spectrum_file, index=False)
+        try:
+            binned_spectrum.to_csv(spectrum_file, index=False)
+        except PermissionError:
+            # While computing the spectrum another instance has saved a file with the same name
+            pass
 
 
     def check_spectrum(self):
@@ -427,7 +437,7 @@ class StatModel:
             if self.verbose:
                 print(f"StatModel::\teval_spectrum\tload results from intermediate file")
             checked_values = check_shape(values)
-            spec_class = VerneSHM() if self.config['earth_shielding'] else self.config['halo_model']()
+            spec_class = VerneSHM() if self.config['earth_shielding'] else self.config['halo_model']
             interm_exists, interm_file, interm_spec = self.find_intermediate_result(
                 nbin=self.config['n_energy_bins'],
                 model=str(spec_class),

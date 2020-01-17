@@ -10,6 +10,7 @@ results/test*
 results/nestle*
 results/emcee*
 results/*
+/notebooks/figures/*
 .ipynb_checkpoints/*
 notebooks/.ipynb_checkpoints/*
 notebooks/.ipynb_checkpoints*

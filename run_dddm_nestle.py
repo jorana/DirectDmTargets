@@ -77,7 +77,10 @@ stats = dddm.NestleStatModel(args.target, args.verbose)
 if args.shielding != "default":
     yes_or_no = {"yes" : True, "no" : False}
     stats.config['earth_shielding'] = yes_or_no[args.shielding]
+    print(yes_or_no[args.shielding])
     stats.set_models()
+else:
+    assert False
 stats.config['poisson'] = args.poisson
 stats.config['notes'] = args.notes
 stats.config['n_energy_bins'] = args.bins
