@@ -12,7 +12,7 @@ import nestle
 from .halo import *
 from .statistics import *
 from .utils import *
-from pymultinest.solve import solve as multinest_solve
+from pymultinest.solve import solve
 
 def default_nested_save_dir():
     return 'nested'
@@ -188,13 +188,14 @@ class NestedSamplerStatModel(StatModel):
                       f"algorithms to give you info, see you soon!")
             start = datetime.now()
             save_at = self.get_save_dir() + 'multinest'
-            mulinest_solve(
+            self.result = solve(
                 LogLikelihood=self._log_probability_nested,
                 Prior=self._log_prior_transform_nested,
+                n_live_points = self.nlive,
                 n_dims=ndim,
                 outputfiles_basename=save_at,
                 verbose=True,
-                tol = tol
+                evidence_tolerance = tol
                 )
             end = datetime.now()
             dt = end - start
