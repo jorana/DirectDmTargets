@@ -21,6 +21,14 @@ Install verne from source:
 
 ``git clone https://github.com/jorana/verne.git``
 
+``git clone https://github.com/JohannesBuchner/PyMultiNest``
+
+``pip install -e PyMultiNest``
+
+``conda install -c conda-forge multinest``
+
+``conda install -c conda-forge/label/cf201901 multinest ``
+
 ``git clone https://github.com/jorana/DD_DM_targets.git``
 
 ``cd DD_DM_targets``
@@ -28,6 +36,8 @@ Install verne from source:
 ``pip install -r requirements.txt``
 
 ``python setup.py install``
+
+
 
 
 
