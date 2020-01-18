@@ -299,6 +299,9 @@ class StatModel:
         '''
         if self.verbose:
             print(f"StatModel::\t{now()}\n\tsaving spectrum at {spectrum_file}")
+        if os.path.exists(spectrum_file):
+            # Do not try overwriting existing files.
+            return
         try:
             binned_spectrum.to_csv(spectrum_file, index=False)
         except PermissionError:

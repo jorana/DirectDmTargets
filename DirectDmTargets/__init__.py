@@ -7,3 +7,4 @@ from .detector import *
 # from .plot_basics import *
 from .emcee_applications import *
 from .nestle import *
+from .nested_sampling import *
