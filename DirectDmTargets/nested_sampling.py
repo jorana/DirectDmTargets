@@ -102,10 +102,15 @@ class NestedSamplerStatModel(StatModel):
                   f"to read the priors")
         if self.config['prior'][x_name]['prior_type'] == 'flat':
             a, b = self.config['prior'][x_name]['param']
+            # Prior transform of a flat prior is a simple line.
             return x * (b - a) + a
         elif self.config['prior'][x_name]['prior_type'] == 'gauss':
+            # Get the range from the config file
             a, b = self.config['prior'][x_name]['range']
             m, s = self.config['prior'][x_name]['param']
+
+            # Here the prior transform is being constructed and shifted. This may not seem trivial
+            # and one is advised to request a notebook where this is explained from the developer(s).
             aprime = spsp.ndtr((a - m) / s)
             bprime = spsp.ndtr((b - m) / s)
             xprime = x * (bprime - aprime) + aprime

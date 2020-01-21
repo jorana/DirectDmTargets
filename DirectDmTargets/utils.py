@@ -3,7 +3,7 @@
 import numpy as np
 import os
 from datetime import datetime
-
+from .context import *
 
 def check_folder_for_file(file_path, max_iterations=30):
     '''
@@ -60,40 +60,46 @@ def now():
     return datetime.now().isoformat(timespec='minutes')
 
 
-def get_result_folder(current_folder='.'):
-    folder = 'results/'
+def load_folder_from_context(request):
+    '''
+
+    :param request: request a named path from the context
+    :return: the path that is requested
+    '''
+    try:
+        folder = context['request']
+    except KeyError as e:
+        print(f'load_folder_from_context::\tRequesting {request} but that is not in {context.keys()}')
+        raise e
     if not os.path.exists(folder):
-        folder = '../' + folder
-    if not os.path.exists(folder):
-        raise FileNotFoundError(f'Could not find {folder}')
+        raise FileNotFoundError(f'load_folder_from_context::\tCould not find {folder}')
+    # Should end up here:
     return folder
-    # TODO
-    # for i in range(10):
-    #     if os.path.exists(current_folder + folder):
-    #         return current_folder + folder
-    #     else:
-    #         folder = '../' + folder
-    # raise FileNotFoundError(f'No folder was found between {current_folder} and {folder}')
 
 
-# TODO UGLY
+def get_result_folder(*args):
+    '''
+    bridge to work with old code when context was not yet implemented
+    '''
+    if args:
+        print(f'get_result_folder::\tfunctionallity depcricated ignoring {args}')
+    print(f'get_result_folder::\trequested folder is {context["results_dir"]}')
+    return load_folder_from_context('results_dir')
+
+
 def get_verne_folder():
-    folder = '../../verne/'
-    if not os.path.exists(folder):
-        folder = '../verne/'
-    if not os.path.exists(folder):
-        raise FileNotFoundError(f'Could not find {folder}')
-    return folder
-
-
-if not os.path.exists(get_verne_folder()):
-    raise FileNotFoundError(f"no folder at {get_verne_folder}")
-
-# if not os.path.exists(get_result_folder()):
-#     os.mkdir(get_result_folder())
+    '''
+    bridge to work with old code when context was not yet implemented
+    '''
+    return load_folder_from_context('verne_files')
 
 
 def is_savable_type(item):
+    '''
+
+    :param item: input of any type.
+    :return: bool if the type is saveable by checking if it is in a limitative list
+    '''
     if type(item) in [list, np.array, np.ndarray, int, str, np.int, np.float,
                       bool, np.float64]:
         return True
@@ -101,6 +107,11 @@ def is_savable_type(item):
 
 
 def convert_dic_to_savable(config):
+    '''
+
+    :param config: some dictionary to save
+    :return: string-like object that should be savable.
+    '''
     result = config.copy()
     for key in result.keys():
         if is_savable_type(result[key]):
@@ -113,11 +124,18 @@ def convert_dic_to_savable(config):
 
 
 def open_save_dir(save_dir, force_index=False):
+    '''
+
+    :param save_dir: requested name of folder to open in the result folder
+    :param force_index: option to force to write to a number (must be an override!)
+    :return: the name of the folder as was saveable (usually input + some number)
+    '''
     base = get_result_folder()
     save = save_dir
     files = os.listdir(base)
     files = [f for f in files if save in f]
     if not save + '0' in files and not force_index:
+        # First file in the results folder with this name
         index = 0
     elif force_index is False:
         index = 0
@@ -131,9 +149,11 @@ def open_save_dir(save_dir, force_index=False):
                 pass
     else:
         index = force_index
+    # this is where we going to save
     save_dir = base + save + str(index) + '/'
     print('open_save_dir::\tusing ' + save_dir)
     if force_index is False:
+        assert not os.path.exists(save_dir), 'Trying to override another directory, this would be very messy'
         os.mkdir(save_dir)
     else:
         assert os.path.exists(save_dir), "specify existing directory, exit"
