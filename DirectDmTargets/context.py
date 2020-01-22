@@ -9,6 +9,7 @@ if 'stbc' in host or 'nikhef' in host:
     context = {'software_dir': '/data/xenon/joranang/software/DD_DM_targets/',
                'results_dir': '/dcache/xenon/jorana/dddm/results/',
                'specta_files': '/dcache/xenon/jorana/dddm/spectra/',
+               'verne_folder': '/data/xenon/joranang/software/verne/',
                'verne_files': '/dcache/xenon/jorana/dddm/verne/'}
 elif host == 'DESKTOP-EC5OUSI.localdomain':
     context = {'software_dir': '/home/joran/google_drive/windows-anaconda/DD_DM_targets/',

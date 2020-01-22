@@ -263,15 +263,16 @@ class VerneSHM:
 
         # set up folders and names
 #         folder = get_verne_folder() + 'results/veldists/'
-        folder = context['verne_files']
+        file_folder = context['verne_files']
+        software_folder = context['verne_folder']                         
         # TODO
         #  This is a statement to get the data faster, i.e. take a short-cut (we
         #  only compute 2 angles and take the average)
         low_n_gamma = False
         if low_n_gamma:
             self.fname = 'tmp_' + self.fname
-        file_name = folder + self.fname + '_avg' + '.csv'
-        check_folder_for_file(folder + self.fname)
+        file_name = file_folder + self.fname + '_avg' + '.csv'
+        check_folder_for_file(file_folder + self.fname)
 
         # if no data available here, we need to make it
         if not os.path.exists(file_name):
@@ -279,7 +280,7 @@ class VerneSHM:
             args = f'-m_x {10 ** self.log_mass} ' \
                    f'-sigma_p {10 ** self.log_cross_section} ' \
                    f'-loc {self.location} ' \
-                   f'-path "{get_verne_folder()}/src/" ' \
+                   f'-path "{software_folder}/src/" ' \
                    f'-v_0 {self.v_0_nodim} ' \
                    f'-v_esc {self.v_esc_nodim} ' \
                    f'-save_as "{file_name}" '
@@ -287,7 +288,7 @@ class VerneSHM:
                 # Set N_gamma low for faster computation (only two angles)
                 args += f' -n_gamma 2'
 
-            cmd = f'python "{get_verne_folder()}"{pyfile} {args}'
+            cmd = f'python "{software_folder}"{pyfile} {args}'
             print(f'No spectrum found at:\n{file_name}\nGenerating spectrum, '
                   f'this can take a minute. Execute:\n{cmd}')
             os.system(cmd)

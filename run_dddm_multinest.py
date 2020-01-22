@@ -82,6 +82,7 @@ if args.shielding != "default":
     stats.set_models()
 else:
     assert False
+stats.config['save_intermediate'] = True
 stats.config['poisson'] = args.poisson
 stats.config['notes'] = args.notes
 stats.config['n_energy_bins'] = args.bins
@@ -91,6 +92,7 @@ stats.fit_parameters = stats.known_parameters[:args.nparams]
 stats.set_benchmark(mw=args.mw, sigma=args.cross_section)
 stats.eval_benchmark()
 stats.nlive = args.nlive
+stats.config['nlive']= args.nlive
 stats.tol = args.tol
 stats.run_nestle()
 stats.save_results()

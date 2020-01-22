@@ -242,8 +242,7 @@ class NestedSamplerStatModel(StatModel):
                 if "log_" in name:
                     resdict[name[4:] + "_fit_res"] = "%.3g +/- %.2g" % (10 ** col.mean(), 10 ** (col.mean()) * np.log(10) * col.std())
                     print('\t', name[4:], resdict[name[4:] + "_fit_res"])
-
-        if self.sampler == 'nestle':
+        elif self.sampler == 'nestle':
             # taken from mattpitkin.github.io/samplers-demo/pages/samplers-samplers-everywhere/#Nestle
             # estimate of the statistical uncertainty on logZ
             logZerrnestle = np.sqrt(self.result.h / self.nlive)

@@ -67,10 +67,10 @@ def load_folder_from_context(request):
     :return: the path that is requested
     '''
     try:
-        folder = context['request']
-    except KeyError as e:
+        folder = context[request]
+    except KeyError:
         print(f'load_folder_from_context::\tRequesting {request} but that is not in {context.keys()}')
-        raise e
+        raise KeyError
     if not os.path.exists(folder):
         raise FileNotFoundError(f'load_folder_from_context::\tCould not find {folder}')
     # Should end up here:
