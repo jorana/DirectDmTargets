@@ -302,6 +302,9 @@ class NestedSamplerStatModel(StatModel):
         np.save(save_dir + 'res_dict.npy', convert_dic_to_savable(fit_summary))
         for col in self.result.keys():
             if col == 'samples' or type(col) is not dict:
+                if self.sampler == 'multinest' and col == 'samples':
+                    # in contrast to nestle, multinest returns the weighted samples.
+                    col = 'weighted_samples'
                 np.save(save_dir + col + '.npy', self.result[col])
             else:
                 np.save(save_dir + col + '.npy',
