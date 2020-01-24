@@ -164,7 +164,7 @@ class MCMCStatModel(StatModel):
         if not self.log['did_run']:
             self.run_emcee()
         # open a folder where to save to results
-        save_dir = open_save_dir(default_emcee_save_dir(), force_index)
+        save_dir = open_save_dir(default_emcee_save_dir(), force_index = force_index)
         # save the config, chain and flattened chain
         with open(save_dir + 'config.json', 'w') as fp:
             json.dump(convert_dic_to_savable(self.config), fp, indent=4)

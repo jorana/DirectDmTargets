@@ -8,11 +8,13 @@ from scipy import special as spsp
 import corner
 import matplotlib.pyplot as plt
 import nestle
+import shutil
 
 from .halo import *
 from .statistics import *
 from .utils import *
 from pymultinest.solve import solve
+from .context import *
 
 def default_nested_save_dir():
     return 'nested'
@@ -176,6 +178,8 @@ class NestedSamplerStatModel(StatModel):
         if self.verbose:
             print(f"NestedSamplerStatModel::\t{now()}\n\tFinished with running optimizer!")
 
+
+
     def run_multinest(self):
         assert self.sampler == 'multinest', f'Trying to run multinest but initialization requires {self.sampler}'
         if self.verbose:
@@ -194,16 +198,33 @@ class NestedSamplerStatModel(StatModel):
                       f"I can say, you'll have to wait for my lower level "
                       f"algorithms to give you info, see you soon!")
             start = datetime.now()
-            save_at = self.get_save_dir() + 'multinest'
-            self.result = solve(
-                LogLikelihood=self._log_probability_nested,
-                Prior=self._log_prior_transform_nested,
-                n_live_points = self.nlive,
-                n_dims=ndim,
-                outputfiles_basename=save_at,
-                verbose=True,
-                evidence_tolerance = tol
-                )
+
+            # Multinest saves output to a folder. First write to the tmp folder, move it to the results folder later
+            tmp_folder = self.get_tmp_dir()
+            save_at_temp = tmp_folder + 'multinest'
+
+            # Need try except for making sure the tmp folder is removed
+            try:
+                self.result = solve(
+                    LogLikelihood=self._log_probability_nested,
+                    Prior=self._log_prior_transform_nested,
+                    n_live_points=self.nlive,
+                    n_dims=ndim,
+                    outputfiles_basename=save_at_temp,
+                    verbose=True,
+                    evidence_tolerance=tol
+                    )
+            except:
+                print(f"run_multinest::\tFAILED. Remove tmp folder!")
+                shutil.rmtree(tmp_folder)
+                assert False, "run_multinest failed"
+
+            # Open a save-folder after succesfull running multinest. Move the multinest results there.
+            save_at = self.get_save_dir()
+            check_folder_for_file(save_at)
+            shutil.move(tmp_folder, save_at)
+            assert not os.path.exists(tmp_folder), f"the tmp folder {tmp_folder} was not moved correctly to {save_at}"
+
             end = datetime.now()
             dt = end - start
             print(f"run_multinest::\t{now()}\n\tfit_done in %i s (%.1f h)" % (dt.seconds, dt.seconds / 3600.))
@@ -211,7 +232,7 @@ class NestedSamplerStatModel(StatModel):
                 print(f"NestedSamplerStatModel::\t{now()}\n\tSUPERVERBOSE\tWe're back!")
         except ValueError as e:
             print(f"Multinest did not finish due to a ValueError. Was running with"
-                  f"\n{len(self.fit_parameters)} for fit ""parameters " f"{self.fit_parameters}")
+                  f"\n{len(self.fit_parameters)} for fit parameters {self.fit_parameters}")
             raise e
         self.log['did_run'] = True
         try:
@@ -274,9 +295,13 @@ class NestedSamplerStatModel(StatModel):
         return resdict
 
     def get_save_dir(self, force_index = False):
-        save_dir = open_save_dir(f'{default_nested_save_dir()}_{self.sampler}', force_index)
+        save_dir = open_save_dir(f'{default_nested_save_dir()}_{self.sampler}', force_index=force_index)
         self.log['saved_in'] = save_dir
         return save_dir
+
+    def get_tmp_dir(self, force_index = False):
+        tmp_dir = open_save_dir(f'{self.sampler}', base=context["tmp_folder"], force_index=force_index)
+        return tmp_dir
 
     def save_results(self, force_index=False):
         if self.verbose:
@@ -304,8 +329,9 @@ class NestedSamplerStatModel(StatModel):
             if col == 'samples' or type(col) is not dict:
                 if self.sampler == 'multinest' and col == 'samples':
                     # in contrast to nestle, multinest returns the weighted samples.
-                    col = 'weighted_samples'
-                np.save(save_dir + col + '.npy', self.result[col])
+                    np.save(save_dir + 'weighted_samples.npy', self.result[col])
+                else:
+                    np.save(save_dir + col + '.npy', self.result[col])
             else:
                 np.save(save_dir + col + '.npy',
                         convert_dic_to_savable(self.result[col]))

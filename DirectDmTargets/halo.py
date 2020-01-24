@@ -272,7 +272,7 @@ class VerneSHM:
         if low_n_gamma:
             self.fname = 'tmp_' + self.fname
         file_name = file_folder + self.fname + '_avg' + '.csv'
-        check_folder_for_file(file_folder + self.fname)
+        check_folder_for_file(file_folder + self.fname, verbose=0)
 
         # if no data available here, we need to make it
         if not os.path.exists(file_name):

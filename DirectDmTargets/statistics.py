@@ -300,7 +300,7 @@ class StatModel:
             binned_spectrum = pd.read_csv(file_path)
         else:
             binned_spectrum = None
-            check_folder_for_file(file_path, max_iterations=20)
+            check_folder_for_file(file_path, max_iterations=20, verbose=0)
 
         if self.verbose:
             print(f"StatModel::\t{now()}\n\tdata at {file_path} = {data_at_path}")

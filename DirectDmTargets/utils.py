@@ -24,7 +24,7 @@ def check_folder_for_file(file_path, max_iterations=30, verbose = 1):
         else:
             base_dir = file_path.split("/")[0]
             start_i = 1
-            assert_str = f"check_save_folder::\tstarting from a folder " \
+            assert_str = f"check_folder_for_file::\tstarting from a folder " \
                          f"({base_dir}) that cannot be found"
             assert os.path.exists(base_dir), assert_str
         # Start from 1 (since that is basedir) go until second to last since that is the file name
@@ -36,14 +36,14 @@ def check_folder_for_file(file_path, max_iterations=30, verbose = 1):
             this_dir = base_dir + "/" + sub_dir
             if not os.path.exists(this_dir):
                 if verbose:
-                    print(f'check_save_folder::\tmaking {this_dir}')
+                    print(f'check_folder_for_file::\tmaking {this_dir}')
                 try:
                     os.mkdir(this_dir)
                 except FileExistsError:
                     print("This is strange. We got a FileExistsError for a path to be made, maybe another instance has created this path too")
                     pass
             base_dir = this_dir
-        assert_str = f'check_save_folder::\tsomething failed. Cannot find {last_folder}'
+        assert_str = f'check_folder_for_file::\tsomething failed. Cannot find {last_folder}'
 
         if not os.path.exists(last_folder):
             print(file_path)
@@ -124,14 +124,16 @@ def convert_dic_to_savable(config):
     return result
 
 
-def open_save_dir(save_dir, force_index=False):
+def open_save_dir(save_dir, base = None, force_index=False):
     '''
 
     :param save_dir: requested name of folder to open in the result folder
+    :param base: folder where the save dir is to be saved in. This is the results folder by default
     :param force_index: option to force to write to a number (must be an override!)
     :return: the name of the folder as was saveable (usually input + some number)
     '''
-    base = get_result_folder()
+    if base is None:
+        base = get_result_folder()
     save = save_dir
     files = os.listdir(base)
     files = [f for f in files if save in f]
