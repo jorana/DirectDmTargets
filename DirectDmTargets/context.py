@@ -13,6 +13,7 @@ if 'stbc' in host or 'nikhef' in host:
                'verne_files': '/dcache/xenon/jorana/dddm/verne/'}
     if 'TMPDIR' in os.environ.keys():
         tmp_folder = os.environ['TMPDIR']
+        print(f'found TMPDIR! on {host}')
     elif os.path.exists('/tmp/'):
         print("Setting tmp folder to /tmp/")
         tmp_folder = '/tmp/'

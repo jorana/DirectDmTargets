@@ -395,6 +395,16 @@ def load_nestle_samples_from_file(load_dir):
     print(f"load_nestle_samples::\t{now()}\n\tdone loading\naccess result with:\n{keys}")
     return result
 
+def load_multinest_samples_from_file(load_dir):
+    keys = ['config', 'res_dict', 'wighted_samples']
+    result = {}
+    for key in keys:
+        result[key] = np.load(load_dir + key + '.npy', allow_pickle=True)
+        if key is 'config' or key is 'res_dict':
+            result[key] = result[key].item()
+    print(f"load_multinest_samples_from_file::\t{now()}\n\tdone loading\naccess result with:\n{keys}")
+    return result
+
 
 def nestle_corner(result, save=False):
     info = "$M_\chi}$=%.2f" % 10 ** np.float(result['config']['mw'])
