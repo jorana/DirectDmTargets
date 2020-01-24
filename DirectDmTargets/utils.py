@@ -5,7 +5,7 @@ import os
 from datetime import datetime
 from .context import *
 
-def check_folder_for_file(file_path, max_iterations=30):
+def check_folder_for_file(file_path, max_iterations=30, verbose = 1):
     '''
 
     :param file_path: path with one or more subfolders
@@ -35,7 +35,8 @@ def check_folder_for_file(file_path, max_iterations=30):
                 break
             this_dir = base_dir + "/" + sub_dir
             if not os.path.exists(this_dir):
-                print(f'check_save_folder::\tmaking {this_dir}')
+                if verbose:
+                    print(f'check_save_folder::\tmaking {this_dir}')
                 try:
                     os.mkdir(this_dir)
                 except FileExistsError:

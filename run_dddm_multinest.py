@@ -94,7 +94,7 @@ stats.eval_benchmark()
 stats.nlive = args.nlive
 stats.config['nlive']= args.nlive
 stats.tol = args.tol
-stats.run_nestle()
+# stats.run_nestle()
 stats.save_results()
 assert stats.log['did_run']
 

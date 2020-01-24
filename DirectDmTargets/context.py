@@ -15,6 +15,7 @@ elif host == 'DESKTOP-EC5OUSI.localdomain':
     context = {'software_dir': '/home/joran/google_drive/windows-anaconda/DD_DM_targets/',
                'results_dir': '/mnt/c/Users/Joran/dddm_data/results/',
                'specta_files': '/mnt/c/Users/Joran/dddm_data/spectra/',
+               'verne_folder': '/home/joran/google_drive/windows-anaconda/verne/',
                'verne_files': '/mnt/c/Users/Joran/dddm_data/verne/'}
 else:
     print(f'context.py::\tunknown host {host} be carefull here')
@@ -22,8 +23,10 @@ else:
     context = {'software_dir': '../../DD_DM_targets/',
                'results_dir': '../../DD_DM_targets/data/results/',
                'specta_files': '../../DD_DM_targets/data/results/spectra/',
+               'verne_folder': '../../verne/',
                'verne_files': '../../verne/'}
     for name in ['results_dir', 'specta_files']:
+        print(f'context.py::\tlooking for {name} in {context["name"]}')
         if not os.path.exists(context['name']):
             try:
                 os.mkdir(context['name'])

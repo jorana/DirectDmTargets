@@ -30,7 +30,7 @@ class NestedSamplerStatModel(StatModel):
         self.config['start'] = datetime.now()  # .date().isoformat()
         self.config['notes'] = "default"
         self.result = False
-        self.save_dir = False
+        # self.save_dir = False
         self.set_fit_parameters(['log_mass', 'log_cross_section'])
         if self.verbose:
             print(f'NestedSamplerStatModel::\t{now()}\n\tVERBOSE ENABLED')
@@ -98,7 +98,7 @@ class NestedSamplerStatModel(StatModel):
 
     def log_prior_transform_nested(self, x, x_name):
         if self.verbose > 1:
-            print(f"NestedSamplerStatModel::\t{now()}\n\tSUPERVERBOSE\tdoing some transformations for nestle "
+            print(f"NestedSamplerStatModel::\t{now()}\n\tSUPERVERBOSE\tdoing some transformations for nestle/multinest "
                   f"to read the priors")
         if self.config['prior'][x_name]['prior_type'] == 'flat':
             a, b = self.config['prior'][x_name]['param']
@@ -136,6 +136,7 @@ class NestedSamplerStatModel(StatModel):
         return np.array(result)
 
     def run_nestle(self):
+        assert self.sampler == 'nestle', f'Trying to run nestle but initialization requires {self.sampler}'
         if self.verbose:
             print(f"NestedSamplerStatModel::\t{now()}\n\tWe made it to my core function, lets do that optimization")
         method = 'multi'  # use MutliNest algorithm
@@ -173,9 +174,10 @@ class NestedSamplerStatModel(StatModel):
         except NameError:
             self.config['fit_time'] = -1
         if self.verbose:
-            print(f"NestedSamplerStatModel::\t{now()}\n\tFinished with running nestle!")
+            print(f"NestedSamplerStatModel::\t{now()}\n\tFinished with running optimizer!")
 
     def run_multinest(self):
+        assert self.sampler == 'multinest', f'Trying to run multinest but initialization requires {self.sampler}'
         if self.verbose:
             print(f"NestedSamplerStatModel::\t{now()}\n\tWe made it to my core function, lets do that optimization")
         # method = 'multi'  # use MutliNest algorithm
@@ -285,10 +287,12 @@ class NestedSamplerStatModel(StatModel):
         self.check_did_run()
         if not self.log['saved_in']:
             save_dir = self.get_save_dir(force_index=force_index)
+        else:
+            save_dir = self.log['saved_in']
         fit_summary = self.get_summary()
         if self.verbose:
             print(f"NestedSamplerStatModel::\t{now()}\n\tAllright all set, let put all that info"
-                  f" in {self.save_dir} and be done with it")
+                  f" in {save_dir} and be done with it")
         # save the config, chain and flattened chain
         with open(save_dir + 'config.json', 'w') as file:
             json.dump(convert_dic_to_savable(self.config), file, indent=4)
@@ -298,9 +302,9 @@ class NestedSamplerStatModel(StatModel):
         np.save(save_dir + 'res_dict.npy', convert_dic_to_savable(fit_summary))
         for col in self.result.keys():
             if col == 'samples' or type(col) is not dict:
-                np.save(self.save_dir + col + '.npy', self.result[col])
+                np.save(save_dir + col + '.npy', self.result[col])
             else:
-                np.save(self.save_dir + col + '.npy',
+                np.save(save_dir + col + '.npy',
                         convert_dic_to_savable(self.result[col]))
         self.log['saved_in'] = save_dir
         print("save_results::\t{now()}\n\tdone_saving")
