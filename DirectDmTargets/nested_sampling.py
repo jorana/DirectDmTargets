@@ -232,7 +232,7 @@ class NestedSamplerStatModel(StatModel):
         resdict = {}
 
         if self.sampler == 'multinest':
-            print('evidence: %(logZ).1f +- %(logZerr).1f' % self.result)
+#             print('evidence: %(logZ).1f +- %(logZerr).1f' % self.result)
             print('parameter values:')
             for name, col in zip(self.fit_parameters, self.result['samples'].transpose()):
                 print('%15s : %.3f +- %.3f' % (name, col.mean(), col.std()))
