@@ -47,7 +47,7 @@ Install verne from source:
 
 ``conda create -n dddm numpy scipy git python=3.7 matplotlib pandas ipython jupyter numba``
 
-``conda activate DD_DM``
+``conda activate dddm``
 
 ``conda install -c conda-forge emcee`` 
 
