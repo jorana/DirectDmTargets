@@ -9,6 +9,9 @@ from .utils import now, get_result_folder
 from .context import *
 import types
 
+# Set a lower bound to the loglikekyhood (this becomes a problem due to machine precition.
+LL_LOW_BOUND = 1e-100 # 1e-300
+
 def get_priors(priors_from="Evans_2019"):
     """
     :return: dictionary of priors, type and values
@@ -603,7 +606,7 @@ def log_likelihood_function(nb, nr):
         # For i~0, machine precision sets nr to 0. However, this becomes a
         # little problematic since the Poisson log likelihood for 0 is not
         # defined. Hence we cap it off by setting nr to 10^-300.
-        nr = 1e-300
+        nr = LL_LOW_BOUND
     return np.log(nr) * nb - loggamma(nb + 1) - nr
 
 
