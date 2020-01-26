@@ -45,7 +45,7 @@ Install verne from source:
 # You may also do something like:
  - make a new conda env:
 
-``conda create -n DD_DM numpy scipy git python=3.7 matplotlib pandas ipython jupyter numba nestle``
+``conda create -n dddm numpy scipy git python=3.7 matplotlib pandas ipython jupyter numba``
 
 ``conda activate DD_DM``
 
