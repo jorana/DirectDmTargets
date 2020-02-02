@@ -6,10 +6,10 @@ host = getfqdn()
 print(f'Host: {host}')
 
 if 'stbc' in host or 'nikhef' in host:
-    context = {'software_dir': '/data/xenon/joranang/software/DD_DM_targets/',
+    context = {'software_dir': '/project/xenon/jorana/software/DD_DM_targets/',
                'results_dir': '/dcache/xenon/jorana/dddm/results/',
                'specta_files': '/dcache/xenon/jorana/dddm/spectra/',
-               'verne_folder': '/data/xenon/joranang/software/verne/',
+               'verne_folder': '/project/xenon/jorana/software/verne/',
                'verne_files': '/dcache/xenon/jorana/dddm/verne/'}
     if 'TMPDIR' in os.environ.keys():
         tmp_folder = os.environ['TMPDIR']
@@ -17,7 +17,11 @@ if 'stbc' in host or 'nikhef' in host:
     elif os.path.exists('/tmp/'):
         print("Setting tmp folder to /tmp/")
         tmp_folder = '/tmp/'
-        if not host == 'stbc-i1.nikhef.nl' or 'stbc-i2.nikhef.nl':
+        if host == 'stbc-i1.nikhef.nl' or host == 'stbc-i2.nikhef.nl':
+            # Fine, we can use the /tmp/ folder
+            pass
+        else:
+            # Not fine, we cannot use the /tmp/ folder on the stoomboot nodes
             print(f'No tmp folder found on {host}. Envorionment vars:')
             for key in os.environ.keys():
                 print(key)
