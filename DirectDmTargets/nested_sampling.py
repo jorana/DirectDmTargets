@@ -255,12 +255,9 @@ class NestedSamplerStatModel(StatModel):
         resdict = {}
 
         if self.sampler == 'multinest':
-#             print('evidence: %(logZ).1f +- %(logZerr).1f' % self.result)
             print('parameter values:')
             for name, col in zip(self.fit_parameters, self.result['samples'].transpose()):
                 print('%15s : %.3f +- %.3f' % (name, col.mean(), col.std()))
-                # TODO
-                #  add weights?
                 resdict[name + "_fit_res"] = ("{0:5.2f} +/- {1:5.2f}".format(col.mean(),col.std()))
                 if "log_" in name:
                     resdict[name[4:] + "_fit_res"] = "%.3g +/- %.2g" % (10 ** col.mean(), 10 ** (col.mean()) * np.log(10) * col.std())

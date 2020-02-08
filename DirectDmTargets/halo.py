@@ -271,11 +271,15 @@ class VerneSHM:
         low_n_gamma = False
         if low_n_gamma:
             self.fname = 'tmp_' + self.fname
-        file_name = file_folder + self.fname + '_avg' + '.csv'
+#         file_name = file_folder + self.fname + '_avg' + '.csv'
+        file_name = file_folder + self.fname +'_' + host + '_avg' + '.csv'
         check_folder_for_file(file_folder + self.fname, verbose=0)
-
+    
+        files_in_folder = os.listdir(file_folder + '/')
+        
+        print(f'VerneSHM::\tlooking for {self.fname} in {file_folder}. That folder has {files_in_folder}. \n\tHas file?\n{self.fname in files_in_folder}'
         # if no data available here, we need to make it
-        if not os.path.exists(file_name):
+        if not os.path.exists(file_name) and not (self.fname in files_in_folder):
             pyfile = '/src/CalcVelDist.py'
             args = f'-m_x {10 ** self.log_mass} ' \
                    f'-sigma_p {10 ** self.log_cross_section} ' \
@@ -292,6 +296,8 @@ class VerneSHM:
             print(f'No spectrum found at:\n{file_name}\nGenerating spectrum, '
                   f'this can take a minute. Execute:\n{cmd}')
             os.system(cmd)
+        elif self.fname in files_in_folder:
+            file_name = str_in_list(self.fname, files_in_folder)
         else:
             print(f'Using {file_name} for the velocity distribution')
 
@@ -316,7 +322,12 @@ class VerneSHM:
             self.load_f()
         return self.itp_func(v, t)
 
-
+# todo move to utils
+def str_in_list(string, _list):
+    for name in _list:
+        if string in name:
+            return name
+    
 # class ContinuousVerneSHM:
 #     """
 #         class used to pass a halo model to the rate computation based on the

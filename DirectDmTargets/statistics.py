@@ -284,7 +284,7 @@ class StatModel:
 
         # Name the file according to the main parameters. Note that for each of the main parameters
                       
-        file_name = context['specta_files'] + '/nbin-%i/model-%s/mw-%.2f/log_s-%.2f/rho-%.2f/v_0-%.1f/v_esc-%i/poisson_%i/spectrum'%(
+        file_name = context['spectra_files'] + '/nbin-%i/model-%s/mw-%.2f/log_s-%.2f/rho-%.2f/v_0-%.1f/v_esc-%i/poisson_%i/spectrum'%(
             self.config['n_energy_bins'] if nbin is None else nbin,
             str(self.config['halo_model']) if model is None else str(model),
             10 ** self.config['mw'] if mw is None else 10**mw,
