@@ -235,6 +235,8 @@ class NestedSamplerStatModel(StatModel):
                     shutil.copytree(tmp_folder, copy_multinest)
                 except FileExistsError:
                     pass
+                except shutil.Error:
+                    pass
             self.log['garbage_bin'].append(tmp_folder)
             # if not os.path.exists(save_at):
             #     shutil.copytree(tmp_folder, save_at)
