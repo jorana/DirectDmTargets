@@ -272,15 +272,20 @@ class VerneSHM:
         if low_n_gamma:
             self.fname = 'tmp_' + self.fname
 #         file_name = file_folder + self.fname + '_avg' + '.csv'
-        file_name = file_folder + self.fname +'_' + host + '_avg' + '.csv'
+        file_name = file_folder + self.fname + '_avg' + '.csv'
         check_folder_for_file(file_folder + self.fname, verbose=0)
-    
-        files_in_folder = os.listdir(file_folder + '/')
+
+        # Convert file_name and self.fname to folder and name of csv file where to save.
+        csv_path = '/'.join(file_name.split('/')[:-1]) + '/'
+        csv_key = (file_folder + self.fname).split('/')[-1]
+        # csv_key = csv_key.strip('_avg.csv')
+        files_in_folder = os.listdir(csv_path + '/')
         
-        print(f'VerneSHM::\tlooking for {self.fname} in {file_folder}. That folder has {files_in_folder}. \n\tHas file?\n{self.fname in files_in_folder}'
+        print(f'VerneSHM::\tlooking for "{csv_key}" in "{csv_path}". That folder has "{files_in_folder}". \n\tHas file?\n{is_str_in_list(csv_key, files_in_folder)}')
         # if no data available here, we need to make it
-        if not os.path.exists(file_name) and not (self.fname in files_in_folder):
+        if (not os.path.exists(file_name)) and (not is_str_in_list(csv_key, files_in_folder)):
             pyfile = '/src/CalcVelDist.py'
+            file_name = file_folder + self.fname + '_' + host + '_avg' + '.csv'
             args = f'-m_x {10 ** self.log_mass} ' \
                    f'-sigma_p {10 ** self.log_cross_section} ' \
                    f'-loc {self.location} ' \
@@ -296,8 +301,10 @@ class VerneSHM:
             print(f'No spectrum found at:\n{file_name}\nGenerating spectrum, '
                   f'this can take a minute. Execute:\n{cmd}')
             os.system(cmd)
-        elif self.fname in files_in_folder:
-            file_name = str_in_list(self.fname, files_in_folder)
+        elif is_str_in_list(csv_key, files_in_folder):
+            print(f'Using {str_in_list(csv_key, files_in_folder)} since it has {csv_key}')
+            file_name = csv_path + str_in_list(csv_key, files_in_folder)
+            print(f'Using {file_name} for the velocity distribution')
         else:
             print(f'Using {file_name} for the velocity distribution')
 
@@ -327,7 +334,17 @@ def str_in_list(string, _list):
     for name in _list:
         if string in name:
             return name
-    
+    raise FileNotFoundError(f'No name named {string} in {_list}')
+
+def is_str_in_list(string, _list):
+    print(f'looking for {string} in {_list}')
+    for name in _list:
+        if string in name:
+            print(f'{string} is in  {name}!')
+            return True
+        else:
+            print(f'{string} is not in  {name}')
+    return False
 # class ContinuousVerneSHM:
 #     """
 #         class used to pass a halo model to the rate computation based on the
