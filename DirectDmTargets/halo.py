@@ -5,7 +5,7 @@ import numpy as np
 import pandas as pd
 import wimprates as wr
 import numericalunits as nu
-from .utils import get_verne_folder, check_folder_for_file
+from .utils import get_verne_folder, check_folder_for_file, is_str_in_list, str_in_list
 import os
 from scipy.interpolate import interp1d
 import sys
@@ -21,7 +21,6 @@ from .context import *
 
 def bin_edges(a, b, n):
     """
-
     :param a: lower limit
     :param b: upper limit
     :param n: number of bins
@@ -276,16 +275,13 @@ class VerneSHM:
         check_folder_for_file(file_folder + self.fname, verbose=0)
 
         # Convert file_name and self.fname to folder and name of csv file where to save.
-        csv_path = '/'.join(file_name.split('/')[:-1]) + '/'
-        csv_key = (file_folder + self.fname).split('/')[-1]
-        # csv_key = csv_key.strip('_avg.csv')
-        files_in_folder = os.listdir(csv_path + '/')
-        
-        print(f'VerneSHM::\tlooking for "{csv_key}" in "{csv_path}". That folder has "{files_in_folder}". \n\tHas file?\n{is_str_in_list(csv_key, files_in_folder)}')
+        abs_file_name, exist_csv = add_hostname_to_safe(file_name)
+
         # if no data available here, we need to make it
-        if (not os.path.exists(file_name)) and (not is_str_in_list(csv_key, files_in_folder)):
+        # if (not os.path.exists(file_name)) and (not is_str_in_list(csv_key, files_in_folder)):
+        if not exist_csv:
             pyfile = '/src/CalcVelDist.py'
-            file_name = file_folder + self.fname + '_' + host + '_avg' + '.csv'
+            file_name = abs_file_name # file_folder + self.fname + '_' + host + '_avg' + '.csv'
             args = f'-m_x {10 ** self.log_mass} ' \
                    f'-sigma_p {10 ** self.log_cross_section} ' \
                    f'-loc {self.location} ' \
@@ -301,15 +297,17 @@ class VerneSHM:
             print(f'No spectrum found at:\n{file_name}\nGenerating spectrum, '
                   f'this can take a minute. Execute:\n{cmd}')
             os.system(cmd)
-        elif is_str_in_list(csv_key, files_in_folder):
-            print(f'Using {str_in_list(csv_key, files_in_folder)} since it has {csv_key}')
-            file_name = csv_path + str_in_list(csv_key, files_in_folder)
-            print(f'Using {file_name} for the velocity distribution')
+        # elif is_str_in_list(csv_key, files_in_folder):
+        #     print(f'Using {str_in_list(csv_key, files_in_folder)} since it has {csv_key}')
+        #     file_name = csv_path + str_in_list(csv_key, files_in_folder)
+        #     print(f'Using {file_name} for the velocity distribution')
         else:
-            print(f'Using {file_name} for the velocity distribution')
+            print(f'Using {abs_file_name} for the velocity distribution')
 
         # Alright now load the data and interpolate that. This is the output that wimprates need
-        df = pd.read_csv(file_name)
+        if os.path.exists((abs_file_name)):
+            raise OSError(f'{abs_file_name} should exist')
+        df = pd.read_csv(abs_file_name)
         x, y = df.keys()
         interpolation = interp1d(df[x] * (nu.km / nu.s), df[y] * (nu.s / nu.km), bounds_error=False, fill_value=0)
 
@@ -329,22 +327,9 @@ class VerneSHM:
             self.load_f()
         return self.itp_func(v, t)
 
-# todo move to utils
-def str_in_list(string, _list):
-    for name in _list:
-        if string in name:
-            return name
-    raise FileNotFoundError(f'No name named {string} in {_list}')
 
-def is_str_in_list(string, _list):
-    print(f'looking for {string} in {_list}')
-    for name in _list:
-        if string in name:
-            print(f'{string} is in  {name}!')
-            return True
-        else:
-            print(f'{string} is not in  {name}')
-    return False
+
+
 # class ContinuousVerneSHM:
 #     """
 #         class used to pass a halo model to the rate computation based on the

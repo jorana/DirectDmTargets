@@ -5,7 +5,7 @@ from .halo import *
 import numericalunits as nu
 import numpy as np
 from scipy.special import loggamma
-from .utils import now, get_result_folder
+from .utils import now, get_result_folder, add_hostname_to_safe
 from .context import *
 import types
 
@@ -304,8 +304,10 @@ class StatModel:
             file_name = file_name + '_' + str(self.config['det_params'][key])
         file_name = file_name.replace(' ', '_')
         file_name = file_name + '.csv'
-        file_path = file_name #get_result_folder() + '/' + file_name
-        data_at_path = os.path.exists(file_path)
+        # file_path = file_name #get_result_folder() + '/' + file_name
+        # data_at_path = os.path.exists(file_path)
+
+        data_at_path, file_path = add_hostname_to_safe(file_name)
 
         if data_at_path:
             binned_spectrum = pd.read_csv(file_path)
@@ -330,6 +332,8 @@ class StatModel:
             # Do not try overwriting existing files.
             return
         try:
+            # rename the file to also reflect the hosts name such that we don't make two copies at the same place with from two different hosts
+            spectrum_file = spectrum_file.replace('.csv', host + '.csv')
             binned_spectrum.to_csv(spectrum_file, index=False)
         except PermissionError:
             # While computing the spectrum another instance has saved a file with the same name

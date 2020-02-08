@@ -3,6 +3,7 @@ import wimprates as wr
 import numpy as np
 import argparse
 assert wr.__version__ != '0.2.2'
+import random
 # # Direct detection of Dark matter using different target materials #
 # 
 # Author:
@@ -68,21 +69,31 @@ parser.add_argument('-shielding',
                     type=str,
                     default="default",
                     help="yes / no / default, override internal determination if we need to take into account earth shielding.")
+parser.add_argument('-save_intermediate',
+                    type=str,
+                    default="yes",
+                    help="yes / no / default, override internal determination if we need to take into account earth shielding.")
+parser.add_argument('-multicore_hash',
+                    type=str,
+                    default="",
+                    help="no / default, override internal determination if we need to take into account earth shielding.")
 
 args = parser.parse_args()
+yes_or_no = {"yes" : True, "no" : False}
+
 
 print(f"run_dddm_nestle.py::\tstart for mw = {args.mw}, sigma = "
       f"{args.cross_section}. Fitting {args.nparams} parameters")
 stats = dddm.NestedSamplerStatModel(args.target, args.verbose)
 stats.sampler = 'multinest'
+# stats.sampler = 'nestle'
 if args.shielding != "default":
-    yes_or_no = {"yes" : True, "no" : False}
-    stats.config['earth_shielding'] = yes_or_no[args.shielding]
-    print(yes_or_no[args.shielding])
+    stats.config['earth_shielding'] = yes_or_no[args.shielding.lower()]
     stats.set_models()
 else:
     assert False
-stats.config['save_intermediate'] = True
+#TODO
+stats.config['save_intermediate'] = yes_or_no[args.save_intermediate.lower()]
 stats.config['poisson'] = args.poisson
 stats.config['notes'] = args.notes
 stats.config['n_energy_bins'] = args.bins
@@ -95,8 +106,12 @@ stats.nlive = args.nlive
 stats.config['nlive']= args.nlive
 stats.tol = args.tol
 # stats.run_nestle()
+if args.multicore_hash != "":
+    stats.get_save_dir(hash= args.multicore_hash)
+    stats.get_tmp_dir(hash = args.multicore_hash)
 stats.save_results()
 assert stats.log['did_run']
+stats.empty_garbage()
 
 print(f"run_dddm_nestle.py::\tfinished for mw = {args.mw}, "
       f"sigma = {args.cross_section}")

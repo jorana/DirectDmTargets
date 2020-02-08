@@ -124,7 +124,7 @@ def convert_dic_to_savable(config):
     return result
 
 
-def open_save_dir(save_dir, base = None, force_index=False):
+def open_save_dir(save_dir, base=None, force_index=False, hash=None):
     '''
 
     :param save_dir: requested name of folder to open in the result folder
@@ -155,12 +155,97 @@ def open_save_dir(save_dir, base = None, force_index=False):
     # this is where we going to save
     save_dir = base + save + str(index) + '/'
     print('open_save_dir::\tusing ' + save_dir)
+    if hash:
+        assert force_index is False, f'do not set hash to {hash} and force_index to {force_index} simultaneously'
+        save_dir = base + save + '_HASH'+ str(hash) + '/'
+        if not os.path.exists(save_dir):
+            os.mkdir(save_dir)
+        else:
+            files_in_dir = os.listdir(save_dir)
+            if len(files_in_dir):
+                print(f'WARNING writing to {save_dir}. There are files in this dir: {files_in_dir} ')
+        return save_dir
     if force_index is False:
         assert not os.path.exists(save_dir), 'Trying to override another directory, this would be very messy'
         os.mkdir(save_dir)
     else:
-        assert os.path.exists(save_dir), "specify existing directory, exit"
-        for file in os.listdir(save_dir):
-            print('open_save_dir::\tremoving ' + save_dir + file)
-            os.remove(save_dir + file)
+        if not os.path.exists(save_dir): #, "specify existing directory, exit"
+            os.mkdir(save_dir)
+        else:
+            for file in os.listdir(save_dir):
+                print('open_save_dir::\tremoving ' + save_dir + file)
+                os.remove(save_dir + file)
     return save_dir
+
+
+# TODO comment
+def str_in_list(string, _list):
+    '''checks if sting is in any of the items in _list
+    if so return that item'''
+    for name in _list:
+        if string in name:
+            return name
+    raise FileNotFoundError(f'No name named {string} in {_list}')
+
+
+def is_str_in_list(string, _list, verbose =1):
+    '''checks if sting is in any of the items in _list.
+    :return bool:'''
+    print(f'looking for {string} in {_list}')
+    for name in _list:
+        if string in name:
+            if verbose: print(f'{string} is in  {name}!')
+            return True
+        else:
+            if verbose: print(f'{string} is not in  {name}')
+    return False
+
+def add_hostname_to_safe(name, verbose = 1):
+    '''
+    :param name: takes name
+    :return: abs_file_name, exist_csv
+    '''
+
+    assert '.csv' in name, f"{name} is not .csv"
+    # where to look
+    csv_path = '/'.join(name.split('/')[:-1]) + '/'
+    # what to look for
+    csv_key = name.split('/')[-1].strip('.csv')
+    # What can we see
+    if not os.path.exists(csv_path):
+        exist_csv = False
+        if not host in name:
+            abs_file_name = name.replace('.csv', f'-{host}.csv')
+        else:
+            abs_file_name = name
+        return exist_csv, abs_file_name
+
+    files_in_folder = os.listdir(csv_path + '/')
+    if verbose:
+        print(f'VerneSHM::\tlooking for "{csv_key}" in "{csv_path}". '
+          f'That folder has "{files_in_folder}". '
+          f'\n\tDoes it have the right file?\n\t{is_str_in_list(csv_key, files_in_folder)}')
+
+    if is_str_in_list(csv_key, files_in_folder):
+        if verbose:
+            print(f'Using {str_in_list(csv_key, files_in_folder)} since it has {csv_key}')
+        exist_csv = True
+        abs_file_name = csv_path + str_in_list(csv_key, files_in_folder)
+        print(f'Using {abs_file_name} for the velocity distribution')
+
+    else:
+        exist_csv = False
+        if not host in name:
+            abs_file_name = name.replace('.csv', f'-{host}.csv')
+        else:
+            abs_file_name = name
+
+    return exist_csv, abs_file_name
+
+    # elif str_in_list(csv_key, files_in_folder):
+    # print(f'Using {str_in_list(csv_key, files_in_folder)} since it has {csv_key}')
+    # file_name = csv_path + str_in_list(csv_key, files_in_folder)
+    # print(f'Using {file_name} for the velocity distribution')
+
+    return abs_file_name, exist_csv
+

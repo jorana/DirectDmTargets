@@ -28,7 +28,7 @@ class NestedSamplerStatModel(StatModel):
         self.tol = 0.1
         self.nlive = 1024
         self.sampler = 'nestle'
-        self.log = {'did_run': False, 'saved_in': None}
+        self.log = {'did_run': False, 'saved_in': None, 'tmp_dir':None, 'garbage_bin': []}
         self.config['start'] = datetime.now()  # .date().isoformat()
         self.config['notes'] = "default"
         self.result = False
@@ -189,6 +189,7 @@ class NestedSamplerStatModel(StatModel):
         tol = self.tol  # the stopping criterion
         if self.verbose:
             print(f"NestedSamplerStatModel::\t{now()}\n\there we go! We are going to fit:\n\t{ndim} parameters\n")
+        save_at = self.get_save_dir()
         assert_str = f"Unknown configuration of fit pars: {self.fit_parameters}"
         assert self.fit_parameters == self.known_parameters[:ndim], assert_str
         try:
@@ -214,16 +215,29 @@ class NestedSamplerStatModel(StatModel):
                     verbose=True,
                     evidence_tolerance=tol
                     )
+            # except OSError:
+            #     # Multinest in multiprocessing does run into an OS error since it opens multiple threads that are later
+            #     # recombined. These threads that are opened complain that they cannot find some file since their result
+            #     #  is added to first of their results.
+            #     print('Ran into a save OSError')
             except:
                 print(f"run_multinest::\tFAILED. Remove tmp folder!")
                 shutil.rmtree(tmp_folder)
-                assert False, "run_multinest failed"
 
-            # Open a save-folder after succesfull running multinest. Move the multinest results there.
-            save_at = self.get_save_dir()
+            # Open a save-folder after succesful running multinest. Move the multinest results there.
+            # save_at = self.get_save_dir()
             check_folder_for_file(save_at)
-            shutil.move(tmp_folder, save_at)
-            assert not os.path.exists(tmp_folder), f"the tmp folder {tmp_folder} was not moved correctly to {save_at}"
+            assert tmp_folder[-1] == '/', 'make sure that tmp_folder ends at "/"'
+            copy_multinest = save_at + tmp_folder.split('/')[-2]
+            print(f'copy {tmp_folder} to {copy_multinest}')
+            if not os.path.exists(copy_multinest):
+                shutil.copytree(tmp_folder, copy_multinest)
+            self.log['garbage_bin'].append(tmp_folder)
+            # if not os.path.exists(save_at):
+            #     shutil.copytree(tmp_folder, save_at)
+            # else:
+            #     shutil.copy2(tmp_folder, save_at)
+            # assert not os.path.exists(tmp_folder), f"the tmp folder {tmp_folder} was not moved correctly to {save_at}"
 
             end = datetime.now()
             dt = end - start
@@ -241,6 +255,17 @@ class NestedSamplerStatModel(StatModel):
             self.config['fit_time'] = -1
         if self.verbose:
             print(f"NestedSamplerStatModel::\t{now()}\n\tFinished with running Multinest!")
+
+    def empty_garbage(self):
+        for file in self.log['garbage_bin']:
+            print(f'delete {file}')
+            if os.path.exists(file):
+                try:
+                    shutil.rmtree(file)
+                except FileNotFoundError:
+                    pass
+            else:
+                print(f'Could not find {file} that is in the garbage bin?')
 
     def get_summary(self):
         if self.verbose:
@@ -262,6 +287,7 @@ class NestedSamplerStatModel(StatModel):
                 if "log_" in name:
                     resdict[name[4:] + "_fit_res"] = "%.3g +/- %.2g" % (10 ** col.mean(), 10 ** (col.mean()) * np.log(10) * col.std())
                     print('\t', name[4:], resdict[name[4:] + "_fit_res"])
+            resdict['n_samples'] = len(self.result['samples'].transpose()[0])
         elif self.sampler == 'nestle':
             # taken from mattpitkin.github.io/samplers-demo/pages/samplers-samplers-everywhere/#Nestle
             # estimate of the statistical uncertainty on logZ
@@ -291,14 +317,21 @@ class NestedSamplerStatModel(StatModel):
                   f"let's return it to whomever asked for it")
         return resdict
 
-    def get_save_dir(self, force_index = False):
-        save_dir = open_save_dir(f'{default_nested_save_dir()}_{self.sampler}', force_index=force_index)
-        self.log['saved_in'] = save_dir
-        return save_dir
+    def get_save_dir(self, force_index = False, hash = None):
+        if not self.log['saved_in'] or force_index:
+            save_dir = open_save_dir(f'{default_nested_save_dir()}_{self.sampler}', force_index=force_index, hash=hash)
+            self.log['saved_in'] = save_dir
+            return save_dir
+        else:
+            return self.log['saved_in']
 
-    def get_tmp_dir(self, force_index = False):
-        tmp_dir = open_save_dir(f'{self.sampler}', base=context["tmp_folder"], force_index=force_index)
-        return tmp_dir
+    def get_tmp_dir(self, force_index = False, hash = None):
+        if not self.log['tmp_dir'] or force_index:
+            tmp_dir = open_save_dir(f'{self.sampler}', base=context["tmp_folder"], force_index=force_index, hash=hash)
+            self.log['tmp_dir'] = tmp_dir
+            return tmp_dir
+        else:
+            return self.log['tmp_dir']
 
     def save_results(self, force_index=False):
         if self.verbose:
