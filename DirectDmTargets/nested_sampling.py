@@ -231,7 +231,10 @@ class NestedSamplerStatModel(StatModel):
             copy_multinest = save_at + tmp_folder.split('/')[-2]
             print(f'copy {tmp_folder} to {copy_multinest}')
             if not os.path.exists(copy_multinest):
-                shutil.copytree(tmp_folder, copy_multinest)
+                try:
+                    shutil.copytree(tmp_folder, copy_multinest)
+                except FileExistsError:
+                    pass
             self.log['garbage_bin'].append(tmp_folder)
             # if not os.path.exists(save_at):
             #     shutil.copytree(tmp_folder, save_at)

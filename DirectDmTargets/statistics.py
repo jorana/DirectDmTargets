@@ -310,7 +310,12 @@ class StatModel:
         data_at_path, file_path = add_hostname_to_safe(file_name)
 
         if data_at_path:
-            binned_spectrum = pd.read_csv(file_path)
+            try:
+                binned_spectrum = pd.read_csv(file_path)
+            except pandas.errors.EmptyDataError:
+                print("StatModel::\tdataframe empty, have to remake the data!")
+                os.remove(file_path)
+                binned_spectrum = None
         else:
             binned_spectrum = None
             check_folder_for_file(file_path, max_iterations=20, verbose=0)

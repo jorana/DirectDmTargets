@@ -159,7 +159,11 @@ def open_save_dir(save_dir, base=None, force_index=False, hash=None):
         assert force_index is False, f'do not set hash to {hash} and force_index to {force_index} simultaneously'
         save_dir = base + save + '_HASH'+ str(hash) + '/'
         if not os.path.exists(save_dir):
-            os.mkdir(save_dir)
+            try:
+                os.mkdir(save_dir)
+            except FileExistsError:
+                # starting up on multiple cores causes the command above to be executed simultaniously
+                pass
         else:
             files_in_dir = os.listdir(save_dir)
             if len(files_in_dir):
