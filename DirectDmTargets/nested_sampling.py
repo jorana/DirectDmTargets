@@ -202,7 +202,7 @@ class NestedSamplerStatModel(StatModel):
 
             # Multinest saves output to a folder. First write to the tmp folder, move it to the results folder later
             tmp_folder = self.get_tmp_dir()
-            save_at_temp = tmp_folder + 'multinest'
+            save_at_temp = f'{tmp_folder}multinest_{os.getpid()}'
 
             # Need try except for making sure the tmp folder is removed
             try:
@@ -354,6 +354,8 @@ class NestedSamplerStatModel(StatModel):
             print(f"NestedSamplerStatModel::\t{now()}\n\tAllright all set, let put all that info"
                   f" in {save_dir} and be done with it")
         # save the config, chain and flattened chain
+        if os.path.exists(save_dir+'config.json'):
+            save_dir += 'pid' + str(os.getpid()) + '_'
         with open(save_dir + 'config.json', 'w') as file:
             json.dump(convert_dic_to_savable(self.config), file, indent=4)
         with open(save_dir + 'res_dict.json', 'w') as file:
