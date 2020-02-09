@@ -141,7 +141,9 @@ experiment = {
         'E_thr': 1.4,  # https://arxiv.org/abs/1907.12771
         'location': "XENON",
         'res': det_res_XENON1T,
-        'bg_func': migdal_background_XENON1T},
+        'bg_func': migdal_background_XENON1T,
+        # 'add_bg': False # unfortunate naming
+    },
     'Ge_migd': {
         'material': 'Ge',
         'type': 'migdal',
@@ -153,7 +155,9 @@ experiment = {
         'E_thr': 70. / 1e3,  # Assume similar to CDMSlite https://arxiv.org/pdf/1808.09098.pdf
         "location": "SUF",
         'res': det_res_CDMS,
-        'bg_func': migdal_background_CDMS},
+        'bg_func': migdal_background_CDMS,
+        # 'add_bg': False # unfortunate naming
+    },
     'Ar_migd': {
         'material': 'Ar',
         'type': 'migdal',
@@ -164,7 +168,9 @@ experiment = {
         'E_thr': 3.,
         "location": "XENON",
         'res': det_res_DarkSide,
-        'bg_func': migdal_background_Darkside}}
+        'bg_func': migdal_background_Darkside,
+        # 'add_bg': False # unfortunate naming
+    }}
 
 # And calculate the effective exposure for each
 for name in experiment.keys():
@@ -174,6 +180,13 @@ for name in experiment.keys():
     experiment[name]['name'] = name
     print(f"calculating effective efficiency for {name} detector done")
 
+# Make a copy with setting background to True!
+exp_names = experiment.keys()
+for name in list(exp_names):
+    bg_name = name + '_bg'
+    experiment[bg_name] = experiment[name].copy()
+    # experiment[bg_name]['add_bg'] = True
+    experiment[bg_name]['type'] = experiment[bg_name]['type'] + '_bg'
 
 @numba.njit
 def smear_signal(rate, energy, sigma, bin_width):
@@ -210,9 +223,11 @@ class DetectorSpectrum(GenSpectrum):
         # numerical integration is performed in compute_detected_spectrum, this
         # number is multiplied here.
         self.rebin_factor = 10
-        # TODO
-        #  add background here
-        self.add_background = False  # self.experiment['type'] == 'migdal'
+        # Please not that this is NOT pretty. It was a monkey patch implemented since
+        # many spectra were already computed using this naming hence we have to deal
+        # with this lack of clarity in earlier coding in this manner.
+        # self.add_background = False if self.experiment['type'] in ['Xe', 'Ge', 'Ar', 'Xe_migd', 'Ge_migd', 'Ar_migd'] else self.experiment['add_bg']
+        self.add_background = True if 'bg' in self.experiment['type'] else False
 
     def __str__(self):
         return (f"DetectorSpectrum class inherited from GenSpectrum.\nSmears "

@@ -302,6 +302,7 @@ class StatModel:
             if type(self.config['det_params'][key]) == types.FunctionType:
                 continue
             file_name = file_name + '_' + str(self.config['det_params'][key])
+        # file_name += '_bg' + int(self.config['spectrum_class'].add_background)
         file_name = file_name.replace(' ', '_')
         file_name = file_name + '.csv'
         # file_path = file_name #get_result_folder() + '/' + file_name
@@ -316,7 +317,9 @@ class StatModel:
                 print("StatModel::\tdataframe empty, have to remake the data!")
                 os.remove(file_path)
                 binned_spectrum = None
+                data_at_path = False
         else:
+            print("StatModel::\tNo data at path. Will have to make it.")
             binned_spectrum = None
             check_folder_for_file(file_path, max_iterations=20, verbose=0)
 
@@ -338,7 +341,8 @@ class StatModel:
             return
         try:
             # rename the file to also reflect the hosts name such that we don't make two copies at the same place with from two different hosts
-            spectrum_file = spectrum_file.replace('.csv', host + '.csv')
+            if not (host in spectrum_file):
+                spectrum_file = spectrum_file.replace('.csv', host + '.csv')
             binned_spectrum.to_csv(spectrum_file, index=False)
         except PermissionError:
             # While computing the spectrum another instance has saved a file with the same name
@@ -494,10 +498,10 @@ class StatModel:
                 print(f"StatModel::\teval_spectrum\tNo file found, proceed and save intermediate result later")
         if len(parameter_names) == 2:
             x0, x1 = checked_values
-            if (parameter_names[0] is 'log_mass' and parameter_names[1] is 'log_cross_section'):
+            if (parameter_names[0] == 'log_mass' and parameter_names[1] == 'log_cross_section'):
                 # This is the right order
                 pass
-            elif (parameter_names[1] is 'log_mass' and parameter_names[0] is 'log_cross_section'):
+            elif (parameter_names[1] == 'log_mass' and parameter_names[0] == 'log_cross_section'):
                 x0, x1 = x1, x0
             else:
                 raise NotImplementedError(

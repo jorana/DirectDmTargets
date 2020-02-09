@@ -53,12 +53,15 @@ def check_folder_for_file(file_path, max_iterations=30, verbose = 1):
             assert False, assert_str
 
 
-def now():
+def now(tstart = None):
     '''
 
     :return: datetime.datetime string with day, hour, minutes
     '''
-    return datetime.now().isoformat(timespec='minutes')
+    res = datetime.now().isoformat(timespec='minutes')
+    if tstart:
+        res+= f'\tdt=\t{(datetime.now()-tstart).seconds} s'
+    return res
 
 
 def load_folder_from_context(request):
@@ -154,7 +157,6 @@ def open_save_dir(save_dir, base=None, force_index=False, hash=None):
         index = force_index
     # this is where we going to save
     save_dir = base + save + str(index) + '/'
-    print('open_save_dir::\tusing ' + save_dir)
     if hash:
         assert force_index is False, f'do not set hash to {hash} and force_index to {force_index} simultaneously'
         save_dir = base + save + '_HASH'+ str(hash) + '/'
@@ -168,6 +170,7 @@ def open_save_dir(save_dir, base=None, force_index=False, hash=None):
             files_in_dir = os.listdir(save_dir)
             if len(files_in_dir):
                 print(f'WARNING writing to {save_dir}. There are files in this dir: {files_in_dir} ')
+        print('open_save_dir::\tusing ' + save_dir)
         return save_dir
     if force_index is False:
         assert not os.path.exists(save_dir), 'Trying to override another directory, this would be very messy'
@@ -179,6 +182,7 @@ def open_save_dir(save_dir, base=None, force_index=False, hash=None):
             for file in os.listdir(save_dir):
                 print('open_save_dir::\tremoving ' + save_dir + file)
                 os.remove(save_dir + file)
+    print('open_save_dir::\tusing ' + save_dir)
     return save_dir
 
 
@@ -235,7 +239,7 @@ def add_identifier_to_safe(name, verbose = 1):
             print(f'Using {str_in_list(csv_key, files_in_folder)} since it has {csv_key}')
         exist_csv = True
         abs_file_name = csv_path + str_in_list(csv_key, files_in_folder)
-        print(f'Using {abs_file_name} for the velocity distribution')
+        print(f'Using {abs_file_name} as input')
 
     else:
         exist_csv = False

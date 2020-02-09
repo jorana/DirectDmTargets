@@ -118,7 +118,9 @@ if stats.sampler == 'multinest':
     stats.run_multinest()
 stats.save_results()
 assert stats.log['did_run']
-stats.empty_garbage()
+
+# time.sleep(5*60)
+# stats.empty_garbage()
 
 print(f"run_dddm_nestle.py::\tfinished for mw = {args.mw}, "
       f"sigma = {args.cross_section}")
