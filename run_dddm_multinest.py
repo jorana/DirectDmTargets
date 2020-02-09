@@ -111,11 +111,11 @@ stats.nlive = args.nlive
 stats.config['nlive']= args.nlive
 stats.tol = args.tol
 # stats.run_nestle()
-if stats.sampler == 'multinest':
-    stats.run_multinest()
 if args.multicore_hash != "":
     stats.get_save_dir(hash= args.multicore_hash)
     stats.get_tmp_dir(hash = args.multicore_hash)
+if stats.sampler == 'multinest':
+    stats.run_multinest()
 stats.save_results()
 assert stats.log['did_run']
 stats.empty_garbage()
