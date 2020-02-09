@@ -205,24 +205,24 @@ class NestedSamplerStatModel(StatModel):
             save_at_temp = f'{tmp_folder}multinest_{os.getpid()}'
 
             # Need try except for making sure the tmp folder is removed
-            try:
-                self.result = solve(
-                    LogLikelihood=self._log_probability_nested,
-                    Prior=self._log_prior_transform_nested,
-                    n_live_points=self.nlive,
-                    n_dims=ndim,
-                    outputfiles_basename=save_at_temp,
-                    verbose=True,
-                    evidence_tolerance=tol
-                    )
+#             try:
+            self.result = solve(
+                LogLikelihood=self._log_probability_nested,
+                Prior=self._log_prior_transform_nested,
+                n_live_points=self.nlive,
+                n_dims=ndim,
+                outputfiles_basename=save_at_temp,
+                verbose=True,
+                evidence_tolerance=tol
+                )
             # except OSError:
             #     # Multinest in multiprocessing does run into an OS error since it opens multiple threads that are later
             #     # recombined. These threads that are opened complain that they cannot find some file since their result
             #     #  is added to first of their results.
             #     print('Ran into a save OSError')
-            except:
-                print(f"run_multinest::\tFAILED. Remove tmp folder!")
-                shutil.rmtree(tmp_folder)
+#             except:
+#                 print(f"run_multinest::\tFAILED. Remove tmp folder!")
+#                 shutil.rmtree(tmp_folder)
 
             # Open a save-folder after succesful running multinest. Move the multinest results there.
             # save_at = self.get_save_dir()
