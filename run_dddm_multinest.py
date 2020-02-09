@@ -84,7 +84,7 @@ parser.add_argument('-multicore_hash',
 args = parser.parse_args()
 yes_or_no = {"yes" : True, "no" : False}
 
-print(f"info\nn_cores:{multiprocessing.cpu_count}\npid{os.getpid()}")
+print(f"info\nn_cores: {multiprocessing.cpu_count()}\npid: {os.getpid()}")
 time.sleep(5)
 
 print(f"run_dddm_nestle.py::\tstart for mw = {args.mw}, sigma = "
