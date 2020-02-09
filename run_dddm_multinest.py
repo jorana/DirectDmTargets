@@ -4,6 +4,9 @@ import numpy as np
 import argparse
 assert wr.__version__ != '0.2.2'
 import random
+import multiprocessing
+import time
+import os
 # # Direct detection of Dark matter using different target materials #
 # 
 # Author:
@@ -81,6 +84,8 @@ parser.add_argument('-multicore_hash',
 args = parser.parse_args()
 yes_or_no = {"yes" : True, "no" : False}
 
+print(f"info\nn_cores:{multiprocessing.cpu_count}\npid{os.getpid()}")
+time.sleep(5)
 
 print(f"run_dddm_nestle.py::\tstart for mw = {args.mw}, sigma = "
       f"{args.cross_section}. Fitting {args.nparams} parameters")

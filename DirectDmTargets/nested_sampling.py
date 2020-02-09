@@ -230,13 +230,13 @@ class NestedSamplerStatModel(StatModel):
             assert tmp_folder[-1] == '/', 'make sure that tmp_folder ends at "/"'
             copy_multinest = save_at + tmp_folder.split('/')[-2]
             print(f'copy {tmp_folder} to {copy_multinest}')
-            if not os.path.exists(copy_multinest):
-                try:
-                    shutil.copytree(tmp_folder, copy_multinest)
-                except FileExistsError:
-                    pass
-                except shutil.Error:
-                    pass
+#             if not os.path.exists(copy_multinest) and os.path.exists(tmp_folder):
+#                 try:
+#                     shutil.copytree(tmp_folder, copy_multinest)
+#                 except FileExistsError:
+#                     pass
+#                 except shutil.Error:
+#                     pass
             self.log['garbage_bin'].append(tmp_folder)
             # if not os.path.exists(save_at):
             #     shutil.copytree(tmp_folder, save_at)
