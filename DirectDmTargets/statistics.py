@@ -312,7 +312,7 @@ class StatModel:
         if data_at_path:
             try:
                 binned_spectrum = pd.read_csv(file_path)
-            except pandas.errors.EmptyDataError:
+            except pd.errors.EmptyDataError:
                 print("StatModel::\tdataframe empty, have to remake the data!")
                 os.remove(file_path)
                 binned_spectrum = None

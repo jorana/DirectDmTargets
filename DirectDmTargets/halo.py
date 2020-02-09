@@ -5,7 +5,7 @@ import numpy as np
 import pandas as pd
 import wimprates as wr
 import numericalunits as nu
-from .utils import get_verne_folder, check_folder_for_file, is_str_in_list, str_in_list
+from .utils import get_verne_folder, check_folder_for_file, is_str_in_list, str_in_list, add_identifier_to_safe
 import os
 from scipy.interpolate import interp1d
 import sys
