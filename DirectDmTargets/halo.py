@@ -10,6 +10,7 @@ import os
 from scipy.interpolate import interp1d
 import sys
 from .context import *
+from os import getpid
 
 # # be able to load from the verne folder using this work around.
 # sys.path.insert(1, get_verne_folder()+'/src/')
@@ -275,7 +276,7 @@ class VerneSHM:
         check_folder_for_file(file_folder + self.fname, verbose=0)
 
         # Convert file_name and self.fname to folder and name of csv file where to save.
-        abs_file_name, exist_csv = add_hostname_to_safe(file_name)
+        abs_file_name, exist_csv = add_identifier_to_safe(file_name)
 
         # if no data available here, we need to make it
         # if (not os.path.exists(file_name)) and (not is_str_in_list(csv_key, files_in_folder)):

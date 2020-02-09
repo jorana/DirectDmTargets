@@ -204,7 +204,7 @@ def is_str_in_list(string, _list, verbose =1):
             if verbose: print(f'{string} is not in  {name}')
     return False
 
-def add_hostname_to_safe(name, verbose = 1):
+def add_identifier_to_safe(name, verbose = 1):
     '''
     :param name: takes name
     :return: abs_file_name, exist_csv
@@ -219,7 +219,7 @@ def add_hostname_to_safe(name, verbose = 1):
     if not os.path.exists(csv_path):
         exist_csv = False
         if not host in name:
-            abs_file_name = name.replace('.csv', f'-{host}.csv')
+            abs_file_name = name.replace('.csv', f'-H{host}-P{getpid()}.csv')
         else:
             abs_file_name = name
         return exist_csv, abs_file_name

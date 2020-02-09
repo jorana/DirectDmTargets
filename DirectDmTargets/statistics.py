@@ -5,7 +5,7 @@ from .halo import *
 import numericalunits as nu
 import numpy as np
 from scipy.special import loggamma
-from .utils import now, get_result_folder, add_hostname_to_safe
+from .utils import now, get_result_folder, add_identifier_to_safe
 from .context import *
 import types
 
@@ -307,7 +307,7 @@ class StatModel:
         # file_path = file_name #get_result_folder() + '/' + file_name
         # data_at_path = os.path.exists(file_path)
 
-        data_at_path, file_path = add_hostname_to_safe(file_name)
+        data_at_path, file_path = add_identifier_to_safe(file_name)
 
         if data_at_path:
             try:
