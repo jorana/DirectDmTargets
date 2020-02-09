@@ -37,7 +37,7 @@ Install verne from source:
 
 ``python setup.py install``
 
-
+`` conda install -c anaconda mpi4py`` 
 
 
 
