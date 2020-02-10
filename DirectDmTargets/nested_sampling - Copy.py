@@ -1,4 +1,5 @@
 """Do a likelihood fit. The class NestedSamplerStatModel is used for fitting applying the bayesian alogorithm nestle"""
+from __future__ import absolute_import, unicode_literals, print_function
 
 from datetime import datetime
 import json
@@ -13,7 +14,7 @@ import shutil
 from .halo import *
 from .statistics import *
 from .utils import *
-from pymultinest.solve import run, Analyzer, solve
+from pymultinest.solve import run, Analyzer
 from .context import *
 
 def default_nested_save_dir():
@@ -178,12 +179,40 @@ class NestedSamplerStatModel(StatModel):
         if self.verbose:
             print(f'NestedSamplerStatModel::\t{now(self.config["start"])}\n\tFinished with running optimizer!')
 
-    # def self.SafePrior(self.cube, ndim, nparams):
-    #     return self._log_probability_nested(cube[:n_dims])
-    #
-    # def SafeLoglikelihood(cube, ndim, nparams, lnew):
-    #     print(f'SafeLoglikelihood called with:\ncube{cube},\ndim{ndim},\n nparams {nparams}, lnew\t{lnew})')
-    #     return
+    def SafePrior(self, cube, ndim, nparams):
+        # return self._log_prior_transform_nested(cube[:len(self.config['fit_parameters'])])
+        n_dims = len(self.fit_parameters)
+        try:
+            a = np.array([cube[i] for i in range(n_dims)])
+            b = self._log_prior_transform_nested(a)
+            for i in range(n_dims):
+                cube[i] = b[i]
+        except Exception as e:
+            import sys
+            sys.stderr.write('ERROR in prior: %s\n' % e)
+            sys.exit(1)
+
+    def SafeLoglikelihood(self, cube, ndim, nparams, lnew):
+        print(f'SafeLoglikelihood called with:\ncube{cube},\ndim{ndim},\n nparams {nparams}, lnew\t{lnew})')
+        # return self._log_probability_nested(cube[:len(self.config['fit_parameters'])])
+        n_dims = len(self.fit_parameters)
+        try:
+            a = np.array([cube[i] for i in range(n_dims)])
+            l = float(self._log_probability_nested(a))
+            # l = self._log_probability_nested(a)
+            if not np.isfinite(l):
+                import sys
+                sys.stderr.write('WARNING: loglikelihood not finite: %f\n' % (l))
+                sys.stderr.write('         for parameters: %s\n' % a)
+                sys.stderr.write('         returned very low value instead\n')
+                return -1e100
+            return l
+        except Exception as e:
+            import sys
+            sys.stderr.write('ERROR in loglikelihood: %s\n' % e)
+            sys.exit(1)
+
+
 
     def run_multinest(self):
         assert self.sampler == 'multinest', f'Trying to run multinest but initialization requires {self.sampler}'
@@ -243,16 +272,26 @@ class NestedSamplerStatModel(StatModel):
             #         sys.stderr.write('ERROR in loglikelihood: %s\n' % e)
             #         sys.exit(1)
 
-            solve(
-                LogLikelihood=self._log_probability_nested,#SafeLoglikelihood,
-                Prior=self._log_prior_transform_nested, #SafePrior,
-                n_live_points=self.nlive,
+            # pymultinest.run(myloglike, myprior, n_params,
+            #                 importance_nested_sampling=False, resume=True,
+            #                 verbose=True, sampling_efficiency='model', n_live_points=1000,
+            #                 outputfiles_basename='chains/2-')
+            self.result = save_at_temp
+            run(
+                # LogLikelihood=self._log_probability_nested,#SafeLoglikelihood,
+                # Prior=self._log_prior_transform_nested, #SafePrior,
+
+                LogLikelihood=self.SafeLoglikelihood, #self._log_probability_nested,#SafeLoglikelihood,
+                Prior=self.SafePrior, #self._log_prior_transform_nested, #SafePrior,
                 n_dims=n_dims,
+                # n_params= n_dims,
+                n_live_points=self.nlive,
+                # n_dims=n_dims,
                 outputfiles_basename=save_at_temp,
                 verbose=True,
-                evidence_tolerance=tol
+                evidence_tolerance=tol,
+                # sampling_efficiency='model'
                 )
-            self.result = save_at_temp
             # except OSError:
             # #     # Multinest in multiprocessing does run into an OS error since it opens multiple threads that are later
             # #     # recombined. These threads that are opened complain that they cannot find some file since their result

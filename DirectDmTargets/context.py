@@ -1,6 +1,5 @@
 from socket import getfqdn
 import os
-# from .utils import *
 
 host = getfqdn()
 print(f'Host: {host}')

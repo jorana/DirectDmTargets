@@ -9,8 +9,8 @@ from .utils import now, get_result_folder, add_identifier_to_safe
 from .context import *
 import types
 
-# Set a lower bound to the loglikekyhood (this becomes a problem due to machine precition.
-LL_LOW_BOUND = 1e-100 # 1e-300
+# Set a lower bound to the loglikekihood (this becomes a problem due to machine precision.
+LL_LOW_BOUND = 1e-99 # 1e-300
 
 def get_priors(priors_from="Evans_2019"):
     """
