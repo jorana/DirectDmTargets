@@ -85,7 +85,8 @@ parser.add_argument('-multicore_hash',
 args = parser.parse_args()
 yes_or_no = {"yes" : True, "no" : False}
 
-print(f"info\nn_cores: {multiprocessing.cpu_count()}\npid: {os.getpid()}")
+rank = MPI.COMM_WORLD.Get_rank()
+print(f"info\nn_cores: {multiprocessing.cpu_count()}\npid: {os.getpid()}\nranke{rank}")
 time.sleep(5)
 
 print(f"run_dddm_nestle.py::\tstart for mw = {args.mw}, sigma = "
@@ -117,7 +118,7 @@ if args.multicore_hash != "":
     stats.get_tmp_dir(hash = args.multicore_hash)
 if stats.sampler == 'multinest':
     stats.run_multinest()
-if args.multicore_hash == "" or  MPI.COMM_WORLD.Get_rank() == 0:
+if args.multicore_hash == "" or rank == 0:
     stats.save_results()
 assert stats.log['did_run']
 
