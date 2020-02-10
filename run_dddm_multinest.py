@@ -7,6 +7,7 @@ import random
 import multiprocessing
 import time
 import os
+from mpi4py import MPI
 # # Direct detection of Dark matter using different target materials #
 # 
 # Author:
@@ -116,7 +117,8 @@ if args.multicore_hash != "":
     stats.get_tmp_dir(hash = args.multicore_hash)
 if stats.sampler == 'multinest':
     stats.run_multinest()
-stats.save_results()
+if args.multicore_hash == "" or  MPI.COMM_WORLD.Get_rank() == 0:
+    stats.save_results()
 assert stats.log['did_run']
 
 # time.sleep(5*60)
