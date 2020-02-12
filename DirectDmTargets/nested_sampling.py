@@ -327,7 +327,8 @@ class NestedSamplerStatModel(StatModel):
         if self.sampler == 'multinest':
             print('start analyzer of results')
             analyzer = Analyzer(len(self.fit_parameters), outputfiles_basename=self.result)
-            self.result = analyzer.get_stats()
+            # Taken from multinest.solve
+	    self.result = analyzer.get_stats()
             samples = analyzer.get_equal_weighted_posterior()[:, :-1]
 
             print('parameter values:')
@@ -338,6 +339,8 @@ class NestedSamplerStatModel(StatModel):
                     resdict[name[4:] + '_fit_res'] = '%.3g +/- %.2g' % (10 ** col.mean(), 10 ** (col.mean()) * np.log(10) * col.std())
                     print('\t', name[4:], resdict[name[4:] + '_fit_res'])
             resdict['n_samples'] = len(samples.transpose()[0])
+            # Pass the samples to the self.result to be saved.
+	    self.result['samples'] = samples
         elif self.sampler == 'nestle':
             # taken from mattpitkin.github.io/samplers-demo/pages/samplers-samplers-everywhere/#Nestle
             # estimate of the statistical uncertainty on logZ
