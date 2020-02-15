@@ -76,6 +76,22 @@ def get_priors(priors_from="Evans_2019"):
                   'v_0': {'range': [80, 380], 'prior_type': 'gauss', 'mean': 233, 'std': 30},
                   'v_esc': {'range': [379, 709], 'prior_type': 'gauss', 'mean': 528, 'std': 33},
                   'k': {'range': [0.5, 3.5], 'prior_type': 'flat'}}
+    elif priors_from == "migdal_very_wide":
+        priors = {'log_mass': {'range': [-2, 2], 'prior_type': 'flat'},
+                  'log_cross_section': {'range': [-49, -32], 'prior_type': 'flat'},
+                  # see Evans_2019_constraint
+                  'density': {'range': [0.001, 0.9], 'prior_type': 'gauss', 'mean': 0.55, 'std': 0.17},
+                  'v_0': {'range': [80, 380], 'prior_type': 'gauss', 'mean': 233, 'std': 30},
+                  'v_esc': {'range': [379, 709], 'prior_type': 'gauss', 'mean': 528, 'std': 33},
+                  'k': {'range': [0.5, 3.5], 'prior_type': 'flat'}}
+    elif priors_from == "migdal_sanity":
+        priors = {'log_mass': {'range': [-2, 2], 'prior_type': 'flat'},
+                  'log_cross_section': {'range': [-49, -32], 'prior_type': 'flat'},
+                  # see Evans_2019_constraint
+                  'density': {'range': [0.001, 0.9], 'prior_type': 'gauss', 'mean': 0.55, 'std': 0.5},
+                  'v_0': {'range': [80, 380], 'prior_type': 'gauss', 'mean': 233, 'std': 90},
+                  'v_esc': {'range': [379, 709], 'prior_type': 'gauss', 'mean': 528, 'std': 99},
+                  'k': {'range': [0.5, 3.5], 'prior_type': 'flat'}}
     else:
         raise NotImplementedError(f"Taking priors from {priors_from} is not implemented")
 
