@@ -493,8 +493,10 @@ class StatModel:
         :param parameter_names: names of parameters
         :return: a spectrum as specified by the parameter_names
         """
-        if self.verbose > 1:
-            print(f'StatModel::\t{now()}\n\tSUPERVERBOSE\tevaluate spectrum')
+        if self.verbose:
+            print(f'StatModel::\t{now()}\n\tevaluate spectrum for {len(values)} parameters')
+        assert len(values) == len(parameter_names), f'trying to fit {len(values)} ' \
+                                                    f'parameters but {parameter_names} are given.'
         default_order = ['log_mass', 'log_cross_section', 'v_0', 'v_esc', 'density', 'k']
         if type(parameter_names) is str:
             raise NotImplementedError(
@@ -504,6 +506,7 @@ class StatModel:
         if self.config['save_intermediate']:
             if self.verbose:
                 print(f"StatModel::\teval_spectrum\tload results from intermediate file")
+            # TODO why is this line needed?
             spec_class = VerneSHM() if self.config['earth_shielding'] else self.config['halo_model']
             interm_exists, interm_file, interm_spec = self.find_intermediate_result(
                 nbin=self.config['n_energy_bins'],
@@ -545,7 +548,10 @@ class StatModel:
                     v_esc=self.config['v_esc'] * nu.km / nu.s,
                     rho_dm=self.config['density'] * nu.GeV / nu.c0 ** 2 / nu.cm ** 3)
             else:
-                fit_shm = self.config['halo_model']
+                fit_shm = self.config['halo_model'](
+                    v_0=self.config['v_0'] * nu.km / nu.s,
+                    v_esc=self.config['v_esc'] * nu.km / nu.s,
+                    rho_dm=self.config['density'] * nu.GeV / nu.c0 ** 2 / nu.cm ** 3)
 
             spectrum = self.config['spectrum_class'](
                 10. ** x0,
@@ -650,7 +656,7 @@ def log_likelihood_function(nb, nr):
     if nr == 0:
         # For i~0, machine precision sets nr to 0. However, this becomes a
         # little problematic since the Poisson log likelihood for 0 is not
-        # defined. Hence we cap it off by setting nr to 10^-300.
+        # defined. Hence we cap it off by setting nr to 10^-100.
         nr = LL_LOW_BOUND
     return np.log(nr) * nb - loggamma(nb + 1) - nr
 

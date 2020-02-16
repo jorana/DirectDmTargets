@@ -124,15 +124,18 @@ class NestedSamplerStatModel(StatModel):
             raise TypeError(err_message)
 
     def _log_probability_nested(self, theta):
-        if self.verbose > 1:
-            print(f'NestedSamplerStatModel::\t{now(self.config["start"])}\n\tSUPERVERBOSE\tdoing _log_probability_nested'
-                  f'\n\t\tooph, what a nasty function to do some transformations behind the scenes')
         ndim = len(theta)
+        if self.verbose > 1:
+            print(f'NestedSamplerStatModel::\t{now(self.config["start"])}\n\tSUPERVERBOSE\tdoing '
+                  f'_log_probability_nested for {ndim} parameters'
+                  f'\n\t\tooph, what a nasty function to do some transformations behind the scenes')
+
         return self.log_probability_nested(theta, self.known_parameters[:ndim])
 
     def _log_prior_transform_nested(self, theta):
         if self.verbose > 1:
-            print(f'NestedSamplerStatModel::\t{now(self.config["start"])}\n\tSUPERVERBOSE\tdoing _log_prior_transform_nested'
+            print(f'NestedSamplerStatModel::\t{now(self.config["start"])}\n\tSUPERVERBOSE\tdoing '
+                  f'_log_prior_transform_nested for {len(theta)} parameters'
                   f'\n\t\tooph, what a nasty function to do some transformations behind the scenes')
         result = [self.log_prior_transform_nested(val, self.known_parameters[i]) for i, val in enumerate(theta)]
         return np.array(result)
