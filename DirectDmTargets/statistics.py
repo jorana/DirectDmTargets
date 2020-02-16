@@ -270,8 +270,8 @@ class StatModel:
     #         # if no data available here, we need to make it
     #         if not os.path.exists(file_name):
     #             pyfile = '/src/CalcVelDist.py'
-    #             args = f'-m_x {10 ** self.log_mass} ' \
-    #                    f'-sigma_p {10 ** self.log_cross_section} ' \
+    #             args = f'-m_x {10. ** self.log_mass} ' \
+    #                    f'-sigma_p {10. ** self.log_cross_section} ' \
     #                    f'-loc {self.location} ' \
     #                    f'-path "{get_verne_folder()}/src/" ' \
     #                    f'-v_0 {self.v_0_nodim} ' \
@@ -289,7 +289,7 @@ class StatModel:
     #             print(f'Using {file_name} for the velocity distribution')
 
 
-    def find_intermediate_result(self,  nbin=None, model=None, mw=None, sigma=None,
+    def find_intermediate_result(self, nbin=None, model=None, mw=None, sigma=None,
                                  rho=None, v_0=None, v_esc=None,
                                  poisson=None, det_conf=None):
         '''
@@ -303,7 +303,7 @@ class StatModel:
         file_name = context['spectra_files'] + '/nbin-%i/model-%s/mw-%.2f/log_s-%.2f/rho-%.2f/v_0-%.1f/v_esc-%i/poisson_%i/spectrum'%(
             self.config['n_energy_bins'] if nbin is None else nbin,
             str(self.config['halo_model']) if model is None else str(model),
-            10 ** self.config['mw'] if mw is None else 10**mw,
+            10. ** self.config['mw'] if mw is None else 10. ** mw,
             self.config['sigma'] if sigma is None else sigma,
             self.config['density'] if rho is None else rho,
             self.config['v_0'] if v_0 is None else v_0,
@@ -368,8 +368,8 @@ class StatModel:
     def check_spectrum(self):
         if self.verbose:
             print(f"StatModel::\t{now()}\n\tevaluating\n\t\t{self.config['spectrum_class']}"
-                  f"\n\tfor mw = {10 ** self.config['mw']}, "
-                  f"\n\tsig = {10 ** self.config['sigma']}, "
+                  f"\n\tfor mw = {10. ** self.config['mw']}, "
+                  f"\n\tsig = {10. ** self.config['sigma']}, "
                   f"\n\thalo model = \n\t\t{self.config['halo_model']} and "
                   f"\n\tdetector = \n\t\t{self.config['det_params']}")
         if self.config['save_intermediate']:
@@ -382,8 +382,8 @@ class StatModel:
         # A) we are not saving intermediate results
         # B) we haven't yet computed the desired intermediate spectrum
         spectrum = self.config['spectrum_class'](
-            10 ** self.config['mw'],
-            10 ** self.config['sigma'],
+            10. ** self.config['mw'],
+            10. ** self.config['sigma'],
             self.config['halo_model'],
             self.config['det_params'])
         spectrum.n_bins = self.config['n_energy_bins']
@@ -523,8 +523,8 @@ class StatModel:
                 raise NotImplementedError(
                     f"Trying to fit two parameters ({parameter_names}), this is not implemented.")
             if self.verbose:
-                print(f"StatModel::\t{now()}\n\tevaluating{self.config['spectrum_class']} for mw = {10 ** x0}, "
-                      f"sig = {10 ** x1}, halo model = {self.config['halo_model']} and "
+                print(f"StatModel::\t{now()}\n\tevaluating{self.config['spectrum_class']} for mw = {10. ** x0}, "
+                      f"sig = {10. ** x1}, halo model = {self.config['halo_model']} and "
                       f"detector = {self.config['det_params']}")
             if self.config['earth_shielding']:
                 if self.verbose > 1:
@@ -540,8 +540,8 @@ class StatModel:
                 fit_shm = self.config['halo_model']
 
             spectrum = self.config['spectrum_class'](
-                10 ** x0,
-                10 ** x1,
+                10. ** x0,
+                10. ** x1,
                 fit_shm,
                 self.config['det_params'])
             spectrum.n_bins = self.config['n_energy_bins']
@@ -582,8 +582,8 @@ class StatModel:
                 raise NotImplementedError(
                     f"Currently not yet ready to fit for {parameter_names}")
 
-            spectrum = self.config['spectrum_class'](10 ** checked_values[0],
-                                                     10 ** checked_values[1],
+            spectrum = self.config['spectrum_class'](10. ** checked_values[0],
+                                                     10. ** checked_values[1],
                                                      fit_shm,
                                                      self.config['det_params'])
             spectrum.n_bins = self.config['n_energy_bins']

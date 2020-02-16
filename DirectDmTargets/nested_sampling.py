@@ -336,7 +336,7 @@ class NestedSamplerStatModel(StatModel):
                 print('%15s : %.3f +- %.3f' % (name, col.mean(), col.std()))
                 resdict[name + '_fit_res'] = ('{0:5.2f} +/- {1:5.2f}'.format(col.mean(),col.std()))
                 if 'log_' in name:
-                    resdict[name[4:] + '_fit_res'] = '%.3g +/- %.2g' % (10 ** col.mean(), 10 ** (col.mean()) * np.log(10) * col.std())
+                    resdict[name[4:] + '_fit_res'] = '%.3g +/- %.2g' % (10. ** col.mean(), 10. ** (col.mean()) * np.log(10.) * col.std())
                     print('\t', name[4:], resdict[name[4:] + '_fit_res'])
             resdict['n_samples'] = len(samples.transpose()[0])
             # Pass the samples to the self.result to be saved.
@@ -363,7 +363,7 @@ class NestedSamplerStatModel(StatModel):
                 print('\t', key, resdict[key + '_fit_res'])
                 if 'log_' in key:
                     resdict[key[4:] + '_fit_res'] = '%.3g +/- %.2g' % (
-                        10 ** p[i], 10 ** (p[i]) * np.log(10) * np.sqrt(cov[i, i]))
+                        10. ** p[i], 10. ** (p[i]) * np.log(10) * np.sqrt(cov[i, i]))
                     print('\t', key[4:], resdict[key[4:] + '_fit_res'])
         if self.verbose:
             print(f'NestedSamplerStatModel::\t{now(self.config["start"])}\n\tAlright we got all the info we need, '
@@ -525,7 +525,7 @@ def load_multinest_samples(load_from=default_nested_save_dir(), item='latest'):
     return load_multinest_samples_from_file(load_dir)
 
 def multinest_corner(result, save=False):
-    info = "$M_\chi}$=%.2f" % 10 ** np.float(result['config']['mw'])
+    info = "$M_\chi}$=%.2f" % 10. ** np.float(result['config']['mw'])
     for prior_key in result['config']['prior'].keys():
         try:
             mean = result['config']['prior'][prior_key]['mean']
@@ -567,7 +567,7 @@ def multinest_corner(result, save=False):
     plt.show()
     
 def nestle_corner(result, save=False):
-    info = "$M_\chi}$=%.2f" % 10 ** np.float(result['config']['mw'])
+    info = "$M_\chi}$=%.2f" % 10. ** np.float(result['config']['mw'])
     for prior_key in result['config']['prior'].keys():
         try:
             mean = result['config']['prior'][prior_key]['mean']

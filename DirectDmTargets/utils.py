@@ -218,7 +218,7 @@ def add_identifier_to_safe(name, verbose = 1):
     # where to look
     csv_path = '/'.join(name.split('/')[:-1]) + '/'
     # what to look for
-    csv_key = name.split('/')[-1].strip('.csv')
+    csv_key = name.split('/')[-1].replace('.csv', "")
     # What can we see
     if not os.path.exists(csv_path):
         exist_csv = False
@@ -236,12 +236,12 @@ def add_identifier_to_safe(name, verbose = 1):
 
     if is_str_in_list(csv_key, files_in_folder):
         if verbose:
-            print(f'Using {str_in_list(csv_key, files_in_folder)} since it has {csv_key}')
+            print(f'VerneSHM::\tUsing {str_in_list(csv_key, files_in_folder)} since it has {csv_key}')
         exist_csv = True
         abs_file_name = csv_path + str_in_list(csv_key, files_in_folder)
-        print(f'Using {abs_file_name} as input')
-
+        print(f'VerneSHM::\tUsing {abs_file_name} as input')
     else:
+        print("VerneSHM::\tNo file found")
         exist_csv = False
         if not host in name:
             abs_file_name = name.replace('.csv', f'-{host}.csv')
@@ -255,5 +255,5 @@ def add_identifier_to_safe(name, verbose = 1):
     # file_name = csv_path + str_in_list(csv_key, files_in_folder)
     # print(f'Using {file_name} for the velocity distribution')
 
-    return abs_file_name, exist_csv
+    # return abs_file_name, exist_csv
 
