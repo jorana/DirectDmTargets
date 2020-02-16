@@ -548,10 +548,7 @@ class StatModel:
                     v_esc=self.config['v_esc'] * nu.km / nu.s,
                     rho_dm=self.config['density'] * nu.GeV / nu.c0 ** 2 / nu.cm ** 3)
             else:
-                fit_shm = self.config['halo_model'](
-                    v_0=self.config['v_0'] * nu.km / nu.s,
-                    v_esc=self.config['v_esc'] * nu.km / nu.s,
-                    rho_dm=self.config['density'] * nu.GeV / nu.c0 ** 2 / nu.cm ** 3)
+                fit_shm = self.config['halo_model']
 
             spectrum = self.config['spectrum_class'](
                 10. ** x0,
