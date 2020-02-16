@@ -184,7 +184,23 @@ class NestedSamplerStatModel(StatModel):
     # def SafeLoglikelihood(cube, ndim, nparams, lnew):
     #     print(f'SafeLoglikelihood called with:\ncube{cube},\ndim{ndim},\n nparams {nparams}, lnew\t{lnew})')
     #     return
-
+    def print_before_run(self):
+        print('--------------------------------------------------')
+        print(f"""NestedSamplerStatModel::\t{now(self.config['start'])}\n\tFinal print of all of the set options:
+        self.tol = {self.tol}
+        self.nlive = {self.nlive}
+        self.sampler = {self.sampler} 
+        self.log = {self.log}
+        self.config = {self.config}
+        self.result = {self.result}
+        self.fit_parameters = {self.fit_parameters}
+        halo_model = {self.config['halo_model']} with:
+            v_0 = {self.config['halo_model'].v_0 / (nu.km / nu.s)}
+            v_esc = {self.config['halo_model'].v_esc / (nu.km / nu.s)}
+            rho_dm = {self.config['halo_model'].rho_dm / (nu.GeV / nu.c0 ** 2 / nu.cm ** 3)}
+        """)
+        print('--------------------------------------------------')
+                
     def run_multinest(self):
         assert self.sampler == 'multinest', f'Trying to run multinest but initialization requires {self.sampler}'
         if self.verbose:

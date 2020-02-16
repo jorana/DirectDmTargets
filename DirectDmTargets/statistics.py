@@ -195,7 +195,13 @@ class StatModel:
         
         if self.config['earth_shielding']:
             if self.verbose:
-                print(f'StatModel::\t{now()}\n\tsetting model to VERNE model')
+                print(f'StatModel::\t{now()}\n\tsetting model to VERNE model. Using:'\
+                      f"\nlog_mass={self.config['mw']},"\
+                      f"\nlog_cross_section={self.config['sigma']},"\
+                      f"\nlocation={experiment[self.config['detector']]['location']},"\
+                      f'\nv_0={self.config["v_0"]} * nu.km / nu.s,'\
+                      f'\nv_esc={self.config["v_esc"]} * nu.km / nu.s,'\
+                      f'\nrho_dm={self.config["density"]} * nu.GeV / nu.c0 ** 2 / nu.cm ** 3')
             model = VerneSHM(
                 log_mass=self.config['mw'],
                 log_cross_section=self.config['sigma'],
@@ -209,7 +215,10 @@ class StatModel:
                 print(f'StatModel::\t{now()}\n\tmodel is set to: {self.config["halo_model"]}')
         else:
             if self.verbose:
-                print(f'StatModel::\t{now()}\n\tSetting model to SHM')
+                print(f'StatModel::\t{now()}\n\tSetting model to SHM. Using:'\
+                      f'\nv_0={self.config["v_0"]} * nu.km / nu.s,'\
+                      f'\nv_esc={self.config["v_esc"]} * nu.km / nu.s,'\
+                      f'\nrho_dm={self.config["density"]} * nu.GeV / nu.c0 ** 2 / nu.cm ** 3')
             self.config['halo_model'] = halo_model if halo_model != 'default' else SHM(
                 v_0=self.config['v_0'] * nu.km / nu.s,
                 v_esc=self.config['v_esc'] * nu.km / nu.s,
@@ -287,7 +296,6 @@ class StatModel:
     #             os.system(cmd)
     #         else:
     #             print(f'Using {file_name} for the velocity distribution')
-
 
     def find_intermediate_result(self, nbin=None, model=None, mw=None, sigma=None,
                                  rho=None, v_0=None, v_esc=None,
