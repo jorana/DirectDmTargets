@@ -28,21 +28,21 @@ def get_priors(priors_from="Evans_2019"):
                   'log_cross_section': {'range': [-46, -42], 'prior_type': 'flat'},
                   'density': {'range': [0.001, 0.9], 'prior_type': 'gauss', 'mean': 0.55, 'std': 0.17},
                   'v_0': {'range': [80, 380], 'prior_type': 'gauss', 'mean': 233, 'std': 3},
-                  'v_esc': {'range': [379, 709], 'prior_type': 'gauss', 'mean': 528, 'std': 24.5},
+                  'v_esc': {'range': [379, 709], 'prior_type': 'gauss', 'mean': 528, 'std': 24.5}, # https://arxiv.org/abs/1901.02016
                   'k': {'range': [0.5, 3.5], 'prior_type': 'flat'}}
     elif priors_from == "Evans_2019_constraint":
         priors = {'log_mass': {'range': [0.1, 3], 'prior_type': 'flat'},
                   'log_cross_section': {'range': [-46, -42], 'prior_type': 'flat'},
                   'density': {'range': [0.001, 0.9], 'prior_type': 'gauss', 'mean': 0.55, 'std': 0.1},
                   'v_0': {'range': [80, 380], 'prior_type': 'gauss', 'mean': 233, 'std': 3},
-                  'v_esc': {'range': [379, 709], 'prior_type': 'gauss', 'mean': 528, 'std': 24.5},
+                  'v_esc': {'range': [379, 709], 'prior_type': 'gauss', 'mean': 528, 'std': 24.5}, # https://arxiv.org/abs/1901.02016
                   'k': {'range': [0.5, 3.5], 'prior_type': 'flat'}}
     elif priors_from == "realistic":
         priors = {'log_mass': {'range': [0.01, 4], 'prior_type': 'flat'},
                   'log_cross_section': {'range': [-49, -44], 'prior_type': 'flat'},
                   'density': {'range': [0.001, 0.9], 'prior_type': 'gauss', 'mean': 0.55, 'std': 0.1},
                   'v_0': {'range': [80, 380], 'prior_type': 'gauss', 'mean': 233 , 'std': 3},
-                  'v_esc': {'range': [379, 709], 'prior_type': 'gauss', 'mean': 528, 'std': 24.5},
+                  'v_esc': {'range': [379, 709], 'prior_type': 'gauss', 'mean': 528, 'std': 24.5}, # https://arxiv.org/abs/1901.02016
                   'k': {'range': [0.5, 3.5], 'prior_type': 'flat'}}
     elif priors_from == "migdal":
         priors = {'log_mass': {'range': [-1.5, 1.5], 'prior_type': 'flat'},
@@ -50,7 +50,7 @@ def get_priors(priors_from="Evans_2019"):
                   # see Evans_2019_constraint
                   'density': {'range': [0.001, 0.9], 'prior_type': 'gauss', 'mean': 0.55, 'std': 0.1},
                   'v_0': {'range': [80, 380], 'prior_type': 'gauss', 'mean': 233, 'std': 3},
-                  'v_esc': {'range': [379, 709], 'prior_type': 'gauss', 'mean': 528, 'std': 24.5},
+                  'v_esc': {'range': [379, 709], 'prior_type': 'gauss', 'mean': 528, 'std': 24.5}, # https://arxiv.org/abs/1901.02016
                   'k': {'range': [0.5, 3.5], 'prior_type': 'flat'}}
     elif priors_from == "migdal_lower":
         priors = {'log_mass': {'range': [-1.5, 1.5], 'prior_type': 'flat'},
@@ -58,7 +58,7 @@ def get_priors(priors_from="Evans_2019"):
                   # see Evans_2019_constraint
                   'density': {'range': [0.001, 0.9], 'prior_type': 'gauss', 'mean': 0.55, 'std': 0.1},
                   'v_0': {'range': [80, 380], 'prior_type': 'gauss', 'mean': 233, 'std': 3},
-                  'v_esc': {'range': [379, 709], 'prior_type': 'gauss', 'mean': 528, 'std': 24.5},
+                  'v_esc': {'range': [379, 709], 'prior_type': 'gauss', 'mean': 528, 'std': 24.5}, # https://arxiv.org/abs/1901.02016
                   'k': {'range': [0.5, 3.5], 'prior_type': 'flat'}}
     elif priors_from == "migdal_upper":
         priors = {'log_mass': {'range': [-1.5, 1.5], 'prior_type': 'flat'},
@@ -66,7 +66,7 @@ def get_priors(priors_from="Evans_2019"):
                   # see Evans_2019_constraint
                   'density': {'range': [0.001, 0.9], 'prior_type': 'gauss', 'mean': 0.55, 'std': 0.1},
                   'v_0': {'range': [80, 380], 'prior_type': 'gauss', 'mean': 233, 'std': 3},
-                  'v_esc': {'range': [379, 709], 'prior_type': 'gauss', 'mean': 528, 'std': 24.5},
+                  'v_esc': {'range': [379, 709], 'prior_type': 'gauss', 'mean': 528, 'std': 24.5}, # https://arxiv.org/abs/1901.02016
                   'k': {'range': [0.5, 3.5], 'prior_type': 'flat'}}
     elif priors_from == "migdal_wide":
         priors = {'log_mass': {'range': [-1.5, 1.5], 'prior_type': 'flat'},
@@ -341,6 +341,14 @@ class StatModel:
         # data_at_path = os.path.exists(file_path)
 
         data_at_path, file_path = add_identifier_to_safe(file_name)
+
+        # There have been some issues with mixed results for these two densities. Remove those files.
+        if rho == 0.55 or rho == 0.4:
+            if data_at_path:
+                print(f'StatModel::\tWARNING REMOVING {file_path}')
+                os.remove(file_path)
+                data_at_path, file_path = add_identifier_to_safe(file_name)
+                print(f'Re-evatulate, now we have {file_path}. Is there data: {data_at_path}')
 
         if data_at_path:
             try:
