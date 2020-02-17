@@ -326,7 +326,7 @@ class StatModel:
             self.config['v_esc'] if v_esc is None else v_esc,
             int(self.config['poisson'] if poisson is None else poisson)
         )
-
+        
         # Add all other parameters that are in the detector config
         if det_conf is None:
             det_conf = self.config['det_params']
