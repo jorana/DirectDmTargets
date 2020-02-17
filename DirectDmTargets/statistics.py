@@ -345,10 +345,13 @@ class StatModel:
         # There have been some issues with mixed results for these two densities. Remove those files.
         if rho == 0.55 or rho == 0.4:
             if data_at_path:
-                print(f'StatModel::\tWARNING REMOVING {file_path}')
-                os.remove(file_path)
-                data_at_path, file_path = add_identifier_to_safe(file_name)
-                print(f'Re-evatulate, now we have {file_path}. Is there data: {data_at_path}')
+                write_time = os.path.getmtime(file_path)
+                feb17_2020 = 1581932824.5842493
+                if write_time < feb17_2020:
+                    print(f'StatModel::\tWARNING REMOVING {file_path}')
+                    os.remove(file_path)
+                    data_at_path, file_path = add_identifier_to_safe(file_name)
+                    print(f'Re-evatulate, now we have {file_path}. Is there data: {data_at_path}')
 
         if data_at_path:
             try:
