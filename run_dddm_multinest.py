@@ -87,7 +87,7 @@ args = parser.parse_args()
 yes_or_no = {"yes" : True, "no" : False}
 
 rank = MPI.COMM_WORLD.Get_rank()
-print(f"info\nn_cores: {multiprocessing.cpu_count()}\npid: {os.getpid()}\nranke{rank}")
+print(f"info\nn_cores: {multiprocessing.cpu_count()}\npid: {os.getpid()}\nrank{rank}")
 time.sleep(5)
 
 print(f"run_dddm_nestle.py::\tstart for mw = {args.mw}, sigma = "

@@ -61,15 +61,16 @@ def migdal_background_XENON1T(e_min, e_max, nbins):
     :param nbins: number of bins
     :return: detector resolution for Ge detector
     '''
-    # TODO really ugly
-    # background in XENON1T
-    # p. 140 https://pure.uva.nl/ws/files/31193425/Thesis.pdf
-    bg_rate = 1.90 * 1.0e-4  # kg day / keV
-    conv_units = 1.0e-3 * (1. / 365.25)  # Tonne year
+    # Asumme that:
+    #   A) The BG is 10x lower than in https://www.nature.com/articles/s41586-019-1124-4
+    #   B) The BG is flat
+    bg_rate = 80 # 1/(keV * t * yr)
+    # bg_rate = 1.90 * 1.0e-4  # kg day / keV
+    # conv_units = 1.0e-3 * (1. / 365.25)  # Tonne year
     # Assume flat background over entire energy range
     # True to first order below 200 keV
 
-    return np.full(nbins, bg_rate * conv_units)
+    return np.full(nbins, bg_rate)
 
 
 @numba.jit(nopython=True)
@@ -170,6 +171,18 @@ experiment = {
         'res': det_res_DarkSide,
         'bg_func': migdal_background_Darkside,
         # 'add_bg': False # unfortunate naming
+    },
+    'Xe_migd_bg': {
+        'material': 'Xe',
+        'type': 'migdal_bg',
+        'exp': 5 * 5,  # aim for 2025 (5 yr * 5 ton)
+        'cut_eff': 0.8,
+        'nr_eff': 0.5,
+        'E_thr': 1.0,  # assume slightly lower than https://arxiv.org/abs/1907.12771
+        'location': "XENON",
+        'res': det_res_XENON1T,
+        'bg_func': migdal_background_XENON1T,
+        # 'add_bg': False # unfortunate naming
     }}
 
 # And calculate the effective exposure for each
@@ -184,9 +197,10 @@ for name in experiment.keys():
 exp_names = experiment.keys()
 for name in list(exp_names):
     bg_name = name + '_bg'
-    experiment[bg_name] = experiment[name].copy()
-    # experiment[bg_name]['add_bg'] = True
-    experiment[bg_name]['type'] = experiment[bg_name]['type'] + '_bg'
+    if not bg_name in exp_names:
+        experiment[bg_name] = experiment[name].copy()
+        # experiment[bg_name]['add_bg'] = True
+        experiment[bg_name]['type'] = experiment[bg_name]['type'] + '_bg'
 
 @numba.njit
 def smear_signal(rate, energy, sigma, bin_width):
