@@ -150,3 +150,30 @@ def plot_spectrum(data, color='blue', label='label', linestyle='none',
                  label=label,
                  markersize=2
                  )
+    
+# def get_posterior(samples, weights):
+#     # re-scale weights to have a maximum of one
+#     nweights = weights/np.max(weights)
+
+#     # get the probability of keeping a sample from the weights
+#     keepidx = np.where(np.random.rand(len(nweights)) < nweights)[0]
+#     # get the posterior samples
+#     return samples[keepidx,:]
+
+# def get_hist(item, nbins = 45, bin_range = None):
+# #     nbins = 45
+# #     bin_range = [[1, 3], [-46, -44]]
+#     if bin_range == None:
+#         bin_range = [results[item]['config']['prior']['log_mass']['range'],
+#                  results[item]['config']['prior']['log_cross_section']['range']
+#                 ]
+#     counts, xedges, yedges = np.histogram2d(*get_p_i(item), bins = nbins, range = bin_range)
+#     return counts , xedges, yedges
+
+# def get_hist_norm(item):
+#     counts , xedges, yedges = get_hist(item)
+#     return counts/np.sum(counts) , xedges, yedges
+
+# def get_p_i(i, samples_name = 'weighted_samples'):
+#     m, sig = results[i][samples_name].T[:2]  
+#     return np.array([m, sig])

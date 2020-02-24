@@ -8,6 +8,7 @@ import multiprocessing
 import time
 import os
 from mpi4py import MPI
+
 # # Direct detection of Dark matter using different target materials #
 # 
 # Author:
@@ -86,7 +87,7 @@ args = parser.parse_args()
 yes_or_no = {"yes" : True, "no" : False}
 
 rank = MPI.COMM_WORLD.Get_rank()
-print(f"info\nn_cores: {multiprocessing.cpu_count()}\npid: {os.getpid()}\nranke{rank}")
+print(f"info\nn_cores: {multiprocessing.cpu_count()}\npid: {os.getpid()}\nrank{rank}")
 time.sleep(5)
 
 print(f"run_dddm_nestle.py::\tstart for mw = {args.mw}, sigma = "
@@ -100,18 +101,20 @@ if args.shielding != "default":
 else:
     assert False
 #TODO
-stats.config['save_intermediate'] = yes_or_no[args.save_intermediate.lower()]
 stats.config['poisson'] = args.poisson
 stats.config['notes'] = args.notes
 stats.config['n_energy_bins'] = args.bins
 stats.set_prior(args.priors_from)
+stats.set_models()
+stats.config['save_intermediate'] = yes_or_no[args.save_intermediate.lower()]
 #TODO change to set_fit_parameters
-stats.fit_parameters = stats.known_parameters[:args.nparams]
 stats.set_benchmark(mw=args.mw, sigma=args.cross_section)
+stats.fit_parameters = stats.known_parameters[:args.nparams]
 stats.eval_benchmark()
 stats.nlive = args.nlive
 stats.config['nlive']= args.nlive
 stats.tol = args.tol
+stats.print_before_run()
 # stats.run_nestle()
 if args.multicore_hash != "":
     stats.get_save_dir(hash= args.multicore_hash)

@@ -9,8 +9,8 @@ from .utils import now, get_result_folder, add_identifier_to_safe
 from .context import *
 import types
 
-# Set a lower bound to the loglikekyhood (this becomes a problem due to machine precition.
-LL_LOW_BOUND = 1e-100 # 1e-300
+# Set a lower bound to the loglikekihood (this becomes a problem due to machine precision.
+LL_LOW_BOUND = 1e-99 # 1e-300
 
 def get_priors(priors_from="Evans_2019"):
     """
@@ -28,21 +28,21 @@ def get_priors(priors_from="Evans_2019"):
                   'log_cross_section': {'range': [-46, -42], 'prior_type': 'flat'},
                   'density': {'range': [0.001, 0.9], 'prior_type': 'gauss', 'mean': 0.55, 'std': 0.17},
                   'v_0': {'range': [80, 380], 'prior_type': 'gauss', 'mean': 233, 'std': 3},
-                  'v_esc': {'range': [379, 709], 'prior_type': 'gauss', 'mean': 528, 'std': 24.5},
+                  'v_esc': {'range': [379, 709], 'prior_type': 'gauss', 'mean': 528, 'std': 24.5}, # https://arxiv.org/abs/1901.02016
                   'k': {'range': [0.5, 3.5], 'prior_type': 'flat'}}
     elif priors_from == "Evans_2019_constraint":
         priors = {'log_mass': {'range': [0.1, 3], 'prior_type': 'flat'},
                   'log_cross_section': {'range': [-46, -42], 'prior_type': 'flat'},
                   'density': {'range': [0.001, 0.9], 'prior_type': 'gauss', 'mean': 0.55, 'std': 0.1},
                   'v_0': {'range': [80, 380], 'prior_type': 'gauss', 'mean': 233, 'std': 3},
-                  'v_esc': {'range': [379, 709], 'prior_type': 'gauss', 'mean': 528, 'std': 24.5},
+                  'v_esc': {'range': [379, 709], 'prior_type': 'gauss', 'mean': 528, 'std': 24.5}, # https://arxiv.org/abs/1901.02016
                   'k': {'range': [0.5, 3.5], 'prior_type': 'flat'}}
     elif priors_from == "realistic":
         priors = {'log_mass': {'range': [0.01, 4], 'prior_type': 'flat'},
                   'log_cross_section': {'range': [-49, -44], 'prior_type': 'flat'},
                   'density': {'range': [0.001, 0.9], 'prior_type': 'gauss', 'mean': 0.55, 'std': 0.1},
                   'v_0': {'range': [80, 380], 'prior_type': 'gauss', 'mean': 233 , 'std': 3},
-                  'v_esc': {'range': [379, 709], 'prior_type': 'gauss', 'mean': 528, 'std': 24.5},
+                  'v_esc': {'range': [379, 709], 'prior_type': 'gauss', 'mean': 528, 'std': 24.5}, # https://arxiv.org/abs/1901.02016
                   'k': {'range': [0.5, 3.5], 'prior_type': 'flat'}}
     elif priors_from == "migdal":
         priors = {'log_mass': {'range': [-1.5, 1.5], 'prior_type': 'flat'},
@@ -50,7 +50,7 @@ def get_priors(priors_from="Evans_2019"):
                   # see Evans_2019_constraint
                   'density': {'range': [0.001, 0.9], 'prior_type': 'gauss', 'mean': 0.55, 'std': 0.1},
                   'v_0': {'range': [80, 380], 'prior_type': 'gauss', 'mean': 233, 'std': 3},
-                  'v_esc': {'range': [379, 709], 'prior_type': 'gauss', 'mean': 528, 'std': 24.5},
+                  'v_esc': {'range': [379, 709], 'prior_type': 'gauss', 'mean': 528, 'std': 24.5}, # https://arxiv.org/abs/1901.02016
                   'k': {'range': [0.5, 3.5], 'prior_type': 'flat'}}
     elif priors_from == "migdal_lower":
         priors = {'log_mass': {'range': [-1.5, 1.5], 'prior_type': 'flat'},
@@ -58,7 +58,7 @@ def get_priors(priors_from="Evans_2019"):
                   # see Evans_2019_constraint
                   'density': {'range': [0.001, 0.9], 'prior_type': 'gauss', 'mean': 0.55, 'std': 0.1},
                   'v_0': {'range': [80, 380], 'prior_type': 'gauss', 'mean': 233, 'std': 3},
-                  'v_esc': {'range': [379, 709], 'prior_type': 'gauss', 'mean': 528, 'std': 24.5},
+                  'v_esc': {'range': [379, 709], 'prior_type': 'gauss', 'mean': 528, 'std': 24.5}, # https://arxiv.org/abs/1901.02016
                   'k': {'range': [0.5, 3.5], 'prior_type': 'flat'}}
     elif priors_from == "migdal_upper":
         priors = {'log_mass': {'range': [-1.5, 1.5], 'prior_type': 'flat'},
@@ -66,7 +66,7 @@ def get_priors(priors_from="Evans_2019"):
                   # see Evans_2019_constraint
                   'density': {'range': [0.001, 0.9], 'prior_type': 'gauss', 'mean': 0.55, 'std': 0.1},
                   'v_0': {'range': [80, 380], 'prior_type': 'gauss', 'mean': 233, 'std': 3},
-                  'v_esc': {'range': [379, 709], 'prior_type': 'gauss', 'mean': 528, 'std': 24.5},
+                  'v_esc': {'range': [379, 709], 'prior_type': 'gauss', 'mean': 528, 'std': 24.5}, # https://arxiv.org/abs/1901.02016
                   'k': {'range': [0.5, 3.5], 'prior_type': 'flat'}}
     elif priors_from == "migdal_wide":
         priors = {'log_mass': {'range': [-1.5, 1.5], 'prior_type': 'flat'},
@@ -75,6 +75,38 @@ def get_priors(priors_from="Evans_2019"):
                   'density': {'range': [0.001, 0.9], 'prior_type': 'gauss', 'mean': 0.55, 'std': 0.17},
                   'v_0': {'range': [80, 380], 'prior_type': 'gauss', 'mean': 233, 'std': 30},
                   'v_esc': {'range': [379, 709], 'prior_type': 'gauss', 'mean': 528, 'std': 33},
+                  'k': {'range': [0.5, 3.5], 'prior_type': 'flat'}}
+    elif priors_from == "migdal_very_wide":
+        priors = {'log_mass': {'range': [-2, 2], 'prior_type': 'flat'},
+                  'log_cross_section': {'range': [-49, -32], 'prior_type': 'flat'},
+                  # see Evans_2019_constraint
+                  'density': {'range': [0.001, 0.9], 'prior_type': 'gauss', 'mean': 0.55, 'std': 0.17},
+                  'v_0': {'range': [80, 380], 'prior_type': 'gauss', 'mean': 233, 'std': 30},
+                  'v_esc': {'range': [379, 709], 'prior_type': 'gauss', 'mean': 528, 'std': 33},
+                  'k': {'range': [0.5, 3.5], 'prior_type': 'flat'}}
+    elif priors_from == "migdal_sanity":
+        priors = {'log_mass': {'range': [-2, 2], 'prior_type': 'flat'},
+                  'log_cross_section': {'range': [-49, -32], 'prior_type': 'flat'},
+                  # see Evans_2019_constraint
+                  'density': {'range': [0.001, 0.9], 'prior_type': 'gauss', 'mean': 0.55, 'std': 0.5},
+                  'v_0': {'range': [80, 380], 'prior_type': 'gauss', 'mean': 233, 'std': 90},
+                  'v_esc': {'range': [379, 709], 'prior_type': 'gauss', 'mean': 528, 'std': 99},
+                  'k': {'range': [0.5, 3.5], 'prior_type': 'flat'}}
+    elif priors_from == "migdal_extremely_wide":
+        priors = {'log_mass': {'range': [-2, 3], 'prior_type': 'flat'},
+                  'log_cross_section': {'range': [-50, -30], 'prior_type': 'flat'},
+                  # see Evans_2019_constraint
+                  'density': {'range': [0.001, 0.9], 'prior_type': 'gauss', 'mean': 0.55, 'std': 0.5},
+                  'v_0': {'range': [80, 380], 'prior_type': 'gauss', 'mean': 233, 'std': 90},
+                  'v_esc': {'range': [379, 709], 'prior_type': 'gauss', 'mean': 528, 'std': 99},
+                  'k': {'range': [0.5, 3.5], 'prior_type': 'flat'}}
+    elif priors_from == "migdal_very_extremely_wide":
+        priors = {'log_mass': {'range': [-2, 4], 'prior_type': 'flat'},
+                  'log_cross_section': {'range': [-50, -30], 'prior_type': 'flat'},
+                  # see Evans_2019_constraint
+                  'density': {'range': [0.001, 0.9], 'prior_type': 'gauss', 'mean': 0.55, 'std': 0.5},
+                  'v_0': {'range': [80, 380], 'prior_type': 'gauss', 'mean': 233, 'std': 90},
+                  'v_esc': {'range': [379, 709], 'prior_type': 'gauss', 'mean': 528, 'std': 99},
                   'k': {'range': [0.5, 3.5], 'prior_type': 'flat'}}
     else:
         raise NotImplementedError(f"Taking priors from {priors_from} is not implemented")
@@ -179,7 +211,13 @@ class StatModel:
         
         if self.config['earth_shielding']:
             if self.verbose:
-                print(f'StatModel::\t{now()}\n\tsetting model to VERNE model')
+                print(f'StatModel::\t{now()}\n\tsetting model to VERNE model. Using:'\
+                      f"\nlog_mass={self.config['mw']},"\
+                      f"\nlog_cross_section={self.config['sigma']},"\
+                      f"\nlocation={experiment[self.config['detector']]['location']},"\
+                      f'\nv_0={self.config["v_0"]} * nu.km / nu.s,'\
+                      f'\nv_esc={self.config["v_esc"]} * nu.km / nu.s,'\
+                      f'\nrho_dm={self.config["density"]} * nu.GeV / nu.c0 ** 2 / nu.cm ** 3')
             model = VerneSHM(
                 log_mass=self.config['mw'],
                 log_cross_section=self.config['sigma'],
@@ -193,7 +231,10 @@ class StatModel:
                 print(f'StatModel::\t{now()}\n\tmodel is set to: {self.config["halo_model"]}')
         else:
             if self.verbose:
-                print(f'StatModel::\t{now()}\n\tSetting model to SHM')
+                print(f'StatModel::\t{now()}\n\tSetting model to SHM. Using:'\
+                      f'\nv_0={self.config["v_0"]} * nu.km / nu.s,'\
+                      f'\nv_esc={self.config["v_esc"]} * nu.km / nu.s,'\
+                      f'\nrho_dm={self.config["density"]} * nu.GeV / nu.c0 ** 2 / nu.cm ** 3')
             self.config['halo_model'] = halo_model if halo_model != 'default' else SHM(
                 v_0=self.config['v_0'] * nu.km / nu.s,
                 v_esc=self.config['v_esc'] * nu.km / nu.s,
@@ -254,8 +295,8 @@ class StatModel:
     #         # if no data available here, we need to make it
     #         if not os.path.exists(file_name):
     #             pyfile = '/src/CalcVelDist.py'
-    #             args = f'-m_x {10 ** self.log_mass} ' \
-    #                    f'-sigma_p {10 ** self.log_cross_section} ' \
+    #             args = f'-m_x {10. ** self.log_mass} ' \
+    #                    f'-sigma_p {10. ** self.log_cross_section} ' \
     #                    f'-loc {self.location} ' \
     #                    f'-path "{get_verne_folder()}/src/" ' \
     #                    f'-v_0 {self.v_0_nodim} ' \
@@ -272,8 +313,7 @@ class StatModel:
     #         else:
     #             print(f'Using {file_name} for the velocity distribution')
 
-
-    def find_intermediate_result(self,  nbin=None, model=None, mw=None, sigma=None,
+    def find_intermediate_result(self, nbin=None, model=None, mw=None, sigma=None,
                                  rho=None, v_0=None, v_esc=None,
                                  poisson=None, det_conf=None):
         '''
@@ -287,14 +327,14 @@ class StatModel:
         file_name = context['spectra_files'] + '/nbin-%i/model-%s/mw-%.2f/log_s-%.2f/rho-%.2f/v_0-%.1f/v_esc-%i/poisson_%i/spectrum'%(
             self.config['n_energy_bins'] if nbin is None else nbin,
             str(self.config['halo_model']) if model is None else str(model),
-            10 ** self.config['mw'] if mw is None else 10**mw,
+            10. ** self.config['mw'] if mw is None else 10. ** mw,
             self.config['sigma'] if sigma is None else sigma,
             self.config['density'] if rho is None else rho,
             self.config['v_0'] if v_0 is None else v_0,
             self.config['v_esc'] if v_esc is None else v_esc,
             int(self.config['poisson'] if poisson is None else poisson)
         )
-
+        
         # Add all other parameters that are in the detector config
         if det_conf is None:
             det_conf = self.config['det_params']
@@ -309,6 +349,17 @@ class StatModel:
         # data_at_path = os.path.exists(file_path)
 
         data_at_path, file_path = add_identifier_to_safe(file_name)
+
+        # There have been some issues with mixed results for these two densities. Remove those files.
+        if rho == 0.55 or rho == 0.4:
+            if data_at_path:
+                write_time = os.path.getmtime(file_path)
+                feb17_2020 = 1581932824.5842493
+                if write_time < feb17_2020:
+                    print(f'StatModel::\tWARNING REMOVING {file_path}')
+                    os.remove(file_path)
+                    data_at_path, file_path = add_identifier_to_safe(file_name)
+                    print(f'Re-evatulate, now we have {file_path}. Is there data: {data_at_path}')
 
         if data_at_path:
             try:
@@ -352,8 +403,8 @@ class StatModel:
     def check_spectrum(self):
         if self.verbose:
             print(f"StatModel::\t{now()}\n\tevaluating\n\t\t{self.config['spectrum_class']}"
-                  f"\n\tfor mw = {10 ** self.config['mw']}, "
-                  f"\n\tsig = {10 ** self.config['sigma']}, "
+                  f"\n\tfor mw = {10. ** self.config['mw']}, "
+                  f"\n\tsig = {10. ** self.config['sigma']}, "
                   f"\n\thalo model = \n\t\t{self.config['halo_model']} and "
                   f"\n\tdetector = \n\t\t{self.config['det_params']}")
         if self.config['save_intermediate']:
@@ -366,8 +417,8 @@ class StatModel:
         # A) we are not saving intermediate results
         # B) we haven't yet computed the desired intermediate spectrum
         spectrum = self.config['spectrum_class'](
-            10 ** self.config['mw'],
-            10 ** self.config['sigma'],
+            10. ** self.config['mw'],
+            10. ** self.config['sigma'],
             self.config['halo_model'],
             self.config['det_params'])
         spectrum.n_bins = self.config['n_energy_bins']
@@ -469,8 +520,10 @@ class StatModel:
         :param parameter_names: names of parameters
         :return: a spectrum as specified by the parameter_names
         """
-        if self.verbose > 1:
-            print(f'StatModel::\t{now()}\n\tSUPERVERBOSE\tevaluate spectrum')
+        if self.verbose:
+            print(f'StatModel::\t{now()}\n\tevaluate spectrum for {len(values)} parameters')
+        assert len(values) == len(parameter_names), f'trying to fit {len(values)} ' \
+                                                    f'parameters but {parameter_names} are given.'
         default_order = ['log_mass', 'log_cross_section', 'v_0', 'v_esc', 'density', 'k']
         if type(parameter_names) is str:
             raise NotImplementedError(
@@ -480,6 +533,7 @@ class StatModel:
         if self.config['save_intermediate']:
             if self.verbose:
                 print(f"StatModel::\teval_spectrum\tload results from intermediate file")
+            # TODO why is this line needed?
             spec_class = VerneSHM() if self.config['earth_shielding'] else self.config['halo_model']
             interm_exists, interm_file, interm_spec = self.find_intermediate_result(
                 nbin=self.config['n_energy_bins'],
@@ -507,8 +561,8 @@ class StatModel:
                 raise NotImplementedError(
                     f"Trying to fit two parameters ({parameter_names}), this is not implemented.")
             if self.verbose:
-                print(f"StatModel::\t{now()}\n\tevaluating{self.config['spectrum_class']} for mw = {10 ** x0}, "
-                      f"sig = {10 ** x1}, halo model = {self.config['halo_model']} and "
+                print(f"StatModel::\t{now()}\n\tevaluating{self.config['spectrum_class']} for mw = {10. ** x0}, "
+                      f"sig = {10. ** x1}, halo model = {self.config['halo_model']} and "
                       f"detector = {self.config['det_params']}")
             if self.config['earth_shielding']:
                 if self.verbose > 1:
@@ -524,8 +578,8 @@ class StatModel:
                 fit_shm = self.config['halo_model']
 
             spectrum = self.config['spectrum_class'](
-                10 ** x0,
-                10 ** x1,
+                10. ** x0,
+                10. ** x1,
                 fit_shm,
                 self.config['det_params'])
             spectrum.n_bins = self.config['n_energy_bins']
@@ -566,8 +620,8 @@ class StatModel:
                 raise NotImplementedError(
                     f"Currently not yet ready to fit for {parameter_names}")
 
-            spectrum = self.config['spectrum_class'](10 ** checked_values[0],
-                                                     10 ** checked_values[1],
+            spectrum = self.config['spectrum_class'](10. ** checked_values[0],
+                                                     10. ** checked_values[1],
                                                      fit_shm,
                                                      self.config['det_params'])
             spectrum.n_bins = self.config['n_energy_bins']
@@ -626,7 +680,7 @@ def log_likelihood_function(nb, nr):
     if nr == 0:
         # For i~0, machine precision sets nr to 0. However, this becomes a
         # little problematic since the Poisson log likelihood for 0 is not
-        # defined. Hence we cap it off by setting nr to 10^-300.
+        # defined. Hence we cap it off by setting nr to 10^-100.
         nr = LL_LOW_BOUND
     return np.log(nr) * nb - loggamma(nb + 1) - nr
 

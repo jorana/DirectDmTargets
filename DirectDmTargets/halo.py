@@ -276,15 +276,16 @@ class VerneSHM:
         check_folder_for_file(file_folder + self.fname, verbose=0)
 
         # Convert file_name and self.fname to folder and name of csv file where to save.
-        abs_file_name, exist_csv = add_identifier_to_safe(file_name)
+        exist_csv, abs_file_name = add_identifier_to_safe(file_name)
+        assertion_string = f'abs file {abs_file_name} should be a string\n'
+        assertion_string+= f'exists csv {exist_csv} should be a bool'
+        assert type(abs_file_name) == str and type(exist_csv) == bool, assertion_string
 
-        # if no data available here, we need to make it
-        # if (not os.path.exists(file_name)) and (not is_str_in_list(csv_key, files_in_folder)):
         if not exist_csv:
             pyfile = '/src/CalcVelDist.py'
             file_name = abs_file_name # file_folder + self.fname + '_' + host + '_avg' + '.csv'
-            args = f'-m_x {10 ** self.log_mass} ' \
-                   f'-sigma_p {10 ** self.log_cross_section} ' \
+            args = f'-m_x {10. ** self.log_mass} ' \
+                   f'-sigma_p {10. ** self.log_cross_section} ' \
                    f'-loc {self.location} ' \
                    f'-path "{software_folder}/src/" ' \
                    f'-v_0 {self.v_0_nodim} ' \
@@ -306,7 +307,7 @@ class VerneSHM:
             print(f'Using {abs_file_name} for the velocity distribution')
 
         # Alright now load the data and interpolate that. This is the output that wimprates need
-        if os.path.exists((abs_file_name)):
+        if not os.path.exists(abs_file_name):
             raise OSError(f'{abs_file_name} should exist')
         df = pd.read_csv(abs_file_name)
         x, y = df.keys()
