@@ -104,8 +104,14 @@ else:
 stats.config['poisson'] = args.poisson
 stats.config['notes'] = args.notes
 stats.config['n_energy_bins'] = args.bins
+
+
 stats.set_prior(args.priors_from)
 stats.set_models()
+stats.config['prior']['log_mass'] = {'range': [int(np.log10(args.mw)) - 1.5, int(np.log10(args.mw)) + 2], 'prior_type': 'flat'}
+stats.config['prior']['log_cross_section']= {'range': [int(args.cross_section) - 3, int(args.cross_section) + 3], 'prior_type': 'flat'}
+stats.config['prior']['log_mass']['param'] = stats.config['prior']['log_mass']['range']
+stats.config['prior']['log_cross_section']['param'] = stats.config['prior']['log_cross_section']['range']
 stats.config['save_intermediate'] = yes_or_no[args.save_intermediate.lower()]
 #TODO change to set_fit_parameters
 stats.set_benchmark(mw=args.mw, sigma=args.cross_section)

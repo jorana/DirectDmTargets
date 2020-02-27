@@ -64,7 +64,7 @@ def migdal_background_XENON1T(e_min, e_max, nbins):
     # Asumme that:
     #   A) The BG is 10x lower than in https://www.nature.com/articles/s41586-019-1124-4
     #   B) The BG is flat
-    bg_rate = 80 # 1/(keV * t * yr)
+    bg_rate = 80 / 10 # 1/(keV * t * yr)
     # bg_rate = 1.90 * 1.0e-4  # kg day / keV
     # conv_units = 1.0e-3 * (1. / 365.25)  # Tonne year
     # Assume flat background over entire energy range
@@ -285,7 +285,15 @@ class DetectorSpectrum(GenSpectrum):
         rates = self.spectrum_simple([self.mw, self.sigma_nucleon])
         # if this option is set to true, add a background component
         if self.add_background:
-            rates += self.experiment['bg_func'](self.E_min, self.E_max, self.n_bins)
+            # pay close attention, the events in the bg_func are already taking into
+            # account the det. efficiency et cetera. Hence the number here should be
+            # multiplied by the total exposure (rather than the effective exposure that
+            # is multiplied by at the end of this subroutine. Hence the bg rates obtained
+            # from that function is multiplied by the ratio between the two.
+            rates += self.experiment['bg_func'](self.E_min,
+                                                self.E_max,
+                                                self.n_bins) * (
+                    self.experiment['exp'] / self.experiment['exp_eff'])
         energies = self.get_bin_centers()
 
         # Set the rate to zero for energies smaller than the threshold
