@@ -32,7 +32,8 @@ def det_res_Ge(E):
 
 
 def det_res_CDMS(E):
-    # From https: // arxiv.org / pdf / 1808.09098.pdf
+    # For CDMS-lite
+    # From https://arxiv.org/pdf/1808.09098.pdf (table II.)
     """
     :param E: recoil energy (in keV)
     :return: detector resolution for Ge detector
@@ -218,6 +219,7 @@ def smear_signal(rate, energy, sigma, bin_width):
     of equal length. The the bin_width
     """
     result = []
+    length = len(rate)
     for i in range(len(energy)):
         res = 0
         for j in range(len(rate)):
@@ -226,6 +228,9 @@ def smear_signal(rate, energy, sigma, bin_width):
                          (1 / (np.sqrt(2 * np.pi) * sigma[j])) *
                          np.exp(-((energy[i] - energy[j]) ** 2 / (2 * sigma[j] ** 2)))
                          )
+            # TODO
+            #  weight = length / (j-length)
+            #  res = res * weight
         result.append(res)
     return np.array(result)
 
