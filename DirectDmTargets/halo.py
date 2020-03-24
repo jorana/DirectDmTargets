@@ -61,7 +61,7 @@ class GenSpectrum:
         if self.experiment['type'] == 'SI':
             self.E_min = 0  # keV
             self.E_max = 100  # keV
-        elif self.experiment['type'] == 'migdal':
+        elif self.experiment['type'] in ['migdal', 'migdal_bg']:
             self.E_min = 0  # keV
             self.E_max = 10  # keV
         assertion_string = "temporary assertion statement to check that the " \
@@ -103,7 +103,7 @@ class GenSpectrum:
                                     halo_model=self.dm_model,
                                     **kwargs
                                     )
-        elif self.experiment['type'] == 'migdal':
+        elif self.experiment['type'] in ['migdal', 'migdal_bg']:
             # TODO
             #  This integration takes a long time, hence, we will lower the
             #  default precision of the scipy dblquad integration

@@ -7,6 +7,7 @@ import numpy as np
 from scipy.special import loggamma
 from .utils import now, get_result_folder, add_identifier_to_safe
 from .context import *
+import time
 import types
 
 # Set a lower bound to the loglikekihood (this becomes a problem due to machine precision.
@@ -73,8 +74,8 @@ def get_priors(priors_from="Evans_2019"):
                   'log_cross_section': {'range': [-48, -37], 'prior_type': 'flat'},
                   # see Evans_2019_constraint
                   'density': {'range': [0.001, 0.9], 'prior_type': 'gauss', 'mean': 0.55, 'std': 0.17},
-                  'v_0': {'range': [80, 380], 'prior_type': 'gauss', 'mean': 233, 'std': 30},
-                  'v_esc': {'range': [379, 709], 'prior_type': 'gauss', 'mean': 528, 'std': 33},
+                  'v_0': {'range': [80, 380], 'prior_type': 'gauss', 'mean': 233, 'std': 20},
+                  'v_esc': {'range': [379, 709], 'prior_type': 'gauss', 'mean': 528, 'std': 24.5},
                   'k': {'range': [0.5, 3.5], 'prior_type': 'flat'}}
     elif priors_from == "migdal_very_wide":
         priors = {'log_mass': {'range': [-2, 2], 'prior_type': 'flat'},
@@ -359,6 +360,9 @@ class StatModel:
                     print(f'StatModel::\tWARNING REMOVING {file_path}')
                     os.remove(file_path)
                     data_at_path, file_path = add_identifier_to_safe(file_name)
+#                     file_size = os.stat(file_path).st_size
+#                     if file_size == 0:
+                            
                     print(f'Re-evatulate, now we have {file_path}. Is there data: {data_at_path}')
 
         if data_at_path:
@@ -394,7 +398,15 @@ class StatModel:
             # rename the file to also reflect the hosts name such that we don't make two copies at the same place with from two different hosts
             if not (host in spectrum_file):
                 spectrum_file = spectrum_file.replace('.csv', host + '.csv')
-            binned_spectrum.to_csv(spectrum_file, index=False)
+            try:
+                binned_spectrum.to_csv(spectrum_file, index=False)
+            except:
+                print(f"Error while saving {spectrum_file}. Sleep 5 sec and retry.")
+                time.sleep(5)
+                if os.path.exists(spectrum_file):
+                    os.remove(spectrum_file)
+                    time.sleep(5)
+                    binned_spectrum.to_csv(spectrum_file, index=False)
         except PermissionError:
             # While computing the spectrum another instance has saved a file with the same name
             pass

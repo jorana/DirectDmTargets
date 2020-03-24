@@ -196,16 +196,17 @@ def str_in_list(string, _list):
     raise FileNotFoundError(f'No name named {string} in {_list}')
 
 
-def is_str_in_list(string, _list, verbose =1):
+def is_str_in_list(string, _list, verbose =0):
     '''checks if sting is in any of the items in _list.
     :return bool:'''
-    print(f'looking for {string} in {_list}')
+    if len(_list) < 10:
+        print(f'is_str_in_list::\tlooking for {string} in {_list}')
     for name in _list:
         if string in name:
-            if verbose: print(f'{string} is in  {name}!')
+            if verbose: print(f'is_str_in_list::\t{string} is in  {name}!')
             return True
         else:
-            if verbose: print(f'{string} is not in  {name}')
+            if verbose: print(f'is_str_in_list::\t{string} is not in  {name}')
     return False
 
 def add_identifier_to_safe(name, verbose = 1):
