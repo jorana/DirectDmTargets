@@ -241,7 +241,9 @@ experiment = {
         'type': 'migdal_bg',
         'exp': 5 * 5,  # aim for 2025 (5 yr * 5 ton)
         'cut_eff': 0.8,
-        'nr_eff': 1,  # Not required for ER-type
+        # TODO
+        #  'nr_eff': 1,  # Not required for ER-type
+        'nr_eff': 0.5,
         'E_thr': 1.0,  # assume slightly lower than https://arxiv.org/abs/1907.12771
         'location': "XENON",
         'res': det_res_XENON1T,
@@ -253,40 +255,34 @@ experiment = {
         'material': 'Ge',
         'type': 'migdal_bg',
         'exp': 56 * 1.e-3,  # Tonne year
-        # https://www.slac.stanford.edu/exp/cdms/ScienceResults/Publications/PhysRevD.95.082002.pdf
         'cut_eff': 0.75,  # p. 11, right column
         'nr_eff': 0.5,  # p. 11, left column NOTE: migdal is ER type!
         'E_thr': 350. / 1e3,  # table VIII, Eph
         "location": "SNOLAB",
         'res': det_res_superCDMS,
         'bg_func': migdal_background_CDMS_Ge_iZIP,
-        # 'add_bg': False # unfortunate naming
     },
     # 'Ge_migd_iZIP_Si_bg': {
     #     'material': 'Si',
     #     'type': 'migdal_bg',
     #     'exp': 4.8 * 1.e-3,  # Tonne year
-    #     # https://www.slac.stanford.edu/exp/cdms/ScienceResults/Publications/PhysRevD.95.082002.pdf
     #     'cut_eff': 0.75,  # p. 11, right column
     #     'nr_eff': 0.675,  # p. 11, left column NOTE: migdal is ER type!
     #     'E_thr': 175./1e3,  # table VIII, Eph
     #     "location": "SNOLAB",
     #     'res': det_res_superCDMS,
     #     'bg_func':  migdal_background_CDMS_Si_iZIP,
-    #     # 'add_bg': False # unfortunate naming
     # },
     'Ge_migd_HV_bg': {
         'material': 'Ge',
         'type': 'migdal_bg',
         'exp': 44 * 1.e-3,  # Tonne year
-        # https://www.slac.stanford.edu/exp/cdms/ScienceResults/Publications/PhysRevD.95.082002.pdf
         'cut_eff': 0.85,  # p. 11, right column
         'nr_eff': 0.5,  # p. 11, left column NOTE: migdal is ER type!
         'E_thr':  100. / 1e3, # table VIII, Eph
         "location": "SNOLAB",
         'res': det_res_superCDMS,  # TODO
         'bg_func': migdal_background_superCDMS_Ge_HV,
-        # 'add_bg': False # unfortunate naming
     },
     # 'Ge_migd_HV_Si': {
     #     'material': 'Si',
@@ -299,7 +295,6 @@ experiment = {
     #     "location": "SNOLAB",
     #     'res': det_res_superCDMS,
     #     'bg_func': migdal_background_CDMS_Si_HV,
-    #     # 'add_bg': False # unfortunate naming
     # },
 }
 
@@ -346,6 +341,8 @@ def smear_signal(rate, energy, sigma, bin_width):
                          np.exp(-((energy[i] - energy[j]) ** 2 / (2 * sigma[j] ** 2)))
                          )
             # TODO
+            #  # at the end of the spectrum the bg-rate drops as the convolution does
+            #  # not take into account the higher energies.
             #  weight = length / (j-length)
             #  res = res * weight
         result.append(res)
