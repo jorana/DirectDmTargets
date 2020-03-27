@@ -251,7 +251,7 @@ experiment = {
         # 'add_bg': False # unfortunate naming
     },
     # https://arxiv.org/abs/1610.00006
-    'Ge_migd_iZIP_Ge_bg': {
+    'Ge_migd_iZIP_bg': {
         'material': 'Ge',
         'type': 'migdal_bg',
         'exp': 56 * 1.e-3,  # Tonne year
