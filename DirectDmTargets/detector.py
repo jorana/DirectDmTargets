@@ -46,6 +46,11 @@ def det_res_CDMS(E):
                    param_b * E +
                    (param_a * E) ** 2)
 
+def det_res_superCDMS(E):
+    resolution = 10  # eV
+    resolution/= 1e3  # keV
+    # https://arxiv.org/abs/1610.00006
+    return np.full(len(E), resolution)
 
 def det_res_XENON1T(E):
     # TODO
@@ -60,7 +65,7 @@ def det_res_DarkSide(E):
 def migdal_background_XENON1T(e_min, e_max, nbins):
     '''
     :param nbins: number of bins
-    :return: detector resolution for Ge detector
+    :return: background for Xe detector
     '''
     # Asumme that:
     #   A) The BG is 10x lower than in https://www.nature.com/articles/s41586-019-1124-4
@@ -78,7 +83,7 @@ def migdal_background_XENON1T(e_min, e_max, nbins):
 def migdal_background_CDMS(e_min, e_max, nbins):
     '''
     :param E: recoil energy (in keV)
-    :return: detector resolution for Ge detector
+    :return: background for Ge detector
     '''
     bins = np.linspace(e_min, e_max, nbins)
     # res = [CDMS_background_functions(bin) for bin in bins]
@@ -89,6 +94,64 @@ def migdal_background_CDMS(e_min, e_max, nbins):
             CDMS_background_functions(bins[i]) * conv_units)
 
     return np.array(res)
+
+
+def migdal_background_superCDMS_Ge_HV(e_min, e_max, nbins):
+    '''
+    :param E: recoil energy (in keV)
+    :return: background for Ge HV detector
+    '''
+    # https://arxiv.org/abs/1610.00006
+    # Assume flat bg from 32Si (Fig. 4 & Table V), ignore other isotopes.
+    bg_rate = 27  # counts/kg/keV/year
+    conv_units = 1.0e3  # Tonne
+    if not e_max < 20:  # 20 keV
+        raise NotImplemented('Assume flat background only below 20 keV')
+    return np.full(nbins, bg_rate*conv_units)
+
+# TODO
+#  No SI in wimprates
+#  def migdal_background_CDMS_Si_HV(e_min, e_max, nbins):
+#     '''
+#     :param E: recoil energy (in keV)
+#     :return: background for Si HV detector
+#     '''
+#     # https://arxiv.org/abs/1610.00006
+#     # Assume flat bg from 32Si (Fig. 4 & Table V), ignore other isotopes.
+#     bg_rate = 300  # counts/kg/keV/year
+#     conv_units = 1.0e3  # Tonne
+#     if not e_max < 100:  # 20 keV
+#         raise NotImplemented('Assume flat background only below 100 keV')
+#     return np.full(nbins, bg_rate*conv_units)
+
+
+def migdal_background_CDMS_Ge_iZIP(e_min, e_max, nbins):
+    '''
+    :param E: recoil energy (in keV)
+    :return: background for Ge iZIP detector
+    '''
+    # https://arxiv.org/abs/1610.00006
+    # Assume flat bg from 3H (Fig. 4 & Table V), ignore other isotopes.
+    bg_rate = 22  # counts/kg/keV/year
+    conv_units = 1.0e3  # Tonne
+    if not e_max < 20:  # 20 keV
+        raise NotImplemented('Assume flat background only below 20 keV')
+    return np.full(nbins, bg_rate*conv_units)
+
+# TODO
+#  No SI in wimprates
+#  def migdal_background_CDMS_Si_iZIP(e_min, e_max, nbins):
+#     '''
+#     :param E: recoil energy (in keV)
+#     :return: background for Si iZIP detector
+#     '''
+#     # https://arxiv.org/abs/1610.00006
+#     # Assume flat bg from 3H (Fig. 4 & Table V), ignore other isotopes.
+#     bg_rate = 370  # counts/kg/keV/year
+#     conv_units = 1.0e3  # Tonne
+#     if not e_max < 100:  # 20 keV
+#         raise NotImplemented('Assume flat background only below 100 keV')
+#     return np.full(nbins, bg_rate*conv_units)
 
 
 @numba.jit(nopython=True)
@@ -178,13 +241,62 @@ experiment = {
         'type': 'migdal_bg',
         'exp': 5 * 5,  # aim for 2025 (5 yr * 5 ton)
         'cut_eff': 0.8,
+        # TODO
+        #  'nr_eff': 1,  # Not required for ER-type
         'nr_eff': 0.5,
         'E_thr': 1.0,  # assume slightly lower than https://arxiv.org/abs/1907.12771
         'location': "XENON",
         'res': det_res_XENON1T,
         'bg_func': migdal_background_XENON1T,
         # 'add_bg': False # unfortunate naming
-    }}
+    },
+    # https://arxiv.org/abs/1610.00006
+    'Ge_migd_iZIP_bg': {
+        'material': 'Ge',
+        'type': 'migdal_bg',
+        'exp': 56 * 1.e-3,  # Tonne year
+        'cut_eff': 0.75,  # p. 11, right column
+        'nr_eff': 0.5,  # p. 11, left column NOTE: migdal is ER type!
+        'E_thr': 350. / 1e3,  # table VIII, Eph
+        "location": "SNOLAB",
+        'res': det_res_superCDMS,
+        'bg_func': migdal_background_CDMS_Ge_iZIP,
+    },
+    # 'Ge_migd_iZIP_Si_bg': {
+    #     'material': 'Si',
+    #     'type': 'migdal_bg',
+    #     'exp': 4.8 * 1.e-3,  # Tonne year
+    #     'cut_eff': 0.75,  # p. 11, right column
+    #     'nr_eff': 0.675,  # p. 11, left column NOTE: migdal is ER type!
+    #     'E_thr': 175./1e3,  # table VIII, Eph
+    #     "location": "SNOLAB",
+    #     'res': det_res_superCDMS,
+    #     'bg_func':  migdal_background_CDMS_Si_iZIP,
+    # },
+    'Ge_migd_HV_bg': {
+        'material': 'Ge',
+        'type': 'migdal_bg',
+        'exp': 44 * 1.e-3,  # Tonne year
+        'cut_eff': 0.85,  # p. 11, right column
+        'nr_eff': 0.5,  # p. 11, left column NOTE: migdal is ER type!
+        'E_thr':  100. / 1e3, # table VIII, Eph
+        "location": "SNOLAB",
+        'res': det_res_superCDMS,  # TODO
+        'bg_func': migdal_background_superCDMS_Ge_HV,
+    },
+    # 'Ge_migd_HV_Si': {
+    #     'material': 'Si',
+    #     'type': 'migdal_bg',
+    #     'exp': 9.6 * 1.e-3,  # Tonne year
+    #     # https://www.slac.stanford.edu/exp/cdms/ScienceResults/Publications/PhysRevD.95.082002.pdf
+    #     'cut_eff': 0.85,  # p. 11, right column
+    #     'nr_eff': 0.675,  # p. 11, left column NOTE: migdal is ER type!
+    #     'E_thr':  100. / 1e3,  # table VIII, Eph
+    #     "location": "SNOLAB",
+    #     'res': det_res_superCDMS,
+    #     'bg_func': migdal_background_CDMS_Si_HV,
+    # },
+}
 
 # And calculate the effective exposure for each
 for name in experiment.keys():
@@ -229,6 +341,8 @@ def smear_signal(rate, energy, sigma, bin_width):
                          np.exp(-((energy[i] - energy[j]) ** 2 / (2 * sigma[j] ** 2)))
                          )
             # TODO
+            #  # at the end of the spectrum the bg-rate drops as the convolution does
+            #  # not take into account the higher energies.
             #  weight = length / (j-length)
             #  res = res * weight
         result.append(res)
