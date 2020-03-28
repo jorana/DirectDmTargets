@@ -3,14 +3,27 @@ import DirectDmTargets as dddm
 import time
 import numpy as np
 import matplotlib.pyplot as plt
+from matplotlib.colors import LogNorm
 from tqdm import tqdm
 import numericalunits as nu
 import wimprates as wr
 import pandas as pd
+pd.set_option('display.width', 1000)
+pd.set_option('display.max_columns', 150)
+pd.set_option('display.max_rows', 100)
+
 import scipy
 import os
 import sys
 import numba
+import datetime
+import multihist as mh
+import seaborn as sns
+import matplotlib.pyplot as plt
+import pandas as pd
+from itertools import cycle
+import scipy.optimize
+
 print('Done import')
 print("SYSTEM")
 print(f"\tRunning on {sys.platform}")
