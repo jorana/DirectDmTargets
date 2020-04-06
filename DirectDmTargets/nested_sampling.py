@@ -32,7 +32,6 @@ class NestedSamplerStatModel(StatModel):
         self.config['start'] = datetime.now()  # .date().isoformat()
         self.config['notes'] = "default"
         self.result = False
-        # self.save_dir = False
         self.set_fit_parameters(['log_mass', 'log_cross_section'])
         if self.verbose:
             print(f'NestedSamplerStatModel::\t{now(self.config["start"])}\n\tVERBOSE ENABLED')
@@ -410,6 +409,7 @@ class NestedSamplerStatModel(StatModel):
                   f'results. But first do some checks, did we actually run?')
         # save fit parameters to config
         self.config['fit_parameters'] = self.fit_parameters
+        self.config['tol'] = self.tol
         self.check_did_run()
         save_dir = self.get_save_dir(force_index=force_index)
         fit_summary = self.get_summary()

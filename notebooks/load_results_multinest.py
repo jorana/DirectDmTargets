@@ -1,5 +1,5 @@
 print("load_results_multinest.py\tstart")
-from .common_init import *
+from common_init import *
 
 print("load_results_multinest.py\tdone packages, get results")
 

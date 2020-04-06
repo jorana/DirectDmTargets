@@ -11,6 +11,7 @@ results/nestle*
 results/emcee*
 results/*
 /notebooks/figures/*
+/notebooks/archive/*
 .ipynb_checkpoints/*
 notebooks/.ipynb_checkpoints/*
 notebooks/.ipynb_checkpoints*
