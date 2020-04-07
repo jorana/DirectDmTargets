@@ -298,7 +298,7 @@ def overlay_hist_confidence_info(i,save_label='', bin_range=None, save_dir = 'fi
     name += f'_{i}'
     combine_normalized([i], **{"alpha": 0.3})
     info = ""
-    for str_inf in ['detector', 'notes', 'start', 'fit_time', 'save_intermediate', 'earth_shielding', 'nlive']:
+    for str_inf in ['detector', 'notes', 'start', 'fit_time', 'save_intermediate', 'earth_shielding', 'nlive', 'tol']:
         try:
             info += f"\n{str_inf} = %s" % results[i]['config'][str_inf]
             if str_inf == 'start':
