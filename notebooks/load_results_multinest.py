@@ -84,7 +84,13 @@ def results_to_df(res):
                 df[key] = [res[it][key] for it in items]
             except KeyError:
                 pass
-
+    tols = []
+    for it in items:
+        try:
+            tols.append(res[it]['config']['tol'])
+        except KeyError:
+            tols.append(None)
+    df['tol'] = tols
     df['mw'] = 10 ** df['config_mw']
     df['n_fit_parameters'] = [len(pars) for pars in df['config_fit_parameters']]
     return df
@@ -378,117 +384,9 @@ def overlay_hist_confidence_info(i, save_label='', bin_range=None, save_dir='fig
         print(f"Warning! No {save_dir}")
     plt.show()
 
-
-# def two_confidence_plot(items, text_box=False, bin_range=None, nsigma=2, nbins=50):
-#     fig, ax = plt.subplots(figsize=(8, 6))
-#     if bin_range == None:
-#         bin_range = [results[items[0]]['config']['prior']['log_mass']['range'],
-#                      results[items[0]]['config']['prior']['log_cross_section']['range']
-#                      ]
-#     hists = {}
-#     for k, item in enumerate(items):  # , 78, 110
-#         x, y = get_p_i(item)
-#         # Make a 2d normed histogram
-#         hists[k], xedges, yedges = np.histogram2d(x, y, bins=nbins, range=bin_range, normed=True)
-#     H = hists[0] * hists[1]
-#     if True:
-#         norm = H.sum()  # Find the norm of the sum
-#         # Set contour levels
-#         contour3 = 0.99
-#         contour2 = 0.95
-#         contour1 = 0.68
-#
-#         # Take histogram bin membership as proportional to Likelihood
-#         # This is true when data comes from a Markovian process
-#         def objective(limit, target):
-#             w = np.where(H > limit)
-#             count = H[w]
-#             return count.sum() - target
-#
-#         target1 = norm * contour1
-#         level1 = scipy.optimize.bisect(objective, H.min(), H.max(), args=(target1,))
-#         levels = [level1]
-#         if nsigma > 1:
-#             target2 = norm * contour2
-#             level2 = scipy.optimize.bisect(objective, H.min(), H.max(), args=(target2,))
-#             levels.append(level2)
-#             if nsigma > 2:
-#                 target3 = norm * contour3
-#                 level3 = scipy.optimize.bisect(objective, H.min(), H.max(), args=(target3,))
-#                 levels.append(level3)
-#             if nsigma > 3:
-#                 print('Nsigma too big')
-#         levels.reverse()
-#         levels.append(H.max())
-#
-#         # Find levels by summing histogram to objective
-#
-#         # Pass levels to normed kde plot
-#         def av_levels(x):
-#             return [(x[i] + x[i + 1]) / 2 for i in range(len(x) - 1)]
-#
-#         if levels[0] == levels[1]:
-#             print("ERRRRRRRRR\n\n")
-#             print(levels)
-#             levels[0] /= 1.01
-#             levels = np.unique(levels)
-#             print(levels)
-#         sns_ax = sns.kdeplot(x, y, shade=True, ax=ax, n_levels=levels, cmap="viridis", normed=True,
-#                              cbar=False, vmin=levels[0], vmax=levels[-1])
-#         kwargs = {}
-#         if k == 0:
-#             kwargs['label'] = 'best fit'
-#         plt.scatter(np.mean(x), np.mean(y), c='black',
-#                     marker='+', **kwargs)
-#         if k == 0:
-#             kwargs['label'] = 'benchmark value'
-#         plt.scatter(results[item]['config']['mw'],
-#                     results[item]['config']['sigma'], c='blue',
-#                     marker='x',
-#                     **kwargs)
-#         if k == 0:
-#             cbar = ax.figure.colorbar(sns_ax.collections[0])
-#             cbar.set_ticks(av_levels(np.linspace(0, 1, nsigma + 1)))
-#             col_labels = ['$3\sigma$', '$2\sigma$', '$1\sigma$'][3 - nsigma:]
-#             cbar.set_ticklabels(col_labels)
-#             cbar.set_label("Posterior probability")
-#
-#     secax = ax.secondary_xaxis('top', functions=(pow10, np.log10))
-#
-#     if 'migd' in results[items[0]]['config']['detector']:
-#         x_ticks = [0.01, 0.1, 1, 3, 5]
-#     else:
-#         x_ticks = [15, 25, 50, 100, 250, 500, 1000]
-#     for x_tick in x_ticks:
-#         ax.axvline(np.log10(x_tick), alpha=0.1)
-#     secax.set_ticks(x_ticks)
-#     plt.xlim(np.log10(x_ticks[0]), np.log10(x_ticks[-1]))
-#     plt.xlabel("$\log_{10}(M_{\chi}$ $[GeV/c^{2}]$)")
-#     secax.set_xlabel("$M_{\chi}$ $[GeV/c^{2}]$")
-#     plt.ylabel("$\log_{10}(\sigma_{S.I.}$ $[cm^{2}]$)")
-#     plt.legend(loc='upper right')
-#
-#     if text_box:
-#         plt.text(0.05, 0.95, text_box, transform=ax.transAxes, alpha=0.5,
-#                  bbox=dict(facecolor="white", boxstyle="round"))
-
-
 def get_binrange(i):
     return results[i]['config']['prior']['log_mass']['range'], results[i]['config']['prior']['log_cross_section'][
         'range']
-
-
-# def combine_posteriors(items):
-#     assert len(items) == 2, 'only combine two posteriors'
-#     assert get_binrange(items[0]) == get_binrange(items[1])
-#     bin_range = get_binrange(items[1])
-#     two_confidence_plot(items, bin_range=bin_range, text_box=True, nsigma=2, nbins=50)
-#     ax = plt.gca()
-#     plt.text(1.6, 1, 'ing', transform=ax.transAxes, fontsize=12, bbox=dict(facecolor="white", boxstyle="round"),
-#              verticalalignment='top')
-#     if bin_range:
-#         plt.xlim(*bin_range[0])
-#         plt.ylim(*bin_range[1])
 
 def one_confidence_plot(i, save_label='', save_dir='figures/', corner = False):
     det = results[i]['config']['detector']
@@ -561,10 +459,11 @@ def two_confidence_plot(items, text_box=False,
     _confidence_plot(item, X, Y, H, bin_range, text_box=text_box, nsigma=nsigma)
 
 
-def _confidence_plot(item, X, Y, H, bin_range, text_box=False, nsigma=3):
+    
+def _confidence_plot(item, X, Y, H, bin_range, text_box=False, nsigma=3, cmap = cm.inferno_r):
     # cmap = cm.viridis
     # cmap = cm.gnuplot2_r
-    cmap = cm.inferno_r
+    
     xmean, xerr = weighted_avg_and_std(X, np.mean(H, axis=0))
     ymean, yerr = weighted_avg_and_std(Y, np.mean(H, axis=1))
     print(f'X mean, std {xmean, xerr}')
@@ -638,7 +537,7 @@ def _confidence_plot(item, X, Y, H, bin_range, text_box=False, nsigma=3):
         x_ticks = [15, 25, 50, 100, 250, 500, 1000]
     for x_tick in x_ticks:
         ax.axvline(np.log10(x_tick), alpha=0.1)
-    secax.set_ticks(x_ticks)
+    secax.set_ticks(x_ticks, rotation = 90)
     plt.xlim(*bin_range[0])
     plt.ylim(*bin_range[1])
     plt.xlabel("$\log_{10}(M_{\chi}$ $[GeV/c^{2}]$)")
