@@ -85,12 +85,13 @@ def results_to_df(res):
             except KeyError:
                 pass
     tols = []
-    for it in items:
-        try:
-            tols.append(res[it]['config']['tol'])
-        except KeyError:
-            tols.append(None)
-    df['tol'] = tols
+    if not 'tol' in df.keys():
+        for it in items:
+            try:
+                tols.append(res[it]['config']['tol'])
+            except KeyError:
+                tols.append(None)
+        df['tol'] = tols
     df['mw'] = 10 ** df['config_mw']
     df['n_fit_parameters'] = [len(pars) for pars in df['config_fit_parameters']]
     return df
@@ -410,6 +411,7 @@ def one_confidence_plot(i, save_label='', save_dir='figures/', corner = False):
 def _one_confidence_plot(item, text_box=False,
                         bin_range=None, nsigma=3,
                         smoothing=None,
+                        cmap = cm.inferno_r,
                         nbins=50):
     if bin_range == None:
         bin_range = [results[item]['config']['prior']['log_mass']['range'],
@@ -428,7 +430,7 @@ def _one_confidence_plot(item, text_box=False,
 
     H = H / np.sum(H)
     X, Y = bin_center(xedges, yedges)
-    _confidence_plot(item, X, Y, H, bin_range, text_box=text_box, nsigma=nsigma)
+    _confidence_plot(item, X, Y, H, bin_range, text_box=text_box, nsigma=nsigma, cmap = cmap)
 
 def two_confidence_plot(items, text_box=False,
                         bin_range=None, nsigma=3,
@@ -518,7 +520,7 @@ def _confidence_plot(item, X, Y, H, bin_range, text_box=False, nsigma=3, cmap = 
     for c in cset2.collections:
         c.set_linestyle('solid')
 
-    plt.errorbar(xmean, ymean, xerr, yerr,
+    plt.errorbar(xmean, ymean, xerr = xerr, yerr = yerr,
                  c='red', capsize=3, label = 'best fit', marker='o')
 
     plt.scatter(results[item]['config']['mw'], results[item]['config']['sigma'],
@@ -532,12 +534,14 @@ def _confidence_plot(item, X, Y, H, bin_range, text_box=False, nsigma=3, cmap = 
     secax = ax.secondary_xaxis('top', functions=(pow10, np.log10))
 
     if 'migd' in results[item]['config']['detector']:
-        x_ticks = [0.01, 0.1, 1, 3, 5, 10, 50, 100]
+        x_ticks = [0.01, 0.1, 0.5, 1, 5, 10, 50, 100]
     else:
         x_ticks = [15, 25, 50, 100, 250, 500, 1000]
     for x_tick in x_ticks:
         ax.axvline(np.log10(x_tick), alpha=0.1)
-    secax.set_ticks(x_ticks, rotation = 90)
+    secax.set_ticks(x_ticks)
+    secax.set_xticklabels([str(x) for x in x_ticks])
+    secax.xaxis.set_tick_params(rotation=45)
     plt.xlim(*bin_range[0])
     plt.ylim(*bin_range[1])
     plt.xlabel("$\log_{10}(M_{\chi}$ $[GeV/c^{2}]$)")
@@ -562,31 +566,63 @@ def weighted_avg_and_std(values, weights):
     return (average, np.sqrt(variance))
 
 
-def match_other_item(i, verbose=False, diff_det_type=False):
+def match_other_item(i, verbose=False, diff_det_type=False, 
+                     anti_match_for = ['config_detector'], 
+                     ommit_matching = None):
     this_df = df[df.item == i]
     if len(this_df) == 0:
         print(f"WARNING: NO item {i}")
         return
     assert len(this_df) < 2, f'found >1 entries in df for {i}'
     sub_df = df.copy()
-    for key in ['config_poisson', 'config_n_energy_bins', 'config_earth_shielding', 'config_save_intermediate',
-                'config_prior_log_mass_range', 'config_prior_log_mass_prior_type', 'config_prior_log_mass_param',
-                'config_prior_log_cross_section_range', 'config_prior_log_cross_section_prior_type',
-                'config_prior_log_cross_section_param', 'config_prior_density_range',
-                'config_prior_density_prior_type', 'config_prior_density_mean', 'config_prior_density_std',
-                'config_prior_density_param', 'config_prior_density_dist', 'config_prior_v_0_range',
-                'config_prior_v_0_prior_type', 'config_prior_v_0_mean', 'config_prior_v_0_std',
-                'config_prior_v_0_param', 'config_prior_v_0_dist', 'config_prior_v_esc_range',
-                'config_prior_v_esc_prior_type', 'config_prior_v_esc_mean', 'config_prior_v_esc_std',
-                'config_prior_v_esc_param', 'config_prior_v_esc_dist', 'config_prior_k_range',
-                'config_prior_k_prior_type', 'config_prior_k_param', 'config_prior_k_dist',
-                'config_v_0', 'config_v_esc', 'config_density', 'config_mw', 'config_sigma',
-                'config_halo_model', 'config_spectrum_class',
-                'config_nlive', 'n_fit_parameters']:
+    
+    match_keys = df.keys()
+    if type(ommit_matching) == str:
+        ommit_matching = [ommit_matching]
+    for _k in ['item', 'config_det_params', 'config_start', 'config_notes',
+               'config_fit_time', 'config_fit_parameters', 'global evidence error',
+               'global evidence', 'marginals', 'modes',
+               'nested importance sampling global log-evidence error',
+               'nested importance sampling global log-evidence',
+               'nested sampling global log-evidence error',
+               'nested sampling global log-evidence',
+               'res_dict_log_mass_fit_res', 'res_dict_mass_fit_res',
+               'res_dict_log_cross_section_fit_res', 'res_dict_cross_section_fit_res',
+               'res_dict_n_samples', 'weighted_samples', 'dir', 'mw']:
+        if _k not in ommit_matching:
+            ommit_matching.append(_k) 
+    if ommit_matching:
+        keys_to_unmatch = []
+        for key in ommit_matching:
+            if key.endswith('*'):
+                for _skey in [m for m in match_keys if key.strip('*') in m]:
+                    print(f'Starred expr. {key}: unmathcing for {_skey}')
+                    keys_to_unmatch.append(_skey)
+            else:
+                
+                keys_to_unmatch.append(key)
+        
+        match_keys = [m for m in match_keys if m not in keys_to_unmatch]
+    
+    if type(anti_match_for) == str:
+        anti_match_for = [anti_match_for]
+    if anti_match_for:
+        keys_to_match = []
+        for key in anti_match_for:
+            if key.endswith('*'):
+                for _skey in [m for m in match_keys if key.strip('*') in m]:
+                    print(f'Starred expr. {key}: antimatching for {_skey}')
+                    keys_to_match.append(_skey)
+            else:
+                keys_to_match.append(key)
+        anti_match_for = keys_to_match
+    for key in match_keys:
         val = this_df[key].values[0]
         if 'dist' in key:
             continue
-        if diff_det_type and 'prior_log' in key:
+#         if diff_det_type and 'prior_log' in key:
+#             continue
+        if key in anti_match_for:
             continue
         if verbose: print(f'looking for {key}:{val}\t\ttotlen:{len(sub_df)}')
         if np.iterable(val) and len(val) == 2:
@@ -596,8 +632,21 @@ def match_other_item(i, verbose=False, diff_det_type=False):
         sub_df = sub_df[mask]
         if len(sub_df) == 0:
             break
-
-    sub_df = sub_df[~(sub_df['config_detector'] == this_df['config_detector'].values[0])]
+    if anti_match_for:
+        for key in keys_to_match:
+            if not key in match_keys:
+                if verbose: print(f'looked for {key} in {match_keys}. No such key')
+                raise ValueError(f"No such key {key} to match to any of match_keys")
+            val = this_df[key].values[0]
+            print(f'looking for {key}: not {val}\t\ttotlen:{len(sub_df)}')
+            if np.iterable(val) and len(val) == 2:
+                mask = [((_val[0] == val[0]) and (_val[1] == val[1])) for _val in sub_df[key]]
+            else:
+                mask = sub_df[key] == val
+            sub_df = sub_df[~mask]
+            if len(sub_df) == 0:
+                break
+#     sub_df = sub_df[~(sub_df['config_detector'] == this_df['config_detector'].values[0])]
     if len(sub_df) == 0:
         print("WARNING: NO MATCH")
         return
@@ -618,5 +667,67 @@ def match_other_item(i, verbose=False, diff_det_type=False):
         print("WARNING: NO MATCH")
         return
     else:
-        print("WARNING: MULTIPLE MATHCES")
-        return sub_df
+        print("WARNING: MULTIPLE MATHCES\nreturning: items, result DataFrame")
+        return sub_df.item.values, sub_df
+    
+def overlay_confidence_plots(items, text_box=False,
+                        nsigma=2,
+                        smoothing=None,
+                        nbins=50):
+    if not len(items): 
+        raise ValueError(f'Items wrong len: {items}')
+    bin_range = [results[items[0]]['config']['prior']['log_mass']['range'],
+                     results[items[0]]['config']['prior']['log_cross_section']['range']
+                     ]
+    for k, item in enumerate(items):  # , 78, 110
+        x, y = get_p_i(item)
+        # Make a 2d normed histogram
+        H, xedges, yedges = np.histogram2d(x, y, bins=nbins, range=bin_range, normed=True)
+        X, Y = bin_center(xedges, yedges)
+        assert bin_range == [
+            results[item]['config']['prior']['log_mass']['range'],
+            results[item]['config']['prior']['log_cross_section']['range']
+        ]
+                     
+        if smoothing:
+            H = sp.ndimage.filters.gaussian_filter(
+                H,
+                [np.sqrt(nbins) / 10, np.sqrt(nbins) / 10],
+                mode='constant')
+        else:
+            H = H.T
+        _confidence_plot(item, X, Y, H, bin_range, text_box=text_box, nsigma=nsigma, cmap = [cm.viridis, cm.gnuplot2_r][k])
+
+# TODO
+#  delete this one?
+def three_confidence_plot(items, text_box=False,
+                        bin_range=None, nsigma=1,
+                        smoothing=None,
+                        nbins=50):
+    if bin_range == None:
+        bin_range = [results[items[0]]['config']['prior']['log_mass']['range'],
+                     results[items[0]]['config']['prior']['log_cross_section']['range']
+                     ]
+    hists = {}
+    for k, item in enumerate(items):  # , 78, 110
+        x, y = get_p_i(item)
+        # Make a 2d normed histogram
+        hists[k], xedges, yedges = np.histogram2d(x, y, bins=nbins, range=bin_range, normed=True)
+        X, Y = bin_center(xedges, yedges)
+        if smoothing:
+            hists[k] = sp.ndimage.filters.gaussian_filter(
+                hists[k].T,
+                [np.sqrt(nbins) / 10, np.sqrt(nbins) / 10],
+                mode='constant')
+        else:
+            hists[k] = hists[k].T
+        _confidence_plot(item, X, Y, hists[k], bin_range, text_box=text_box, nsigma=nsigma, cmap = [cm.viridis, cm.gnuplot2_r][k])
+    if len(items) == 2:
+        H = hists[0] * hists[1]
+    else:
+        raise ValueError(f'Len items is {len(items)}')
+    H = H / np.sum(H)
+    
+    _confidence_plot(item, X, Y, H, bin_range, text_box=text_box, nsigma=nsigma+1)
+
+    
