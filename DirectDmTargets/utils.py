@@ -245,7 +245,8 @@ def add_identifier_to_safe(name, verbose = 1):
         print("VerneSHM::\tNo file found")
         exist_csv = False
         if not host in name:
-            abs_file_name = name.replace('.csv', f'-{host}.csv')
+            # abs_file_name = name.replace('.csv', f'-{host}.csv')
+            abs_file_name = name.replace('.csv', f'-H{host}-P{os.getpid()}.csv')
         else:
             abs_file_name = name
 

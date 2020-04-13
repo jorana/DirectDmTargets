@@ -242,12 +242,12 @@ class VerneSHM:
 
         # TODO
         #  Temporary check that these parameters are in a reasonable range.
-        assert_str = "double check these parameters"
-        for i, param in enumerate([self.v_esc_nodim, self.v_0_nodim, self.rho_dm_nodim]):
-            ref_val = [230, 544, 0.3][i]
-            # values should be comparable to the reference value
-            assert (abs((ref_val - param) / ref_val) < 5 and
-                    abs((ref_val - param) / param) < 5), assert_str + f'\nparameter is {param} vs. ref val of {ref_val}'
+        #     assert_str = "double check these parameters"
+        #     for i, param in enumerate([self.v_esc_nodim, self.v_0_nodim, self.rho_dm_nodim]):
+        #         ref_val = [230, 544, 0.3][i]
+        #         # values should be comparable to the reference value
+        #         assert (abs((ref_val - param) / ref_val) < 5 and
+        #                 abs((ref_val - param) / param) < 5), assert_str + f'\nparameter is {param} vs. ref val of {ref_val}'
         self.itp_func = None
     # TODO
     #  def __str__(self):
