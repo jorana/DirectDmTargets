@@ -5,6 +5,7 @@ import os
 from datetime import datetime
 from .context import *
 
+
 def check_folder_for_file(file_path, max_iterations=30, verbose = 1):
     '''
 
@@ -220,7 +221,13 @@ def add_identifier_to_safe(name, verbose = 1):
     csv_path = '/'.join(name.split('/')[:-1]) + '/'
     # what to look for
     csv_key = name.split('/')[-1].replace('.csv', "")
-    # What can we see
+
+    if os.path.exists(csv_path) and not os.stat(csv_path).st_size:
+        # Check that the file we are looking for is not an empty file, that would be bad.
+        print(f"WARNING:\t removing empty file {csv_path}")
+        os.remove(csv_path)
+    
+    # What can we see    
     if not os.path.exists(csv_path):
         exist_csv = False
         if not host in name:
@@ -232,9 +239,9 @@ def add_identifier_to_safe(name, verbose = 1):
     files_in_folder = os.listdir(csv_path + '/')
     if verbose:
         print(f'VerneSHM::\tlooking for "{csv_key}" in "{csv_path}". '
-          f'That folder has "{files_in_folder}". '
           f'\n\tDoes it have the right file?\n\t{is_str_in_list(csv_key, files_in_folder)}')
-
+        if len(files_in_folder) < 5:
+              print(f'That folder has "{files_in_folder}". ')
     if is_str_in_list(csv_key, files_in_folder):
         if verbose:
             print(f'VerneSHM::\tUsing {str_in_list(csv_key, files_in_folder)} since it has {csv_key}')

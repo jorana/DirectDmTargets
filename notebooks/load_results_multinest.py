@@ -568,7 +568,7 @@ def weighted_avg_and_std(values, weights):
 
 def match_other_item(i, verbose=False, diff_det_type=False, 
                      anti_match_for = ['config_detector'], 
-                     ommit_matching = None):
+                     ommit_matching = []):
     this_df = df[df.item == i]
     if len(this_df) == 0:
         print(f"WARNING: NO item {i}")
