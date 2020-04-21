@@ -46,15 +46,25 @@ def det_res_CDMS(E):
                    param_b * E +
                    (param_a * E) ** 2)
 
+
 def det_res_superCDMS(E):
     resolution = 10  # eV
     resolution/= 1e3  # keV
     # https://arxiv.org/abs/1610.00006
     return np.full(len(E), resolution)
 
+
 def det_res_XENON1T(E):
     # TODO
     return det_res_Xe(E)
+
+
+def det_res_XENON1T_update(E):
+    """Caption figure 6 https://arxiv.org/abs/2003.03825"""
+    a = 31.71
+    b = 0.15
+    sigma_over_E_percent = b + a / np.sqrt(E)
+    return E * sigma_over_E_percent / 100
 
 
 def det_res_DarkSide(E):
@@ -296,6 +306,20 @@ experiment = {
     #     'res': det_res_superCDMS,
     #     'bg_func': migdal_background_CDMS_Si_HV,
     # },
+    'Xe_migd_tmp_bg': {
+        'material': 'Xe',
+        'type': 'migdal_bg',
+        'exp': 5 * 5,  # aim for 2025 (5 yr * 5 ton)
+        'cut_eff': 0.8,
+        # TODO
+        #  'nr_eff': 1,  # Not required for ER-type
+        'nr_eff': 0.5,
+        'E_thr': 1.0,  # assume slightly lower than https://arxiv.org/abs/1907.12771
+        'location': "XENON",
+        'res': det_res_XENON1T_update,
+        'bg_func': migdal_background_XENON1T,
+        # 'add_bg': False # unfortunate naming
+    },
 }
 
 # And calculate the effective exposure for each
@@ -312,7 +336,6 @@ for name in list(exp_names):
     bg_name = name + '_bg'
     if not bg_name in exp_names:
         experiment[bg_name] = experiment[name].copy()
-        # experiment[bg_name]['add_bg'] = True
         experiment[bg_name]['type'] = experiment[bg_name]['type'] + '_bg'
 
 @numba.njit
@@ -359,7 +382,6 @@ class DetectorSpectrum(GenSpectrum):
         # Please not that this is NOT pretty. It was a monkey patch implemented since
         # many spectra were already computed using this naming hence we have to deal
         # with this lack of clarity in earlier coding in this manner.
-        # self.add_background = False if self.experiment['type'] in ['Xe', 'Ge', 'Ar', 'Xe_migd', 'Ge_migd', 'Ar_migd'] else self.experiment['add_bg']
         self.add_background = True if 'bg' in self.experiment['type'] else False
 
     def __str__(self):
