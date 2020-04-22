@@ -1,4 +1,5 @@
 print("load_results_multinest.py\tstart")
+
 from common_init import *
 import scipy as sp
 from matplotlib import cm
@@ -19,6 +20,7 @@ import sys
 import datetime
 import seaborn as sns
 import matplotlib.pyplot as plt
+from matplotlib.patches import Rectangle
 import pandas as pd
 import scipy.optimize
 import shutil
@@ -800,3 +802,165 @@ def three_confidence_plot(items, text_box=False,
                            alpha = 0.5)
     _results.append(res)
     return _results
+
+def save_canvas(name, save_dir = './figures'):
+    dddm.check_folder_for_file(save_dir + '/.')
+    dddm.check_folder_for_file(save_dir + '/pdf/.')
+    if os.path.exists(save_dir) and os.path.exists(save_dir + '/pdf'):
+        plt.savefig(f"{save_dir}/{name}.png", dpi=300, bbox_inches="tight")
+        plt.savefig(f"{save_dir}/pdf/{name}.pdf", dpi=300, bbox_inches="tight")
+    else:
+        raise FileExistsError( f'{save_dir} does not exist or does not have /pdf')
+        
+def plot_prior_range(res, it, sigma_dist = [5,10]):
+    assert len(sigma_dist) == 2
+    xmean, xerr, ymean, yerr = res
+    br = get_binrange(it)
+    for _br in br[0]:
+        plt.axvspan(_br, 2 * _br - xmean, alpha = 0.3, color = 'r')
+    for _br in br[1]:     
+        plt.axhspan(_br, 2 * _br - ymean,
+                    xmin = br[0][0],
+                    xmax = br[0][1],
+                    alpha = 0.3, color = 'r')
+    lims = [
+        np.clip(
+            xmean + sigma_dist[0] * np.array([-xerr, xerr]),
+            *(br[0] + np.array([-0.25,0.25]))
+        ),
+        np.clip(
+            ymean + sigma_dist[1] * np.array([-yerr, yerr]),
+            *(br[1] + np.array([-0.5,0.5])))
+    ]
+
+                
+    plt.xlim(*lims[0])
+    plt.ylim(*lims[1])  
+
+def plot_fit_res(res,  it = None, cs = ['r', 'b'], labels = ['best fit',  'benchmark value']):
+    xmean, xerr, ymean, yerr = res
+    plt.errorbar(xmean, ymean, xerr = xerr, yerr = yerr,
+                 c = cs[0], capsize=3, label = labels[0], marker='o')
+    if it:
+        plt.scatter(results[it]['config']['mw'], results[it]['config']['sigma'],
+                        c = cs[1],  marker='x', label = labels[1])
+
+def plot_check_compare(to_check, name_base, show = True, **kwargs):
+    if os.path.exists( f'figures/{name_base}'):
+        print(f'remove old figures/{name_base}')
+        shutil.rmtree(f'figures/{name_base}')
+    for l, its in enumerate(to_check):
+        for k, it in enumerate(its):
+            res = one_confidence_plot(it, corner=False, save_dir='figures/misc/')
+            plot_prior_range(res, it)
+            plot_fit_res(res, it)
+            
+            plt.grid(axis='y')
+            plt.legend(loc='upper right')
+            name = f'set{l}_sub{k}_' + name_base
+            save_canvas(name, save_dir = f'figures/{name_base}/')
+            
+            if show: plt.show()
+            else: plt.clf()
+        if len(its):
+            plt.figure(figsize=(10,6))
+            res = overlay_confidence_plots(its, **kwargs)# , save_dir='figures/misc/')
+            plot_prior_range(res[-1], its[0])
+            for j, _res in enumerate(res):
+                cs = [['orange', 'k'], ['cyan', 'k'], ['r', 'k']]
+
+                labels = [['best fit' , 'benckmark value'],
+                          ['best fit' , 'benckmark value']]   
+                if kwargs.get('cbar_notes'):
+                    for i in range(len(labels)):
+                        labels[i][0] += kwargs['cbar_notes'][i]
+                plot_fit_res(_res, cs = cs[j], it = its[0] if j == 0 else None,
+                            labels = labels[j])
+            plt.grid(axis='y')
+            plt.legend(loc='upper right')
+            name = f'set{l}_' + name_base
+            save_canvas(name, save_dir = f'figures/{name_base}/')
+            if show: 
+                plt.show()
+            else: plt.clf()
+
+def plot_check_combine(to_check, name_base, show = True, **combined_kwargs):
+    for l, its in enumerate(to_check):
+        print(its)
+        for k, it in enumerate(its):
+            res = one_confidence_plot(it, corner=False, save_dir='figures/misc/')
+            plot_prior_range(res, it)
+            plot_fit_res(res, it)
+            
+            plt.grid(axis='y')
+            plt.legend(loc='upper right')
+
+            name = f'set{l}_sub{k}_' + name_base
+            save_canvas(name, save_dir = f'figures/{name_base}/')
+            if show: plt.show()
+            else: plt.clf()
+            
+        # Combine plots 0 and 1: the two Ge components of the Ge-detector
+        plt.figure(figsize=(12,6))
+        res = three_confidence_plot(its[:2], **combined_kwargs)
+        plot_prior_range(res[-1], its[0])
+        for j, _res in enumerate(res):
+            cs = [['orange', None], ['cyan', None], ['r', 'k']]
+
+            labels = [['best sub-fit', None],
+                      ['best sub-fit', None],
+                      ['best fit', 'benckmark value']]                          
+            if combined_kwargs.get('cbar_notes'):
+                for i in range(len(labels)):
+                    labels[i][0] += combined_kwargs['cbar_notes'][i]
+#             print('allo')
+#             print(_res,cs[j], 
+#                          its[0] if j == len(res)-1 else None, 
+#                          labels[j])
+            plot_fit_res(_res, cs = cs[j], 
+                         it = its[0] if j == len(res)-1 else None, 
+                         labels = labels[j])
+            plt.legend(loc='upper right')
+        name = f'set{l}_sub{k+1}_' + name_base
+        save_canvas(name, save_dir = f'figures/{name_base}/')
+        if show: plt.show()
+        else: plt.clf()
+                
+        # Overlay combined plot        
+        if len(its):
+            # make this plot twice (once of the combined plot and one as intermediate results)
+            for _ in [0, 1]:
+                plt.figure(figsize=(10,6))
+                kwargs_copy = combined_kwargs.copy()
+                del kwargs_copy['cbar_notes']
+                kwargs_copy['cbar_note'] = '\nGe combined'
+                res = two_confidence_plot(its[:2], **kwargs_copy)#,  save_dir='figures/misc/')
+                plot_prior_range(res, its[0])
+                plot_fit_res(res, 
+                             it = its[0], 
+                             labels = ['best fit Ge', None])
+                if _ == 0:
+                    plt.legend(loc='upper right')
+                    plt.grid(axis='y')
+                    name = f'set{l}_sub{k+2}_' + name_base
+                    save_canvas(name,  save_dir = f'figures/{name_base}/')
+                    if show: plt.show()
+                    else: plt.clf()
+            # Plot the Xe-dataset
+            for k, i in enumerate(its):
+                if k<2: continue
+                kwargs_copy['cbar_note'] = '\nXe combined'
+                
+                res = _one_confidence_plot(i, **kwargs_copy, 
+                                     cmap = [cm.viridis, cm.gnuplot2_r, cm.gist_heat][k])
+                plot_prior_range(res, i)
+                plot_fit_res(res, 
+                         it = i, 
+                         cs = ['cyan', 'blue'],
+                         labels = ['best fit Xe', 'benchmark value'])
+            plt.legend(loc='upper right')
+            plt.grid(axis='y')
+            name = f'set{l}_' + name_base
+            save_canvas(name,  save_dir = f'figures/{name_base}/')
+            if show: plt.show()
+            else: plt.clf()
