@@ -129,7 +129,7 @@ if stats.sampler == 'multinest':
     stats.run_multinest()
 if args.multicore_hash == "" or rank == 0:
     stats.save_results()
-assert stats.log['did_run']
+assert stats.log_dict['did_run']
 
 # time.sleep(5*60)
 # stats.empty_garbage()

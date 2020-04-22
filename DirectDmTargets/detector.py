@@ -3,7 +3,7 @@
 import numba
 import numpy as np
 import pandas as pd
-
+from warnings import warn
 from .halo import GenSpectrum, get_bins
 
 
@@ -55,12 +55,16 @@ def det_res_superCDMS(E):
 
 
 def det_res_XENON1T(E):
-    # TODO
+    warn('Deprication warning: use det_res_XENON1T_update')
     return det_res_Xe(E)
 
 
 def det_res_XENON1T_update(E):
-    """Caption figure 6 https://arxiv.org/abs/2003.03825"""
+    """
+    Detector resolution of XENON1T. See caption figure 6 https://arxiv.org/abs/2003.03825
+    :param E: energy in keV
+    :return: resolution at E
+    """
     a = 31.71
     b = 0.15
     sigma_over_E_percent = b + a / np.sqrt(E)
@@ -68,35 +72,33 @@ def det_res_XENON1T_update(E):
 
 
 def det_res_DarkSide(E):
-    # TODO
+    warn('Warning use det_res_XENON1T_update() instead')
     return det_res_Ar(E)
 
 
 def migdal_background_XENON1T(e_min, e_max, nbins):
-    '''
+    """
     :param nbins: number of bins
     :return: background for Xe detector
-    '''
-    # Asumme that:
+    """
+    # Assume that:
     #   A) The BG is 10x lower than in https://www.nature.com/articles/s41586-019-1124-4
     #   B) The BG is flat
-    bg_rate = 80 / 10 # 1/(keV * t * yr)
-    # bg_rate = 1.90 * 1.0e-4  # kg day / keV
-    # conv_units = 1.0e-3 * (1. / 365.25)  # Tonne year
+    bg_rate = 80 / 10  # 1/(keV * t * yr)
     # Assume flat background over entire energy range
     # True to first order below 200 keV
-
+    if e_min > e_max or e_max > 200:
+        raise ValueError(f'Assume flat background only below 200 keV ({e_min}, {e_max})')
     return np.full(nbins, bg_rate)
 
 
 @numba.jit(nopython=True)
 def migdal_background_CDMS(e_min, e_max, nbins):
-    '''
+    """
     :param E: recoil energy (in keV)
     :return: background for Ge detector
-    '''
+    """
     bins = np.linspace(e_min, e_max, nbins)
-    # res = [CDMS_background_functions(bin) for bin in bins]
     res = []
     conv_units = 1.0e-3 * (1 / 365.25)
     for i in range(nbins):
@@ -107,60 +109,60 @@ def migdal_background_CDMS(e_min, e_max, nbins):
 
 
 def migdal_background_superCDMS_Ge_HV(e_min, e_max, nbins):
-    '''
+    """
     :param E: recoil energy (in keV)
     :return: background for Ge HV detector
-    '''
+    """
     # https://arxiv.org/abs/1610.00006
     # Assume flat bg from 32Si (Fig. 4 & Table V), ignore other isotopes.
     bg_rate = 27  # counts/kg/keV/year
     conv_units = 1.0e3  # Tonne
-    if not e_max < 20:  # 20 keV
-        raise NotImplemented('Assume flat background only below 20 keV')
+    if e_min > e_max or e_max > 20:
+        raise ValueError(f'Assume flat background only below 20 keV ({e_min}, {e_max})')
     return np.full(nbins, bg_rate*conv_units)
 
 # TODO
-#  No SI in wimprates
+#  Since there is no implementation of a Si-target in wimprates
 #  def migdal_background_CDMS_Si_HV(e_min, e_max, nbins):
-#     '''
+#     """
 #     :param E: recoil energy (in keV)
 #     :return: background for Si HV detector
-#     '''
+#     """
 #     # https://arxiv.org/abs/1610.00006
 #     # Assume flat bg from 32Si (Fig. 4 & Table V), ignore other isotopes.
 #     bg_rate = 300  # counts/kg/keV/year
 #     conv_units = 1.0e3  # Tonne
 #     if not e_max < 100:  # 20 keV
-#         raise NotImplemented('Assume flat background only below 100 keV')
+#             raise ValueError(f'Assume flat background only below 100 keV ({e_min}, {e_max})')
 #     return np.full(nbins, bg_rate*conv_units)
 
 
 def migdal_background_CDMS_Ge_iZIP(e_min, e_max, nbins):
-    '''
+    """
     :param E: recoil energy (in keV)
     :return: background for Ge iZIP detector
-    '''
+    """
     # https://arxiv.org/abs/1610.00006
     # Assume flat bg from 3H (Fig. 4 & Table V), ignore other isotopes.
     bg_rate = 22  # counts/kg/keV/year
     conv_units = 1.0e3  # Tonne
-    if not e_max < 20:  # 20 keV
-        raise NotImplemented('Assume flat background only below 20 keV')
+    if e_min > e_max or e_max > 20:
+        raise ValueError(f'Assume flat background only below 20 keV ({e_min}, {e_max})')
     return np.full(nbins, bg_rate*conv_units)
 
 # TODO
-#  No SI in wimprates
+#  Since there is no implementation of a Si-target in wimprates
 #  def migdal_background_CDMS_Si_iZIP(e_min, e_max, nbins):
-#     '''
+#     """
 #     :param E: recoil energy (in keV)
 #     :return: background for Si iZIP detector
-#     '''
+#     """
 #     # https://arxiv.org/abs/1610.00006
 #     # Assume flat bg from 3H (Fig. 4 & Table V), ignore other isotopes.
 #     bg_rate = 370  # counts/kg/keV/year
 #     conv_units = 1.0e3  # Tonne
-#     if not e_max < 100:  # 20 keV
-#         raise NotImplemented('Assume flat background only below 100 keV')
+#     if not e_max < 100:
+#           raise ValueError(f'Assume flat background only below 100 keV ({e_min}, {e_max})')
 #     return np.full(nbins, bg_rate*conv_units)
 
 
@@ -184,14 +186,6 @@ def migdal_background_Darkside(e_min, e_max, nbins):
     # p. 140 https://pure.uva.nl/ws/files/31193425/Thesis.pdf
     return 1e4 * migdal_background_XENON1T(e_min, e_max, nbins)
 
-
-# TODO
-# def threshold_function_Xe(E)
-#     """
-#     :param E: recoil energy (in keV)
-#     :return: detector resolution for Ge detector
-#     """
-#     return np.sqrt(0.3 ** 2 + (0.06 ** 2) * E)
 
 # Set the default benchmark for a 50 GeV WIMP with a cross-section of 1e-45 cm^2
 benchmark = {'mw': 50., 'sigma_nucleon': 1e-45}
@@ -217,7 +211,6 @@ experiment = {
         'location': "XENON",
         'res': det_res_XENON1T,
         'bg_func': migdal_background_XENON1T,
-        # 'add_bg': False # unfortunate naming
     },
     'Ge_migd': {
         'material': 'Ge',
@@ -231,7 +224,6 @@ experiment = {
         "location": "SUF",
         'res': det_res_CDMS,
         'bg_func': migdal_background_CDMS,
-        # 'add_bg': False # unfortunate naming
     },
     'Ar_migd': {
         'material': 'Ar',
@@ -244,7 +236,6 @@ experiment = {
         "location": "XENON",
         'res': det_res_DarkSide,
         'bg_func': migdal_background_Darkside,
-        # 'add_bg': False # unfortunate naming
     },
     'Xe_migd_bg': {
         'material': 'Xe',
@@ -258,7 +249,6 @@ experiment = {
         'location': "XENON",
         'res': det_res_XENON1T,
         'bg_func': migdal_background_XENON1T,
-        # 'add_bg': False # unfortunate naming
     },
     # https://arxiv.org/abs/1610.00006
     'Ge_migd_iZIP_bg': {
@@ -272,7 +262,9 @@ experiment = {
         'res': det_res_superCDMS,
         'bg_func': migdal_background_CDMS_Ge_iZIP,
     },
-    # 'Ge_migd_iZIP_Si_bg': {
+    # TODO
+    #  Since there is no implementation of a Si-target in wimprates
+    #  'Ge_migd_iZIP_Si_bg': {
     #     'material': 'Si',
     #     'type': 'migdal_bg',
     #     'exp': 4.8 * 1.e-3,  # Tonne year
@@ -294,7 +286,9 @@ experiment = {
         'res': det_res_superCDMS,  # TODO
         'bg_func': migdal_background_superCDMS_Ge_HV,
     },
-    # 'Ge_migd_HV_Si': {
+    # TODO
+    #  Since there is no implementation of a Si-target in wimprates
+    #  'Ge_migd_HV_Si': {
     #     'material': 'Si',
     #     'type': 'migdal_bg',
     #     'exp': 9.6 * 1.e-3,  # Tonne year
@@ -318,7 +312,6 @@ experiment = {
         'location': "XENON",
         'res': det_res_XENON1T_update,
         'bg_func': migdal_background_XENON1T,
-        # 'add_bg': False # unfortunate naming
     },
 }
 
@@ -328,7 +321,6 @@ for name in experiment.keys():
                                    experiment[name]['cut_eff'] *
                                    experiment[name]['nr_eff'])
     experiment[name]['name'] = name
-    print(f"calculating effective efficiency for {name} detector done")
 
 # Make a copy with setting background to True!
 exp_names = experiment.keys()
@@ -354,7 +346,6 @@ def smear_signal(rate, energy, sigma, bin_width):
     of equal length. The the bin_width
     """
     result = []
-    length = len(rate)
     for i in range(len(energy)):
         res = 0
         for j in range(len(rate)):

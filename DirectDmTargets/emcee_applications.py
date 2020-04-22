@@ -8,20 +8,18 @@ MCMC is:
 Nevertheless, the walkers give great insight in how the likelihood-function is
 felt by the steps that the walkers make"""
 
-from datetime import datetime
 import json
 import multiprocessing
-import os
-
 import corner
-import emcee
 import matplotlib.pyplot as plt
-
 from .statistics import *
 from .utils import *
+import os
+from datetime import datetime
 
 
 def default_emcee_save_dir():
+    """The name of folders where to save results from the MCMCStatModel"""
     return 'emcee'
 
 
@@ -38,8 +36,15 @@ class MCMCStatModel(StatModel):
         self.log = {'sampler': False, 'did_run': False, 'pos': False}
         self.remove_frac = 0.2
         self.thin = 15
-        self.config['start'] = datetime.now()  # .date().isoformat()
+        self.config['start'] = datetime.now()
         self.config['notes'] = "default"
+
+        # Do the import of emcee inside the class such that the package can be
+        # loaded without emcee
+        try:
+            import emcee
+        except ModuleNotFoundError:
+            raise ModuleNotFoundError('package emcee not found. See README')
 
     def set_fit_parameters(self, params):
         if not type(params) == list:

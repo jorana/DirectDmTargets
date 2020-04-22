@@ -1,3 +1,7 @@
+"""Setup the file structure for the software. Specifies several folders:
+software_dir: path of installation
+"""
+
 from socket import getfqdn
 import os
 
@@ -40,8 +44,8 @@ elif host == 'DESKTOP-EC5OUSI.localdomain' or host == 'DESKTOP-URE1BBI.localdoma
     assert os.path.exists(tmp_folder), f"Cannot find tmp folder at {tmp_folder}"
     context['tmp_folder'] = tmp_folder
 else:
-    print(f'context.py::\tunknown host {host} be carefull here')
-    # TODO
+    # Generally people will end up here
+    print(f'context.py::\tunknown host {host} be careful here')
     context = {'software_dir': '../../DD_DM_targets/',
                'results_dir': '../../DD_DM_targets/data/results/',
                'spectra_files': '../../DD_DM_targets/data/results/spectra/',
@@ -58,9 +62,9 @@ else:
         if not os.path.exists(context['name']):
             try:
                 os.mkdir(context['name'])
-            except:
+            except Exception as e:
                 print(f'Could not find nor make {context["name"]}')
-                raise OSError("Couldn't initialize folders correctly, please tailor context.py to your needs")
+                raise OSError(f"Tailor context.py to your needs. Couldn't initialize folders correctly because of {e}.")
 
 for key in context.keys():
     assert os.path.exists(context[key]), f'No folder at {context[key]}'

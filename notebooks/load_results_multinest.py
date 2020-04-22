@@ -7,6 +7,7 @@ import numpy as np
 from matplotlib.colors import LogNorm
 from tqdm import tqdm
 import pandas as pd
+import warnings
 
 pd.set_option('display.width', 1000)
 pd.set_option('display.max_columns', 150)
@@ -20,6 +21,7 @@ import seaborn as sns
 import matplotlib.pyplot as plt
 import pandas as pd
 import scipy.optimize
+import shutil
 from IPython.core.pylabtools import figsize
 figsize(8, 6)
 print("load_results_multinest.py\tdone packages, get results")
@@ -32,6 +34,7 @@ print("load_results_multinest.py\tdone packages, get results")
 results = {}
 all_res = dddm.context['results_dir']
 res_dirs = os.listdir(all_res)
+res_dirs.reverse()
 no_result = []
 load_errors = []
 for i, resdir in enumerate(tqdm(res_dirs)):
@@ -205,7 +208,7 @@ def pow10(x):
 
 
 def confidence_plot(items, text_box=False, bin_range=None, nsigma=2, nbins=50):
-    print("DEPRICATED use two_confidence_plot")
+    warnings.warn('DEPRICATED use two_confidence_plot')
     fig, ax = plt.subplots(figsize=(8, 6))
     if bin_range == None:
         bin_range = [results[items[0]]['config']['prior']['log_mass']['range'],
@@ -291,6 +294,7 @@ def confidence_plot(items, text_box=False, bin_range=None, nsigma=2, nbins=50):
 
 
 def find_largest_posterior(df, sig=-38, mw=1, fix_nlive=None):
+    warnings.warn('Confusing algorithm')
     results = []
     for nparam in [2, 5]:
         for halo in ['shm', 'shielded_shm']:
@@ -319,6 +323,11 @@ def find_largest_posterior(df, sig=-38, mw=1, fix_nlive=None):
 
 
 def get_info(i):
+    """
+    Get info of results i to display with plot
+    :param i:
+    :return:
+    """
     info = ""
     for str_inf in ['detector', 'notes', 'start', 'fit_time', 'save_intermediate', 'earth_shielding', 'nlive', 'tol']:
         try:
@@ -348,6 +357,12 @@ def get_info(i):
 
 
 def get_savename_title(i, save_label=''):
+    """
+    Wrapper for getting name and title
+    :param i:
+    :param save_label:
+    :return:
+    """
     this_df = df[df['item'] == i]
     print(this_df[['item', 'mw', 'config_sigma', 'n_fit_parameters', 'config_halo_model', 'config_nlive']])
     title = f'$m_w$={this_df["mw"].values[0]}' + ' $Gev/c^{2}$'
@@ -386,13 +401,26 @@ def overlay_hist_confidence_info(i, save_label='', bin_range=None, save_dir='fig
     plt.show()
 
 def get_binrange(i):
+    """
+    Get bin range of results i
+    :param i:
+    :return:
+    """
     return results[i]['config']['prior']['log_mass']['range'], results[i]['config']['prior']['log_cross_section'][
         'range']
 
 def one_confidence_plot(i, save_label='', save_dir='figures/', corner = False):
+    """
+
+    :param i:
+    :param save_label:
+    :param save_dir:
+    :param corner:
+    :return:
+    """
     det = results[i]['config']['detector']
     name, title = get_savename_title(i, save_label)
-    _one_confidence_plot(i, nbins=200, text_box=str(det), smoothing=True)
+    res = _one_confidence_plot(i, nbins=200, text_box=str(det), smoothing=True)
     plt.title(f'{title}')
     info = get_info(i)
     ax = plt.gca()
@@ -406,13 +434,25 @@ def one_confidence_plot(i, save_label='', save_dir='figures/', corner = False):
     else:
         print(f"Warning! No {save_dir}")
     # plt.show()
+    return res
 
 
-def _one_confidence_plot(item, text_box=False,
-                        bin_range=None, nsigma=3,
+def _one_confidence_plot(item,
+                        bin_range=None,
                         smoothing=None,
                         cmap = cm.inferno_r,
-                        nbins=50):
+                        nbins=50, **kwargs):
+    """
+    Show one confince plot with preferred options
+    :param item:
+    :param text_box:
+    :param bin_range:
+    :param nsigma:
+    :param smoothing:
+    :param cmap:
+    :param nbins:
+    :return:
+    """
     if bin_range == None:
         bin_range = [results[item]['config']['prior']['log_mass']['range'],
                      results[item]['config']['prior']['log_cross_section']['range']
@@ -430,12 +470,19 @@ def _one_confidence_plot(item, text_box=False,
 
     H = H / np.sum(H)
     X, Y = bin_center(xedges, yedges)
-    _confidence_plot(item, X, Y, H, bin_range, text_box=text_box, nsigma=nsigma, cmap = cmap)
+    return _confidence_plot(item, X, Y, H, bin_range, cmap = cmap, **kwargs)
 
-def two_confidence_plot(items, text_box=False,
-                        bin_range=None, nsigma=3,
-                        smoothing=None,
-                        nbins=50):
+def two_confidence_plot(items, smoothing = False, bin_range=None, nbins=50, **kwargs):
+    """
+    Combine two results into a single one
+    :param items:
+    :param text_box:
+    :param bin_range:
+    :param nsigma:
+    :param smoothing:
+    :param nbins:
+    :return:
+    """
     if bin_range == None:
         bin_range = [results[items[0]]['config']['prior']['log_mass']['range'],
                      results[items[0]]['config']['prior']['log_cross_section']['range']
@@ -458,14 +505,16 @@ def two_confidence_plot(items, text_box=False,
         raise ValueError(f'Len items is {len(items)}')
     H = H / np.sum(H)
     X, Y = bin_center(xedges, yedges)
-    _confidence_plot(item, X, Y, H, bin_range, text_box=text_box, nsigma=nsigma)
+    return _confidence_plot(item, X, Y, H, bin_range, **kwargs)
 
 
     
-def _confidence_plot(item, X, Y, H, bin_range, text_box=False, nsigma=3, cmap = cm.inferno_r):
+def _confidence_plot(item, X, Y, H, bin_range, text_box=False, nsigma=3,
+                     cbar_note = "", cmap = cm.inferno_r, alpha = 1,
+                     ):
     # cmap = cm.viridis
     # cmap = cm.gnuplot2_r
-    
+
     xmean, xerr = weighted_avg_and_std(X, np.mean(H, axis=0))
     ymean, yerr = weighted_avg_and_std(Y, np.mean(H, axis=1))
     print(f'X mean, std {xmean, xerr}')
@@ -510,7 +559,9 @@ def _confidence_plot(item, X, Y, H, bin_range, text_box=False, nsigma=3, cmap = 
 
     contours = plt.contourf(X, Y, H, (0,),
                             levels=levels,
-                            cmap=cm.get_cmap(cmap, len(levels) - 1), norm = LogNorm()
+                            alpha = alpha,
+                            cmap=cm.get_cmap(cmap, len(levels) - 1),
+                            norm = LogNorm()
                             )
     ax = plt.gca()
     cset2 = ax.contour(X, Y, H, contours.levels, colors='k')
@@ -520,16 +571,10 @@ def _confidence_plot(item, X, Y, H, bin_range, text_box=False, nsigma=3, cmap = 
     for c in cset2.collections:
         c.set_linestyle('solid')
 
-    plt.errorbar(xmean, ymean, xerr = xerr, yerr = yerr,
-                 c='red', capsize=3, label = 'best fit', marker='o')
-
-    plt.scatter(results[item]['config']['mw'], results[item]['config']['sigma'],
-                c='blue', marker='x', label = 'benchmark value')
-
     cbar = ax.figure.colorbar(contours)
     col_labels = ['$3\sigma$', '$2\sigma$', '$1\sigma$'][3 - nsigma:]
     cbar.set_ticklabels(col_labels)
-    cbar.set_label("Posterior probability")
+    cbar.set_label("Posterior probability" + cbar_note)
 
     secax = ax.secondary_xaxis('top', functions=(pow10, np.log10))
 
@@ -547,12 +592,12 @@ def _confidence_plot(item, X, Y, H, bin_range, text_box=False, nsigma=3, cmap = 
     plt.xlabel("$\log_{10}(M_{\chi}$ $[GeV/c^{2}]$)")
     secax.set_xlabel("$M_{\chi}$ $[GeV/c^{2}]$")
     plt.ylabel("$\log_{10}(\sigma_{S.I.}$ $[cm^{2}]$)")
-    plt.legend(loc='upper right')
+
 
     if text_box:
         plt.text(0.05, 0.95, text_box, transform=ax.transAxes, alpha=0.5,
                  bbox=dict(facecolor="white", boxstyle="round"))
-    return  xmean, xerr, ymean, yerr
+    return xmean, xerr, ymean, yerr
 
 def weighted_avg_and_std(values, weights):
     """
@@ -673,12 +718,19 @@ def match_other_item(i, verbose=False, diff_det_type=False,
 def overlay_confidence_plots(items, text_box=False,
                         nsigma=2,
                         smoothing=None,
-                        nbins=50):
+                        alpha = 0.5,
+                        nbins=50,
+                        cbar_notes = None):
     if not len(items): 
         raise ValueError(f'Items wrong len: {items}')
     bin_range = [results[items[0]]['config']['prior']['log_mass']['range'],
                      results[items[0]]['config']['prior']['log_cross_section']['range']
                      ]
+    _result = []
+    if cbar_notes is None:
+        cbar_notes = np.repeat('', len(items))
+    assert len(cbar_notes) == len(items), "lengths do no match"
+
     for k, item in enumerate(items):  # , 78, 110
         x, y = get_p_i(item)
         # Make a 2d normed histogram
@@ -691,24 +743,35 @@ def overlay_confidence_plots(items, text_box=False,
                      
         if smoothing:
             H = sp.ndimage.filters.gaussian_filter(
-                H,
+                H.T,
                 [np.sqrt(nbins) / 10, np.sqrt(nbins) / 10],
                 mode='constant')
         else:
             H = H.T
-        _confidence_plot(item, X, Y, H, bin_range, text_box=text_box, nsigma=nsigma, cmap = [cm.viridis, cm.gnuplot2_r][k])
+        _res = _confidence_plot(item, X, Y, H, bin_range, text_box=text_box, nsigma=nsigma,
+                                cmap = [cm.viridis, cm.gnuplot2_r][k], cbar_note= cbar_notes[k],
+                                alpha = alpha)
+        _result.append(_res)
+    return _result
 
 # TODO
 #  delete this one?
 def three_confidence_plot(items, text_box=False,
                         bin_range=None, nsigma=1,
                         smoothing=None,
+                        cbar_notes=None,
                         nbins=50):
     if bin_range == None:
         bin_range = [results[items[0]]['config']['prior']['log_mass']['range'],
                      results[items[0]]['config']['prior']['log_cross_section']['range']
                      ]
+    # Note that we need one note for the combined plot as well
+    if cbar_notes is None:
+        cbar_notes = np.repeat('', len(items) + 1)
+    assert len(cbar_notes) == len(items) + 1, "lengths do no match"
+
     hists = {}
+    _results = []
     for k, item in enumerate(items):  # , 78, 110
         x, y = get_p_i(item)
         # Make a 2d normed histogram
@@ -721,13 +784,19 @@ def three_confidence_plot(items, text_box=False,
                 mode='constant')
         else:
             hists[k] = hists[k].T
-        _confidence_plot(item, X, Y, hists[k], bin_range, text_box=text_box, nsigma=nsigma, cmap = [cm.viridis, cm.gnuplot2_r][k])
+        # Single plot
+        res = _confidence_plot(item, X, Y, hists[k], bin_range, text_box=text_box, nsigma=nsigma,
+                               cbar_note = cbar_notes[k],
+                               cmap = [cm.viridis, cm.gnuplot2_r][k], alpha = 0.3)
+        _results.append(res)
+    # Combined plot
     if len(items) == 2:
         H = hists[0] * hists[1]
     else:
         raise ValueError(f'Len items is {len(items)}')
     H = H / np.sum(H)
-    
-    _confidence_plot(item, X, Y, H, bin_range, text_box=text_box, nsigma=nsigma+1)
-
-    
+    res = _confidence_plot(item, X, Y, H, bin_range, text_box=text_box, nsigma=nsigma+1,
+                           cbar_note = cbar_notes[k+1],
+                           alpha = 0.5)
+    _results.append(res)
+    return _results

@@ -1,24 +1,20 @@
 """For a given detector get a WIMPrate for a given detector (not taking into
 account any detector effects"""
 
+from .context import *
+from .utils import get_verne_folder, check_folder_for_file, is_str_in_list, str_in_list, add_identifier_to_safe
 import numpy as np
 import pandas as pd
 import wimprates as wr
 import numericalunits as nu
-from .utils import get_verne_folder, check_folder_for_file, is_str_in_list, str_in_list, add_identifier_to_safe
 import os
 from scipy.interpolate import interp1d
-import sys
-from .context import *
-from os import getpid
 
 # # be able to load from the verne folder using this work around.
 # sys.path.insert(1, get_verne_folder()+'/src/')
 # # python-file in verne folder
 # import CalcVelDist_per_v
 
-# VBOUND_MIN = 0 * (nu.km /nu.s)
-# VBOUND_MAX = 1000 * (nu.km /nu.s)
 
 def bin_edges(a, b, n):
     """
@@ -64,11 +60,6 @@ class GenSpectrum:
         elif self.experiment['type'] in ['migdal', 'migdal_bg']:
             self.E_min = 0  # keV
             self.E_max = 10  # keV
-        assertion_string = "temporary assertion statement to check that the " \
-                           "mass and the cross-section do not go beyond the " \
-                           "boundaries of the prior."
-        # assert 1 <= mw <= 1000, assertion_string
-        # assert 1e-49 <= sig <= 1e-42, assertion_string
 
     def __str__(self):
         """
@@ -117,7 +108,6 @@ class GenSpectrum:
                 benchmark["sigma_nucleon"] * nu.cm ** 2,
                 # TODO should this be different for the different experiments?
                 q_nr=0.15,
-                #
                 halo_model=self.dm_model,
                 material=self.experiment['material'],
                 **migdal_integration_kwargs
@@ -191,11 +181,15 @@ class SHM:
                        if rho_dm is None else rho_dm)
 
     def __str__(self):
+        # Standard Halo Model (shm)
         return 'shm'
 
     def velocity_dist(self, v, t):
-        # in units of per velocity,
-        # v is in units of velocity
+        """
+        Get the velocity distribution in units of per velocity,
+        :param v: v is in units of velocity
+        :return: observed velocity distribution at earth
+        """
         return wr.observed_speed_dist(v, t, self.v_0, self.v_esc)
 
 
@@ -243,23 +237,19 @@ class VerneSHM:
         self.itp_func = None
 
     def __str__(self):
+        # The standard halo model observed at some location shielded from strongly
+        # interacting DM by overburden (rock atmosphere)
         return 'shielded_shm'
 
     def load_f(self):
-        '''
+        """
         load the velocity distribution. If there is no velocity distribution shaved, load one.
         :return:
-        '''
+        """
 
         # set up folders and names
         file_folder = context['verne_files']
-        software_folder = context['verne_folder']                         
-        # TODO
-        #  This is a statement to get the data faster, i.e. take a short-cut (we
-        #  only compute 2 angles and take the average)
-        low_n_gamma = False
-        if low_n_gamma:
-            self.fname = 'tmp_' + self.fname
+        software_folder = context['verne_folder']
         file_name = file_folder + self.fname + '_avg' + '.csv'
         check_folder_for_file(file_folder + self.fname, verbose=0)
 
@@ -279,9 +269,6 @@ class VerneSHM:
                    f'-v_0 {self.v_0_nodim} ' \
                    f'-v_esc {self.v_esc_nodim} ' \
                    f'-save_as "{file_name}" '
-            if low_n_gamma:
-                # Set N_gamma low for faster computation (only two angles)
-                args += f' -n_gamma 2'
 
             cmd = f'python "{software_folder}"{pyfile} {args}'
             print(f'No spectrum found at:\n{file_name}\nGenerating spectrum, '
@@ -294,21 +281,29 @@ class VerneSHM:
         if not os.path.exists(abs_file_name):
             raise OSError(f'{abs_file_name} should exist')
         df = pd.read_csv(abs_file_name)
+
+        if not len(df):
+            # Somehow we got an empty dataframe, we cannot continue
+            os.remove(abs_file_name)
+            raise ValueError(f'Was trying to read an empty dataframe from {abs_file_name}')
+
         x, y = df.keys()
         interpolation = interp1d(df[x] * (nu.km / nu.s), df[y] * (nu.s / nu.km), bounds_error=False, fill_value=0)
 
-        # Wimprates needs to have a two-parameter function. However since we
-        # ignore time for now. We make this makeshift transition from a one
-        # parameter function to a two parameter function
-
         def velocity_dist(v_, t_):
+            # Wimprates needs to have a two-parameter function. However since we
+            # ignore time for now. We make this makeshift transition from a one
+            # parameter function to a two parameter function
             return interpolation(v_)
 
         self.itp_func = velocity_dist
 
     def velocity_dist(self, v, t):
-        # in units of per velocity,
-        # v is in units of velocity
+        """
+        Get the velocity distribution in units of per velocity,
+        :param v: v is in units of velocity
+        :return: observed velocity distribution at earth
+        """
         if self.itp_func == None:
             self.load_f()
         return self.itp_func(v, t)
