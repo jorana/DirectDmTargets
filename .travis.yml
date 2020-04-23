@@ -2,15 +2,30 @@ language: python
 dist: xenial
 python:
 - '3.8'
+before_install:
+  # Here we just install Miniconda, which you shouldn't have to change.
+
+  - wget http://repo.continuum.io/miniconda/Miniconda-latest-Linux-x86_64.sh -O miniconda.sh
+  - chmod +x miniconda.sh
+  - ./miniconda.sh -b
+  - export PATH=/home/travis/miniconda/bin:$PATH
+  - conda update --yes conda
+
 install:
-- git clone https://github.com/jorana/wimprates
-- pip install -e wimprates
-- pip install -r requirements.txt
-- git clone https://github.com/jorana/verne.git
-- conda install -c conda-forge multinest
-- conda install -c conda-forge/label/cf201901 multinest
-- conda install -c anaconda mpi4py
-- git clone https://github.com/JohannesBuchner/PyMultiNest
-- pip install -e PyMultiNest
-- python setup.py install
-script: python tests/test_all.py
+  # We just set up a conda environment with the right Python version. This
+  # should not need changing.
+
+  - conda create --yes -n test python=3.8
+  - source activate test
+  - git clone https://github.com/jorana/wimprates
+  - pip install -e wimprates
+  - pip install -r requirements.txt
+  - git clone https://github.com/jorana/verne.git
+  - conda install -c conda-forge multinest
+  - conda install -c conda-forge/label/cf201901 multinest
+  - conda install -c anaconda mpi4py
+  - git clone https://github.com/JohannesBuchner/PyMultiNest
+  - pip install -e PyMultiNest
+  - python setup.py install
+script: 
+  python tests/test_all.py
