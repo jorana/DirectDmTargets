@@ -34,7 +34,7 @@ parser.add_argument('-nparams', type=int, default=2, help="Number of parameters 
 parser.add_argument('-priors_from', type=str, default="Pato_2010", help="Obtain priors from paper <priors_from>")
 parser.add_argument('-verbose', type=float, default=0, help="Set to 0 (no print statements), 1 (some print statements) or >1 (a lot of print statements). Set the level of print statements while fitting.")
 parser.add_argument('-shielding', type=str, default="default", help="yes / no / default, override internal determination if we need to take into account earth shielding.")
-parser.add_argument('-save_intermediate', type=str, default="yes", help="yes / no / default, override internal determination if we need to take into account earth shielding.")
+parser.add_argument('-save_intermediate', type=str, default="no", help="yes / no / default, override internal determination if we need to take into account earth shielding.")
 parser.add_argument('-multicore_hash', type=str, default="", help="no / default, override internal determination if we need to take into account earth shielding.")
 
 args = parser.parse_args()
