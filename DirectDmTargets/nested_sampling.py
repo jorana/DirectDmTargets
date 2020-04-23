@@ -1,9 +1,9 @@
-"""Do a likelihood fit. The class NestedSamplerStatModel is used for fitting applying the bayesian alogorithm nestle"""
+"""Do a likelihood fit. The class NestedSamplerStatModel is used for fitting applying the bayesian algorithm nestle"""
 
 from .halo import *
 from .statistics import *
-from .utils import *
 from .context import *
+from .utils import *
 from datetime import datetime
 import json
 import os
@@ -32,6 +32,7 @@ class NestedSamplerStatModel(StatModel):
         self.config['start'] = datetime.now()
         self.config['notes'] = "default"
         self.result = False
+        self.fit_parameters = None
         self.set_fit_parameters(['log_mass', 'log_cross_section'])
 
         self.log.info(f'NestedSamplerStatModel::\tVERBOSE ENABLED')
@@ -222,8 +223,8 @@ class NestedSamplerStatModel(StatModel):
             start = datetime.now()
 
             # Multinest saves output to a folder. First write to the tmp folder, move it to the results folder later
-            tmp_folder = self.get_tmp_dir()
-            save_at_temp = f'{tmp_folder}multinest'
+            _tmp_folder = self.get_tmp_dir()
+            save_at_temp = f'{_tmp_folder}multinest'
 
             solve(
                 LogLikelihood=self._log_probability_nested,  # SafeLoglikelihood,
@@ -236,13 +237,13 @@ class NestedSamplerStatModel(StatModel):
             )
             self.result = save_at_temp
 
-            # Open a save-folder after succesfull running multinest. Move the multinest results there.
+            # Open a save-folder after successful running multinest. Move the multinest results there.
             # save_at = self.get_save_dir()
             check_folder_for_file(save_at)
-            assert tmp_folder[-1] == '/', 'make sure that tmp_folder ends at ' / ''
-            copy_multinest = save_at + tmp_folder.split('/')[-2]
-            self.log.info(f'copy {tmp_folder} to {copy_multinest}')
-            self.log_dict['garbage_bin'].append(tmp_folder)
+            assert _tmp_folder[-1] == '/', 'make sure that tmp_folder ends at "/"'
+            copy_multinest = save_at + _tmp_folder.split('/')[-2]
+            self.log.info(f'copy {_tmp_folder} to {copy_multinest}')
+            self.log_dict['garbage_bin'].append(_tmp_folder)
             end = datetime.now()
             dt = end - start
             self.log.warning(f'run_multinest::\tfit_done in %i s (%.1f h)' % (dt.seconds, dt.seconds / 3600.))
@@ -275,7 +276,7 @@ class NestedSamplerStatModel(StatModel):
                       f"least trying) let's first see if I did run")
         self.check_did_run()
         self.log.info(f"NestedSamplerStatModel::\t{now(self.config['start'])}\n\tAlright, that's done. Let's get some "
-                      f"info. I'm not ging to print too much here")
+                      f"info. I'm not going to print too much here")
         # keep a dictionary of all the results
         resdict = {}
 
@@ -298,8 +299,8 @@ class NestedSamplerStatModel(StatModel):
                 resdict[name + '_fit_res'] = ('{0:5.2f} +/- {1:5.2f}'.format(col.mean(), col.std()))
                 if 'log_' in name:
                     resdict[name[4:] + '_fit_res'] = '%.3g +/- %.2g' % (
-                    10. ** col.mean(), 10. ** (col.mean()) * np.log(10.) * col.std())
-                    self.log.info('\t', name[4:], resdict[name[4:] + '_fit_res'])
+                        10. ** col.mean(), 10. ** (col.mean()) * np.log(10.) * col.std())
+                    self.log.info(f'\t {name[4:]}, {resdict[name[4:] + "_fit_res"]}')
             resdict['n_samples'] = len(samples.transpose()[0])
             # Pass the samples to the self.result to be saved.
             self.result['samples'] = samples
@@ -328,11 +329,11 @@ class NestedSamplerStatModel(StatModel):
             p, cov = nestle.mean_and_cov(self.result.samples, self.result.weights)
             for i, key in enumerate(self.fit_parameters):
                 resdict[key + '_fit_res'] = ('{0:5.2f} +/- {1:5.2f}'.format(p[i], np.sqrt(cov[i, i])))
-                self.log.info('\t', key, resdict[key + '_fit_res'])
+                self.log.info(f'\t, {key}, {resdict[key + "_fit_res"]}')
                 if 'log_' in key:
                     resdict[key[4:] + '_fit_res'] = '%.3g +/- %.2g' % (
                         10. ** p[i], 10. ** (p[i]) * np.log(10) * np.sqrt(cov[i, i]))
-                    self.log.info('\t', key[4:], resdict[key[4:] + '_fit_res'])
+                    self.log.info(f'\t, {key[4:]}, {resdict[key[4:] + "_fit_res"]}')
         self.log.info(f'NestedSamplerStatModel::\tAlright we got all the info we need, '
                       f"let's return it to whomever asked for it")
         return resdict
@@ -384,7 +385,7 @@ class NestedSamplerStatModel(StatModel):
         shutil.copy(self.config['logging'], save_dir + self.config['logging'].split('/')[-1])
         self.log.info(f'save_results::\tdone_saving')
 
-    def show_corner(self, save=True):
+    def show_corner(self):
         self.log.info(
             f"NestedSamplerStatModel::\t{now(self.config['start'])}\n\tLet's do some graphics, I'll make you a "
             f"nice corner plot just now")
@@ -458,8 +459,10 @@ def load_multinest_samples_from_file(load_dir):
 
 
 def do_strip_from_pid(string):
-    '''remove PID identifier from a string'''
-    if not 'pid' in string:
+    """
+    remove PID identifier from a string
+    """
+    if 'pid' not in string:
         return string
     else:
         new_key = string.split("_")
@@ -468,7 +471,7 @@ def do_strip_from_pid(string):
 
 
 def load_multinest_samples(load_from=default_nested_save_dir(), item='latest'):
-    base = get_result_folder();
+    base = get_result_folder()
     save = load_from
     files = os.listdir(base)
     if item == 'latest':
