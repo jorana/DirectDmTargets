@@ -5,17 +5,16 @@ python:
 before_install:
   # Here we just install Miniconda, which you shouldn't have to change.
 
-  - wget http://repo.continuum.io/miniconda/Miniconda-latest-Linux-x86_64.sh -O miniconda.sh
+  - wget https://repo.anaconda.com/miniconda/Miniconda3-latest-Linux-x86_64.sh -O miniconda.sh
   - chmod +x miniconda.sh
-  - yes | bash ./miniconda.sh
-  - ls
+  - bash ./miniconda.sh -b
 
 install:
   # We just set up a conda environment with the right Python version. This
   # should not need changing.
 
-  - conda create --yes -n test python=3.8
-  - source activate test
+  - miniconda3/condabin/conda create create --yes -n test python=3.8
+  - source miniconda3/bin/activate test
   - git clone https://github.com/jorana/wimprates
   - pip install -e wimprates
   - pip install -r requirements.txt
