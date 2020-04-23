@@ -48,8 +48,8 @@ class GenSpectrum:
         :param det: detector name
         """
         assert type(det) is dict, "Invalid detector type. Please provide dict."
-        self.mw = mw # note that this is not in log scale!
-        self.sigma_nucleon = sig # note that this is not in log scale!
+        self.mw = mw  # note that this is not in log scale!
+        self.sigma_nucleon = sig  # note that this is not in log scale!
         self.dm_model = model
         self.experiment = det
 
@@ -74,7 +74,7 @@ class GenSpectrum:
     def spectrum_simple(self, benchmark):
         """
         :param benchmark: insert the kind of DM to consider (should contain Mass
-         and Crossection)
+         and cross-section)
         :return: returns the rate
         """
         if ((not type(benchmark) is dict) or (
@@ -215,7 +215,7 @@ class VerneSHM:
         self.v_esc_nodim = 544 if v_esc is None else v_esc / (nu.km / nu.s)
         self.rho_dm_nodim = 0.3 if rho_dm is None else rho_dm / (nu.GeV / nu.c0 ** 2 / nu.cm ** 3)
 
-        # Here we keep the units dimensionfull as these parameters are requested
+        # Here we keep the units dimensionful as these parameters are requested
         # by wimprates and therefore must have dimensions
         self.v_0 = self.v_0_nodim * nu.km / nu.s
         self.v_esc = self.v_esc_nodim * nu.km / nu.s
@@ -256,7 +256,7 @@ class VerneSHM:
         # Convert file_name and self.fname to folder and name of csv file where to save.
         exist_csv, abs_file_name = add_identifier_to_safe(file_name)
         assertion_string = f'abs file {abs_file_name} should be a string\n'
-        assertion_string+= f'exists csv {exist_csv} should be a bool'
+        assertion_string += f'exists csv {exist_csv} should be a bool'
         assert type(abs_file_name) == str and type(exist_csv) == bool, assertion_string
 
         if not exist_csv:
@@ -304,6 +304,6 @@ class VerneSHM:
         :param v: v is in units of velocity
         :return: observed velocity distribution at earth
         """
-        if self.itp_func == None:
+        if self.itp_func is None:
             self.load_f()
         return self.itp_func(v, t)

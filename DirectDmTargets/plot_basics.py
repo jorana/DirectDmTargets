@@ -1,5 +1,5 @@
 """Some basic functions for plotting et cetera. Used to for instance check that
-the likelohood function is well behaved"""
+the likelihood function is well behaved"""
 
 import numpy as np
 import pandas as pd
@@ -26,8 +26,8 @@ def hist_data(data, data_range=None, nbins=50):
         assert (type(data_range) == list or type(data_range) == tuple) and len(
             data_range) == 2, assert_str
 
-    counts, bin_edges = np.histogram(data, range=data_range, bins=nbins)
-    bin_centers = (bin_edges[:-1] + bin_edges[1:]) / 2
+    counts, _bin_edges = np.histogram(data, range=data_range, bins=nbins)
+    bin_centers = (_bin_edges[:-1] + _bin_edges[1:]) / 2
     x, y, yerr = bin_centers, counts, np.sqrt(counts)
     return x, y, yerr
 
@@ -61,8 +61,8 @@ def show_ll_function(npoints=1e4, clip_val=-1e4, min_val=0.1):
     Z = -ll_element_wise(X, Y, clip_val)
     im = imshow(Z, cmap=cm.RdBu,
                 norm=LogNorm(min_val, -clip_val))  # drawing the function
-    colorbar(im, label='$-\mathcal{L}$')  # adding the colobar on the right
-    title('$-\mathcal{L}$ clipped at %i' % (clip_val))
+    colorbar(im, label='$-\mathcal{L}$')  # adding the colorbar on the right
+    title('$-\mathcal{L}$ clipped at %i' % clip_val)
     plt.xlabel("Nb")
     plt.ylabel("Nr")
     show()
@@ -95,6 +95,8 @@ def plt_ll_sigma_mass(spec_clas, vary, det='Xe', bins=10, m=50, sig=1e-45):
             res = spec_clas(x, sig, use_SHM, experiment[det])
             res.n_bins = bins
             return res.get_data(poisson=False)['counts']
+    else:
+        raise ValueError(f'Can not vary {vary}')
     plr = [log_likelihood(data['counts'], model(x)) for x in
            tqdm(var)]
 
@@ -126,7 +128,7 @@ def plt_priors(itot=100):
     for key in priors.keys():
         par = priors[key]['param']
         dist = priors[key]['dist']
-        data = [dist(par) for i in range(itot)]
+        data = [dist(par) for _ in range(itot)]
         if priors[key]['prior_type'] == 'gauss':
             plt.axvline(priors[key]['mean'], c='r')
             plt.axvline(priors[key]['mean'] - priors[key]['std'], c='b')

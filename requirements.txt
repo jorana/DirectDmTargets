@@ -11,4 +11,3 @@ corner
 numericalunits
 multihist
 seaborn
-mpi4py

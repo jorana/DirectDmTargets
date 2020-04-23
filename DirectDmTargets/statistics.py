@@ -1,12 +1,12 @@
 """Statistical model giving likelihoods for detecting a spectrum given a benchmark to compare it with."""
 
+from .context import *
 from .detector import *
 from .halo import *
 import numericalunits as nu
 import numpy as np
 from scipy.special import loggamma
 from .utils import now, get_result_folder, add_identifier_to_safe
-from .context import *
 import time
 import types
 import logging
@@ -128,7 +128,7 @@ def get_priors(priors_from="Evans_2019"):
             param['dist'] = lambda x: flat_prior_distribution(x)
         elif param['prior_type'] == 'gauss':
             param['param'] = param['mean'], param['std']
-            param['dist'] = lambda x: gaus_prior_distribution(x)
+            param['dist'] = lambda x: gauss_prior_distribution(x)
     return priors
 
 
@@ -156,6 +156,7 @@ class StatModel:
         self.config['earth_shielding'] = experiment[detector_name]['type'] == 'migdal'
         self.config['save_intermediate'] = True if self.config['earth_shielding'] else False
         self.verbose = verbose
+        self.benchmark_values = None
 
         if self.verbose > 1:
             level = logging.DEBUG
@@ -210,7 +211,7 @@ class StatModel:
         other models can be evaluated for this 'truth'
 
         :param mw: mass of benchmark wimp in GeV. log10(mass) will be saved to config
-        :param sigma: cross-secontion of wimp in cm^2. log10(sigma) will be saved to config
+        :param sigma: cross-section of wimp in cm^2. log10(sigma) will be saved to config
         """
         self.log.info(f'taking log10 of mass of {mw}')
         self.config['mw'] = np.log10(mw)
@@ -229,12 +230,12 @@ class StatModel:
 
         if self.config['earth_shielding']:
             self.log.info(
-                f'StatModel::\tsetting model to VERNE model. Using:' \
-                f"\nlog_mass={self.config['mw']}," \
-                f"\nlog_cross_section={self.config['sigma']}," \
-                f"\nlocation={experiment[self.config['detector']]['location']}," \
-                f'\nv_0={self.config["v_0"]} * nu.km / nu.s,' \
-                f'\nv_esc={self.config["v_esc"]} * nu.km / nu.s,' \
+                f'StatModel::\tsetting model to VERNE model. Using:'
+                f"\nlog_mass={self.config['mw']}," 
+                f"\nlog_cross_section={self.config['sigma']},"
+                f"\nlocation={experiment[self.config['detector']]['location']}," 
+                f'\nv_0={self.config["v_0"]} * nu.km / nu.s,' 
+                f'\nv_esc={self.config["v_esc"]} * nu.km / nu.s,' 
                 f'\nrho_dm={self.config["density"]} * nu.GeV / nu.c0 ** 2 / nu.cm ** 3')
             model = VerneSHM(
                 log_mass=self.config['mw'],
@@ -247,9 +248,9 @@ class StatModel:
             self.config['halo_model'] = halo_model if halo_model != 'default' else model
             self.log.info(f'StatModel::\tmodel is set to: {self.config["halo_model"]}')
         else:
-            self.log.info(f'StatModel::\tSetting model to SHM. Using:' \
-                          f'\nv_0={self.config["v_0"]} * nu.km / nu.s,' \
-                          f'\nv_esc={self.config["v_esc"]} * nu.km / nu.s,' \
+            self.log.info(f'StatModel::\tSetting model to SHM. Using:' 
+                          f'\nv_0={self.config["v_0"]} * nu.km / nu.s,' 
+                          f'\nv_esc={self.config["v_esc"]} * nu.km / nu.s,' 
                           f'\nrho_dm={self.config["density"]} * nu.GeV / nu.c0 ** 2 / nu.cm ** 3')
             self.config['halo_model'] = halo_model if halo_model != 'default' else SHM(
                 v_0=self.config['v_0'] * nu.km / nu.s,
@@ -292,8 +293,9 @@ class StatModel:
         self.log.warning('Saving intermediate results. Computational gain may be limited')
         assert 'DetectorSpectrum' in str(self.config['spectrum_class']), "Input detector spectrum"
         # Name the file according to the main parameters. Note that for each of the main parameters
-        file_name = context[
-                        'spectra_files'] + '/nbin-%i/model-%s/mw-%.2f/log_s-%.2f/rho-%.2f/v_0-%.1f/v_esc-%i/poisson_%i/spectrum' % (
+        file_name = (
+                context['spectra_files'] +
+                '/nbin-%i/model-%s/mw-%.2f/log_s-%.2f/rho-%.2f/v_0-%.1f/v_esc-%i/poisson_%i/spectrum' % (
                         self.config['n_energy_bins'] if nbin is None else nbin,
                         str(self.config['halo_model']) if model is None else str(model),
                         10. ** self.config['mw'] if mw is None else 10. ** mw,
@@ -302,7 +304,7 @@ class StatModel:
                         self.config['v_0'] if v_0 is None else v_0,
                         self.config['v_esc'] if v_esc is None else v_esc,
                         int(self.config['poisson'] if poisson is None else poisson)
-                    )
+                ))
 
         # Add all other parameters that are in the detector config
         if det_conf is None:
@@ -344,12 +346,12 @@ class StatModel:
         return data_at_path, file_path, binned_spectrum
 
     def save_intermediate_result(self, binned_spectrum, spectrum_file):
-        '''
+        """
         Save evaluated binned spectrum according to naming convention
         :param binned_spectrum: evaluated spectrum
         :param spectrum_file: name where to save the evaluated spectrum
         :return:
-        '''
+        """
         self.log.info(f"StatModel::\tsaving spectrum at {spectrum_file}")
         if os.path.exists(spectrum_file):
             # Do not try overwriting existing files.
@@ -408,7 +410,7 @@ class StatModel:
 
     def check_bench_set(self):
         if not self.bench_is_set:
-            self.log.info(f'StatModel::\tbechmark not set->doing so now')
+            self.log.info(f'StatModel::\tbenchmark not set->doing so now')
             self.eval_benchmark()
 
     def log_probability(self, parameter_vals, parameter_names):
@@ -442,7 +444,7 @@ class StatModel:
                 f"{parameter_vals, parameter_names}")
         if not np.isfinite(lp):
             return -np.inf
-        self.log.info(f'StatModel::\tloading rate for given paramters')
+        self.log.info(f'StatModel::\tloading rate for given parameters')
         evaluated_rate = self.eval_spectrum(parameter_vals, parameter_names)['counts']
 
         # Compute the likelihood
@@ -462,7 +464,7 @@ class StatModel:
         :return: prior of value
         """
         # For each of the priors read from the config file how the prior looks
-        # like. Get the boundaries (and mean (m) and width (s) for gausian
+        # like. Get the boundaries (and mean (m) and width (s) for gaussian
         # distributions).
         self.log.info(f'StatModel::\tevaluating priors')
         if self.config['prior'][variable_name]['prior_type'] == 'flat':
@@ -518,10 +520,10 @@ class StatModel:
                               f"save intermediate result later")
         if len(parameter_names) == 2:
             x0, x1 = checked_values
-            if (parameter_names[0] == 'log_mass' and parameter_names[1] == 'log_cross_section'):
+            if parameter_names[0] == 'log_mass' and parameter_names[1] == 'log_cross_section':
                 # This is the right order
                 pass
-            elif (parameter_names[1] == 'log_mass' and parameter_names[0] == 'log_cross_section'):
+            elif parameter_names[1] == 'log_mass' and parameter_names[0] == 'log_cross_section':
                 x0, x1 = x1, x0
             else:
                 raise NotImplementedError(
@@ -719,7 +721,7 @@ def flat_prior_distribution(_range):
     return np.random.uniform(_range[0], _range[1])
 
 
-def gaus_prior_distribution(_param):
+def gauss_prior_distribution(_param):
     mu, sigma = _param
     return np.random.normal(mu, sigma)
 

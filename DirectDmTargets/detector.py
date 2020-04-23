@@ -35,7 +35,6 @@ def det_res_CDMS(E):
     # For CDMS-lite
     # From https://arxiv.org/pdf/1808.09098.pdf (table II.)
     """
-    :param E: recoil energy (in keV)
     :return: detector resolution for Ge detector
     """
     sigma_e = 10. / 1e3  # eV to keV
@@ -49,13 +48,13 @@ def det_res_CDMS(E):
 
 def det_res_superCDMS(E):
     resolution = 10  # eV
-    resolution/= 1e3  # keV
+    resolution /= 1e3  # keV
     # https://arxiv.org/abs/1610.00006
     return np.full(len(E), resolution)
 
 
 def det_res_XENON1T(E):
-    warn('Deprication warning: use det_res_XENON1T_update')
+    warn('Deprecation warning: use det_res_XENON1T_update')
     return det_res_Xe(E)
 
 
@@ -78,7 +77,6 @@ def det_res_DarkSide(E):
 
 def migdal_background_XENON1T(e_min, e_max, nbins):
     """
-    :param nbins: number of bins
     :return: background for Xe detector
     """
     # Assume that:
@@ -95,7 +93,6 @@ def migdal_background_XENON1T(e_min, e_max, nbins):
 @numba.jit(nopython=True)
 def migdal_background_CDMS(e_min, e_max, nbins):
     """
-    :param E: recoil energy (in keV)
     :return: background for Ge detector
     """
     bins = np.linspace(e_min, e_max, nbins)
@@ -110,7 +107,6 @@ def migdal_background_CDMS(e_min, e_max, nbins):
 
 def migdal_background_superCDMS_Ge_HV(e_min, e_max, nbins):
     """
-    :param E: recoil energy (in keV)
     :return: background for Ge HV detector
     """
     # https://arxiv.org/abs/1610.00006
@@ -139,7 +135,6 @@ def migdal_background_superCDMS_Ge_HV(e_min, e_max, nbins):
 
 def migdal_background_CDMS_Ge_iZIP(e_min, e_max, nbins):
     """
-    :param E: recoil energy (in keV)
     :return: background for Ge iZIP detector
     """
     # https://arxiv.org/abs/1610.00006
@@ -196,10 +191,13 @@ benchmark = {'mw': 50., 'sigma_nucleon': 1e-45}
 # nuclear recoil acceptance (nr_eff), energy threshold [keV] (E_thr), resolution function (res)
 experiment = {
     'Xe': {'material': 'Xe', 'type': 'SI', 'exp': 5., 'cut_eff': 0.8, 'nr_eff': 0.5, 'E_thr': 10.,
+            'location': "XENON",
            'res': det_res_Xe},
     'Ge': {'material': 'Ge', 'type': 'SI', 'exp': 3., 'cut_eff': 0.8, 'nr_eff': 0.9, 'E_thr': 10.,
+            'location': "SUF",
            'res': det_res_Ge},
     'Ar': {'material': 'Ar', 'type': 'SI', 'exp': 10., 'cut_eff': 0.8, 'nr_eff': 0.8, 'E_thr': 30.,
+            'location': "XENON",
            'res': det_res_Ar},
     'Xe_migd': {
         'material': 'Xe',
@@ -281,7 +279,7 @@ experiment = {
         'exp': 44 * 1.e-3,  # Tonne year
         'cut_eff': 0.85,  # p. 11, right column
         'nr_eff': 0.5,  # p. 11, left column NOTE: migdal is ER type!
-        'E_thr':  100. / 1e3, # table VIII, Eph
+        'E_thr':  100. / 1e3,  # table VIII, Eph
         "location": "SNOLAB",
         'res': det_res_superCDMS,  # TODO
         'bg_func': migdal_background_superCDMS_Ge_HV,
@@ -326,9 +324,10 @@ for name in experiment.keys():
 exp_names = experiment.keys()
 for name in list(exp_names):
     bg_name = name + '_bg'
-    if not bg_name in exp_names:
+    if bg_name not in exp_names:
         experiment[bg_name] = experiment[name].copy()
         experiment[bg_name]['type'] = experiment[bg_name]['type'] + '_bg'
+
 
 @numba.njit
 def smear_signal(rate, energy, sigma, bin_width):
@@ -370,6 +369,7 @@ class DetectorSpectrum(GenSpectrum):
         # numerical integration is performed in compute_detected_spectrum, this
         # number is multiplied here.
         self.rebin_factor = 10
+        self.n_bins_result = None
         # Please not that this is NOT pretty. It was a monkey patch implemented since
         # many spectra were already computed using this naming hence we have to deal
         # with this lack of clarity in earlier coding in this manner.

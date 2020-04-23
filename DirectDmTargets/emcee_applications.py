@@ -1,5 +1,5 @@
 """Do a likelihood fit. The class MCMCStatModel is used for fitting applying
-the MCMC alogorithm emcee.
+the MCMC algorithm emcee.
 
 MCMC is:
     slower than the nestle package; and
@@ -8,6 +8,7 @@ MCMC is:
 Nevertheless, the walkers give great insight in how the likelihood-function is
 felt by the steps that the walkers make"""
 
+from .context import *
 import json
 import multiprocessing
 import corner
@@ -33,18 +34,11 @@ class MCMCStatModel(StatModel):
         self.fit_parameters = ['log_mass', 'log_cross_section']
         self.sampler = None
         self.pos = None
-        self.log = {'sampler': False, 'did_run': False, 'pos': False}
+        self.log_dict = {'sampler': False, 'did_run': False, 'pos': False}
         self.remove_frac = 0.2
         self.thin = 15
         self.config['start'] = datetime.now()
         self.config['notes'] = "default"
-
-        # Do the import of emcee inside the class such that the package can be
-        # loaded without emcee
-        try:
-            import emcee
-        except ModuleNotFoundError:
-            raise ModuleNotFoundError('package emcee not found. See README')
 
     def set_fit_parameters(self, params):
         if not type(params) == list:
@@ -61,7 +55,7 @@ class MCMCStatModel(StatModel):
         self.fit_parameters = params
 
     def set_pos_full_prior(self, use_pos=None):
-        self.log['pos'] = True
+        self.log_dict['pos'] = True
         if use_pos is not None:
             self.pos = use_pos
             return
@@ -70,13 +64,13 @@ class MCMCStatModel(StatModel):
                 self.config['prior'][param]['param']),
                 1.25 * self.config['prior'][param]['range'][0],
                 0.75 * self.config['prior'][param]['range'][-1]
-            ) for i in range(self.nwalkers)]
+            ) for _ in range(self.nwalkers)]
                 for param in self.fit_parameters]
         ])
         return pos.T
 
     def set_pos(self, use_pos=None):
-        self.log['pos'] = True
+        self.log_dict['pos'] = True
         if use_pos is not None:
             print("using specified start position")
             self.pos = use_pos
@@ -101,18 +95,25 @@ class MCMCStatModel(StatModel):
         self.pos = pos
 
     def set_sampler(self, mult=True):
+        # Do the import of emcee inside the class such that the package can be
+        # loaded without emcee
+        try:
+            import emcee
+        except ModuleNotFoundError:
+            raise ModuleNotFoundError('package emcee not found. See README')
+
         ndim = len(self.fit_parameters)
         kwargs = {"threads": multiprocessing.cpu_count()} if mult else {}
         self.sampler = emcee.EnsembleSampler(self.nwalkers, ndim,
                                              self.log_probability,
                                              args=([self.fit_parameters]),
                                              **kwargs)
-        self.log['sampler'] = True
+        self.log_dict['sampler'] = True
 
     def run_emcee(self):
-        if not self.log['sampler']:
+        if not self.log_dict['sampler']:
             self.set_sampler()
-        if not self.log['pos']:
+        if not self.log_dict['pos']:
             self.set_pos()
         try:
             start = datetime.now()
@@ -125,7 +126,7 @@ class MCMCStatModel(StatModel):
                   f"{len(self.fit_parameters)} for fit parameters "
                   f"{self.fit_parameters}")
             raise e
-        self.log['did_run'] = True
+        self.log_dict['did_run'] = True
         try:
             dt = end - start
             print("run_emcee::\tfit_done in %i s (%.1f h)" % (
@@ -135,7 +136,7 @@ class MCMCStatModel(StatModel):
             self.config['fit_time'] = -1
 
     def show_walkers(self):
-        if not self.log['did_run']:
+        if not self.log_dict['did_run']:
             self.run_emcee()
         labels = self.fit_parameters
         fig, axes = plt.subplots(len(labels), figsize=(10, 7), sharex=True)
@@ -149,7 +150,7 @@ class MCMCStatModel(StatModel):
         axes[-1].set_xlabel("step number")
 
     def show_corner(self):
-        if not self.log['did_run']:
+        if not self.log_dict['did_run']:
             self.run_emcee()
         print(f"Removing a fraction of {self.remove_frac} of the samples, total"
               f"number of removed samples = {self.nsteps * self.remove_frac}")
@@ -166,10 +167,10 @@ class MCMCStatModel(StatModel):
     def save_results(self, force_index=False):
         # save fit parameters to config
         self.config['fit_parameters'] = self.fit_parameters
-        if not self.log['did_run']:
+        if not self.log_dict['did_run']:
             self.run_emcee()
         # open a folder where to save to results
-        save_dir = open_save_dir(default_emcee_save_dir(), force_index = force_index)
+        save_dir = open_save_dir(default_emcee_save_dir(), force_index=force_index)
         # save the config, chain and flattened chain
         with open(save_dir + 'config.json', 'w') as fp:
             json.dump(convert_dic_to_savable(self.config), fp, indent=4)
@@ -208,7 +209,7 @@ def load_chain_emcee(load_from=default_emcee_save_dir(), item='latest'):
 def emcee_plots(result, save=False, plot_walkers=True):
     if not type(save) is bool:
         assert os.path.exists(save), f"invalid path '{save}'"
-        if not save[-1] == "/":
+        if save[-1] != "/":
             save += "/"
     info = "$M_\chi}$=%.2f" % 10 ** np.float(result['config']['mw'])
     for prior_key in result['config']['prior'].keys():

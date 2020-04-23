@@ -18,61 +18,25 @@ print("run_dddm_emcee.py::\tstart")
 
 parser = argparse.ArgumentParser(description="Running a fit for a certain set "
                                              "of parameters")
-parser.add_argument('-mw',
-                    type=np.float,
-                    default=50.,
-                    help="wimp mass")
-parser.add_argument('-cross_section',
-                    type=np.float,
-                    default=-45,
-                    help="wimp cross-section")
-parser.add_argument('-poisson',
-                    type=bool,
-                    default=False,
-                    help="Add poisson noise to the test data set")
-parser.add_argument('-nwalkers',
-                    type=int,
-                    default=250,
-                    help="walkers of MCMC")
-parser.add_argument('-nsteps',
-                    type=int,
-                    default=150,
-                    help="steps of MCMC")
-parser.add_argument('-notes',
-                    type=str,
-                    default="default",
-                    help="notes on particular settings")
-parser.add_argument('-bins',
-                    type=int,
-                    default=10,
-                    help="the number of energy bins")
-parser.add_argument('-target',
-                    type=str,
-                    default='Xe',
-                    help="Target material of the detector (Xe/Ge/Ar)")
-parser.add_argument('-nparams',
-                    type=int,
-                    default=2,
-                    help="Number of parameters to fit")
-parser.add_argument('-priors_from',
-                    type=str,
-                    default="Pato_2010",
-                    help="Obtain priors from paper <priors_from>")
-parser.add_argument('-verbose',
-                    type=float,
-                    default=0,
-                    help="Set to 0 (no print statements), 1 (some print statements) or >1 (a lot of print statements). Set the level of print statements while fitting.")
-parser.add_argument('-shielding',
-                    type=str,
-                    default="default",
-                    help="yes / no / default, override internal determination if we need to take into account earth shielding.")
+parser.add_argument('-mw', type=np.float, default=50., help="wimp mass")
+parser.add_argument('-cross_section', type=np.float, default=-45, help="wimp cross-section")
+parser.add_argument('-poisson', type=bool, default=False, help="Add poisson noise to the test data set")
+parser.add_argument('-nwalkers', type=int, default=250, help="walkers of MCMC")
+parser.add_argument('-nsteps', type=int, default=150, help="steps of MCMC")
+parser.add_argument('-notes', type=str, default="default", help="notes on particular settings")
+parser.add_argument('-bins', type=int, default=10, help="the number of energy bins")
+parser.add_argument('-target', type=str, default='Xe', help="Target material of the detector (Xe/Ge/Ar)")
+parser.add_argument('-nparams', type=int, default=2, help="Number of parameters to fit")
+parser.add_argument('-priors_from', type=str, default="Pato_2010", help="Obtain priors from paper <priors_from>")
+parser.add_argument('-verbose', type=float, default=0, help="Set to 0 (no print statements), 1 (some print statements) or >1 (a lot of print statements). Set the level of print statements while fitting.")
+parser.add_argument('-shielding', type=str, default="default", help="yes / no / default, override internal determination if we need to take into account earth shielding.")
 args = parser.parse_args()
 
 print(f"run_dddm_emcee.py::\tstart for mw = {args.mw}, sigma = "
       f"{args.cross_section}. Fitting {args.nparams} parameters")
 stats = dddm.MCMCStatModel(args.target, args.verbose)
 if args.shielding != "default":
-    yes_or_no = {"yes" : True, "no" : False}
+    yes_or_no = {"yes": True, "no": False}
     stats.config['earth_shielding'] = yes_or_no[args.shielding]
     stats.set_models()
 stats.config['poisson'] = args.poisson
@@ -86,8 +50,7 @@ stats.nsteps = args.nsteps
 stats.eval_benchmark()
 stats.run_emcee()
 stats.save_results()
-assert stats.log['did_run']
+assert stats.log_dict['did_run']
 
-print(f"run_dddm_emcee.py::\tfinished for mw = {args.mw}, "
-      f"sigma = {args.cross_section}")
+print(f"run_dddm_emcee.py::\tfinished for mw = {args.mw}, sigma = {args.cross_section}")
 print("finished, bye bye")

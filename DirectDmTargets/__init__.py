@@ -1,5 +1,5 @@
-__version__ = '0.3.0'
-
+__version__ = '0.4.0'
+# from .context import *
 from .halo import *
 from .plot_basics import *
 from .statistics import *
