@@ -18,14 +18,14 @@ install:
   - conda create --yes -n test python=$TRAVIS_PYTHON_VERSION
   - source activate test
   - git clone https://github.com/jorana/wimprates
-  - pip install -e wimprates
-  - pip install -r requirements.txt
+  - yes | pip install -e wimprates
+  - yes | pip install -r requirements.txt
   - git clone https://github.com/jorana/verne.git
-  - conda install -c conda-forge multinest
-  - conda install -c conda-forge/label/cf201901 multinest
-  - conda install -c anaconda mpi4py
+  - yes | conda install -c conda-forge multinest
+  - yes | conda install -c conda-forge/label/cf201901 multinest
+  - yes | conda install -c anaconda mpi4py
   - git clone https://github.com/JohannesBuchner/PyMultiNest
-  - pip install -e PyMultiNest
-  - python setup.py install
+  - yes | pip install -e PyMultiNest
+  - yes | python setup.py install
 script: 
   python tests/test_all.py
