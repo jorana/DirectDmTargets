@@ -9,7 +9,9 @@ import wimprates as wr
 import numericalunits as nu
 import os
 from scipy.interpolate import interp1d
-
+import datetime
+import time
+import socket
 # # be able to load from the verne folder using this work around.
 # sys.path.insert(1, get_verne_folder()+'/src/')
 # # python-file in verne folder
@@ -37,6 +39,67 @@ def get_bins(a, b, n):
     """
     result = np.vstack((bin_edges(a, b, n)[0:-1], bin_edges(a, b, n)[1:]))
     return np.transpose(result)
+
+
+def file_ready(name, cmd, maxtime=30):
+    """
+    Check the file is ready when we execute cmd
+    Author: A. Pickford
+    :param name: name of the file that is to be written
+    :param cmd: the command used to create that file
+    :param maxtime: max. minutes this process waits for the file to be written
+    :return: is the file written within max time. type(bool)
+    """
+    print('file_ready: start')
+    endTime = datetime.datetime.now() + datetime.timedelta(minutes=maxtime)
+    flagName = '{0}.flag'.format(name)
+
+    print('file_ready: begin while loop')
+    while datetime.datetime.now() < endTime:
+        if os.path.exists(name):
+            print('file_ready: file exists')
+            # file exists, check for flag file
+            if os.path.exists(flagName):
+                print ('file_ready: flag file exists')
+                # file and flag file both exist, another process should be
+                # creating the file, so wait 30 seconds for other process
+                # to finish and delete flag file then retry file checks
+                time.sleep(30)
+                continue
+            else:
+                print('file_ready: flag file does not exist')
+                # file and exists and no flag file, all is good use the file
+                return True
+        else:
+            print('file_ready: file does not exist')
+            # file does not exist, try and make the flag file
+            try:
+                with open(flagName, 'w') as flag:
+                    flag.write('0\n')
+            except IOError as e:
+                # error creating flag file, most likely another process has just
+                # opened the file, this relies on dcache throwing us an
+                # IOError back if we try to write to an existing file so in a race
+                # to write the file someone is first and someone gets the error
+                # we got the error so wait 30 seconds and retry the file checks
+                print('file_ready: error creating flag file')
+                time.sleep(30)
+                continue
+            # we wrote the flag file and should now create the real file
+            # execute 'cmd' to generate the file
+            os.system(cmd)
+            print('file_ready: flag file created')
+            print('file_ready: file write end')
+
+            # delete flag file
+            print('file_ready: delete flag file')
+            os.remove(flagName)
+            print('file_ready: end true')
+            return True
+
+    # if the file isn't ready after maxtime minutes give up and return false
+    print('file_ready: end false')
+    return False
 
 
 class GenSpectrum:
@@ -273,7 +336,7 @@ class VerneSHM:
             cmd = f'python "{software_folder}"{pyfile} {args}'
             print(f'No spectrum found at:\n{file_name}\nGenerating spectrum, '
                   f'this can take a minute. Execute:\n{cmd}')
-            os.system(cmd)
+            assert file_ready(file_name, cmd), f"{file_name} could not be written"
         else:
             print(f'Using {abs_file_name} for the velocity distribution')
 
