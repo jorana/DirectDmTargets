@@ -226,7 +226,8 @@ class NestedSamplerStatModel(StatModel):
         start = datetime.now()
 
         # Multinest saves output to a folder. First write to the tmp folder, move it to the results folder later
-        _tmp_folder = self.get_tmp_dir()
+        # _tmp_folder = self.get_tmp_dir()
+        _tmp_folder = self.get_save_dir()
         save_at_temp = f'{_tmp_folder}multinest'
 
         # solve(

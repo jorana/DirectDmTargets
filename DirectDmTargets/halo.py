@@ -2,7 +2,7 @@
 account any detector effects"""
 
 from .context import *
-from .utils import get_verne_folder, check_folder_for_file, is_str_in_list, str_in_list, add_identifier_to_safe
+from .utils import get_verne_folder, check_folder_for_file, is_str_in_list, str_in_list, add_identifier_to_safe, unique_hash
 import numpy as np
 import pandas as pd
 import wimprates as wr
@@ -41,19 +41,23 @@ def get_bins(a, b, n):
     return np.transpose(result)
 
 
-def file_ready(name, cmd, maxtime=30):
+def file_ready(name, cmd, max_time=30, max_age=300):
     """
     Check the file is ready when we execute cmd
     Author: A. Pickford
     :param name: name of the file that is to be written
     :param cmd: the command used to create that file
-    :param maxtime: max. minutes this process waits for the file to be written
+    :param max_time: max. minutes this process waits for the file to be written
+    :param max_age: max. age (in minutes) of the file, if the file is older than this, remove it
     :return: is the file written within max time. type(bool)
     """
     print('file_ready: start')
-    endTime = datetime.datetime.now() + datetime.timedelta(minutes=maxtime)
+    endTime = datetime.datetime.now() + datetime.timedelta(minutes=max_time)
     flagName = '{0}.flag'.format(name)
-
+    if (os.path.exists(flagName) and
+            time.time() - os.path.getmtime(flagName) > max_age * 60):
+        print(f'file_ready: found old flag {flagName}. Remove it')
+        os.remove(flagName)
     print('file_ready: begin while loop')
     while datetime.datetime.now() < endTime:
         if os.path.exists(name):
@@ -87,6 +91,7 @@ def file_ready(name, cmd, maxtime=30):
                 continue
             # we wrote the flag file and should now create the real file
             # execute 'cmd' to generate the file
+            print(f'file_ready: exec {cmd}')
             os.system(cmd)
             print('file_ready: flag file created')
             print('file_ready: file write end')
@@ -324,7 +329,7 @@ class VerneSHM:
 
         if not exist_csv:
             pyfile = '/src/CalcVelDist.py'
-            file_name = abs_file_name 
+            file_name = tmp_folder + unique_hash() + '.csv'
             args = f'-m_x {10. ** self.log_mass} ' \
                    f'-sigma_p {10. ** self.log_cross_section} ' \
                    f'-loc {self.location} ' \
@@ -337,6 +342,12 @@ class VerneSHM:
             print(f'No spectrum found at:\n{file_name}\nGenerating spectrum, '
                   f'this can take a minute. Execute:\n{cmd}')
             assert file_ready(file_name, cmd), f"{file_name} could not be written"
+            mv_cmd = f'mv {file_name} {abs_file_name}'
+            if not os.path.exists(abs_file_name):
+                print(f'load_f:\tcopy from temp-folder to verne_folder')
+                file_ready(abs_file_name, mv_cmd, max_time=1)
+            else:
+                warn(f'load_f:\twhile writing {file_name}, {abs_file_name} was created')
         else:
             print(f'Using {abs_file_name} for the velocity distribution')
 
