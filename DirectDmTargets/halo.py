@@ -343,7 +343,11 @@ class VerneSHM:
         # Alright now load the data and interpolate that. This is the output that wimprates need
         if not os.path.exists(abs_file_name):
             raise OSError(f'{abs_file_name} should exist')
-        df = pd.read_csv(abs_file_name)
+        try:
+            df = pd.read_csv(abs_file_name)
+        except pd.io.common.EmptyDataError as pandas_error:
+            os.remove(abs_file_name)
+            raise pandas_error
 
         if not len(df):
             # Somehow we got an empty dataframe, we cannot continue

@@ -1,5 +1,6 @@
 """Do a likelihood fit. The class NestedSamplerStatModel is used for fitting applying the bayesian algorithm nestle"""
 
+from __future__ import absolute_import, unicode_literals, print_function
 from .halo import *
 from .statistics import *
 from .context import *
@@ -12,6 +13,8 @@ import corner
 import matplotlib.pyplot as plt
 import shutil
 
+
+import tempfile
 
 # import logging
 
@@ -215,44 +218,45 @@ class NestedSamplerStatModel(StatModel):
         save_at = self.get_save_dir()
         assert_str = f'Unknown configuration of fit pars: {self.fit_parameters}'
         assert self.fit_parameters == self.known_parameters[:n_dims], assert_str
-        try:
-            self.log.warning(f'NestedSamplerStatModel::\tstart_fit for %i parameters' % n_dims)
-            self.log.info(f'NestedSamplerStatModel::\tbeyond this point, there is nothing '
-                          f"I can say, you'll have to wait for my lower level "
-                          f'algorithms to give you info, see you soon!')
-            start = datetime.now()
+        # try:
+        self.log.warning(f'NestedSamplerStatModel::\tstart_fit for %i parameters' % n_dims)
+        self.log.info(f'NestedSamplerStatModel::\tbeyond this point, there is nothing '
+                      f"I can say, you'll have to wait for my lower level "
+                      f'algorithms to give you info, see you soon!')
+        start = datetime.now()
 
-            # Multinest saves output to a folder. First write to the tmp folder, move it to the results folder later
-            _tmp_folder = self.get_tmp_dir()
-            save_at_temp = f'{_tmp_folder}multinest'
+        # Multinest saves output to a folder. First write to the tmp folder, move it to the results folder later
+        _tmp_folder = self.get_tmp_dir()
+        save_at_temp = f'{_tmp_folder}multinest'
 
-            solve(
-                LogLikelihood=self._log_probability_nested,  # SafeLoglikelihood,
-                Prior=self._log_prior_transform_nested,  # SafePrior,
-                n_live_points=self.nlive,
-                n_dims=n_dims,
-                outputfiles_basename=save_at_temp,
-                verbose=True,
-                evidence_tolerance=tol
-            )
-            self.result = save_at_temp
+        # solve(
+        solve_multinest(
+            LogLikelihood=self._log_probability_nested,  # SafeLoglikelihood,
+            Prior=self._log_prior_transform_nested,  # SafePrior,
+            n_live_points=self.nlive,
+            n_dims=n_dims,
+            outputfiles_basename=save_at_temp,
+            verbose=True,
+            evidence_tolerance=tol
+        )
+        self.result = save_at_temp
 
-            # Open a save-folder after successful running multinest. Move the multinest results there.
-            # save_at = self.get_save_dir()
-            check_folder_for_file(save_at)
-            assert _tmp_folder[-1] == '/', 'make sure that tmp_folder ends at "/"'
-            copy_multinest = save_at + _tmp_folder.split('/')[-2]
-            self.log.info(f'copy {_tmp_folder} to {copy_multinest}')
-            self.log_dict['garbage_bin'].append(_tmp_folder)
-            end = datetime.now()
-            dt = end - start
-            self.log.warning(f'run_multinest::\tfit_done in %i s (%.1f h)' % (dt.seconds, dt.seconds / 3600.))
+        # Open a save-folder after successful running multinest. Move the multinest results there.
+        # save_at = self.get_save_dir()
+        check_folder_for_file(save_at)
+        assert _tmp_folder[-1] == '/', 'make sure that tmp_folder ends at "/"'
+        copy_multinest = save_at + _tmp_folder.split('/')[-2]
+        self.log.info(f'copy {_tmp_folder} to {copy_multinest}')
+        self.log_dict['garbage_bin'].append(_tmp_folder)
+        end = datetime.now()
+        dt = end - start
+        self.log.warning(f'run_multinest::\tfit_done in %i s (%.1f h)' % (dt.seconds, dt.seconds / 3600.))
 
-        except ValueError as e:
-            self.log.error(
-                f'Multinest did not finish due to a ValueError. Was running with'
-                f'\n{len(self.fit_parameters)} for fit parameters {self.fit_parameters}')
-            raise e
+        # except ValueError as e:
+        #     self.log.error(
+        #         f'Multinest did not finish due to a ValueError. Was running with'
+        #         f'\n{len(self.fit_parameters)} for fit parameters {self.fit_parameters}')
+        #     raise e
         self.log_dict['did_run'] = True
         try:
             self.config['fit_time'] = dt.seconds
@@ -569,3 +573,48 @@ def nestle_corner(result, save=False):
     if save:
         plt.savefig(f"{save}corner.png", dpi=200)
     plt.show()
+
+
+def solve_multinest(LogLikelihood, Prior, n_dims, **kwargs):
+    from pymultinest.solve import run, Analyzer, solve
+    kwargs['n_dims'] = n_dims
+    files_temporary = False
+    if 'outputfiles_basename' not in kwargs:
+        files_temporary = True
+        tempdir = tempfile.mkdtemp('pymultinest')
+        kwargs['outputfiles_basename'] = tempdir + '/'
+    outputfiles_basename = kwargs['outputfiles_basename']
+
+    def SafePrior(cube, ndim, nparams):
+        a = np.array([cube[i] for i in range(n_dims)])
+        b = Prior(a)
+        for i in range(n_dims):
+            cube[i] = b[i]
+
+
+    def SafeLoglikelihood(cube, ndim, nparams, lnew):
+        a = np.array([cube[i] for i in range(n_dims)])
+        l = float(LogLikelihood(a))
+        if not np.isfinite(l):
+            warn('WARNING: loglikelihood not finite: %f\n' % (l))
+            warn('         for parameters: %s\n' % a)
+            warn('         returned very low value instead\n')
+            return -1e100
+        return l
+
+
+    kwargs['LogLikelihood'] = SafeLoglikelihood
+    kwargs['Prior'] = SafePrior
+    run(**kwargs)
+
+    analyzer = Analyzer(n_dims, outputfiles_basename=outputfiles_basename)
+    stats = analyzer.get_stats()
+    samples = analyzer.get_equal_weighted_posterior()[:, :-1]
+
+    # if files_temporary:
+    #     shutil.rmtree(tempdir, ignore_errors=True)
+
+    return dict(logZ=stats['nested sampling global log-evidence'],
+                logZerr=stats['nested sampling global log-evidence error'],
+                samples=samples,
+                )
