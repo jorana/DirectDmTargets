@@ -93,5 +93,6 @@ if args.multicore_hash == "" or rank == 0:
     stats.save_results()
 assert stats.log_dict['did_run']
 
+
 print(f"run_dddm_multinest.py::\tfinished for mw = {args.mw}, sigma = {args.cross_section}")
 print("finished, bye bye")

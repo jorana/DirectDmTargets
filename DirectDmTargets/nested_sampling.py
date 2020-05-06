@@ -529,7 +529,7 @@ def multinest_corner(result, save=False):
     fig.axes[1].text(0, 1, info, verticalalignment='top')
     if save:
         plt.savefig(f"{save}corner.png", dpi=200)
-    plt.show()
+    # plt.show()
 
 
 def nestle_corner(result, save=False):
@@ -573,7 +573,7 @@ def nestle_corner(result, save=False):
     fig.axes[1].text(0, 1, info, verticalalignment='top')
     if save:
         plt.savefig(f"{save}corner.png", dpi=200)
-    plt.show()
+    # plt.show()
 
 
 def solve_multinest(LogLikelihood, Prior, n_dims, **kwargs):

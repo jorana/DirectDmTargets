@@ -870,10 +870,13 @@ def plot_check_compare(to_check, name_base, show=True, **kwargs):
             name = f'set{l}_sub{k}_' + name_base
             save_canvas(name, save_dir=f'figures/{name_base}/')
 
-            if show:
-                plt.show()
-            else:
-                plt.clf()
+            if show: plt.show()
+            else: plt.clf()
+            name = f'set{l}_sub{k}_corner' + name_base
+            dddm.multinest_corner(results[it])            
+            save_canvas(name, save_dir=f'figures/{name_base}/')
+            if show: plt.show()
+            else: plt.clf()
         if len(its):
             plt.figure(figsize=(10, 6))
             res = overlay_confidence_plots(its, **kwargs)  # , save_dir='figures/misc/')
@@ -915,7 +918,11 @@ def plot_check_combine(to_check, name_base, show=True, **combined_kwargs):
                 plt.show()
             else:
                 plt.clf()
-
+            name = f'set{l}_sub{k}_corner' + name_base
+            dddm.multinest_corner(results[it])            
+            save_canvas(name, save_dir=f'figures/{name_base}/')
+            if show: plt.show()
+            else: plt.clf()
         # Combine plots 0 and 1: the two Ge components of the Ge-detector
         plt.figure(figsize=(12, 6))
         res = three_confidence_plot(its[:2], **combined_kwargs)
