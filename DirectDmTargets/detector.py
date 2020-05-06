@@ -278,7 +278,7 @@ experiment = {
         'res': det_res_superCDMS,  # TODO
         'bg_func': migdal_background_superCDMS_Ge_HV,
     },
-     'Ge_migd_HV_Si': {
+     'Ge_migd_HV_Si_bg': {
         'material': 'Si',
         'type': 'migdal_bg',
         'exp': 9.6 * 1.e-3,  # Tonne year
