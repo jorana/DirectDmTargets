@@ -345,7 +345,7 @@ class NestedSamplerStatModel(StatModel):
 
     def get_save_dir(self, force_index=False, hash=None):
         if (not self.log_dict['saved_in']) or force_index:
-            self.log_dict['saved_in'] = open_save_dir(f'{default_nested_save_dir()}_{self.sampler}',
+            self.log_dict['saved_in'] = open_save_dir(f'nes_{self.sampler[:2]}',
                                                       force_index=force_index, hash=hash)
         self.log.info(f'NestedSamplerStatModel::\tget_save_dir\tsave_dir = {self.log_dict["saved_in"]}')
         return self.log_dict['saved_in']
