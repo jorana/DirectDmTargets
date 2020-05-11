@@ -12,11 +12,8 @@ from scipy import special as spsp
 import corner
 import matplotlib.pyplot as plt
 import shutil
-
-
 import tempfile
 
-# import logging
 
 def default_nested_save_dir():
     """The name of folders where to save results from the NestedSamplerStatModel"""
@@ -226,11 +223,10 @@ class NestedSamplerStatModel(StatModel):
         start = datetime.now()
 
         # Multinest saves output to a folder. First write to the tmp folder, move it to the results folder later
-        # _tmp_folder = self.get_tmp_dir()
         _tmp_folder = self.get_save_dir()
         save_at_temp = f'{_tmp_folder}multinest'
 
-        # solve(
+
         solve_multinest(
             LogLikelihood=self._log_probability_nested,  # SafeLoglikelihood,
             Prior=self._log_prior_transform_nested,  # SafePrior,
@@ -243,22 +239,12 @@ class NestedSamplerStatModel(StatModel):
         self.result = save_at_temp
 
         # Open a save-folder after successful running multinest. Move the multinest results there.
-        # save_at = self.get_save_dir()
         check_folder_for_file(save_at)
-        assert _tmp_folder[-1] == '/', 'make sure that tmp_folder ends at "/"'
-        copy_multinest = save_at + _tmp_folder.split('/')[-2]
-        self.log.info(f'copy {_tmp_folder} to {copy_multinest}')
-        self.log_dict['garbage_bin'].append(_tmp_folder)
         end = datetime.now()
         dt = end - start
         self.log.warning(f'run_multinest::\tfit_done in %i s (%.1f h)' % (dt.seconds, dt.seconds / 3600.))
-
-        # except ValueError as e:
-        #     self.log.error(
-        #         f'Multinest did not finish due to a ValueError. Was running with'
-        #         f'\n{len(self.fit_parameters)} for fit parameters {self.fit_parameters}')
-        #     raise e
         self.log_dict['did_run'] = True
+
         try:
             self.config['fit_time'] = dt.seconds
         except NameError:
@@ -266,6 +252,7 @@ class NestedSamplerStatModel(StatModel):
         self.log.info(f'NestedSamplerStatModel::\tFinished with running Multinest!')
 
     def empty_garbage(self):
+        self.log.warn(f'Deprecation warning. Will remove empty_garbage in future versions')
         for file in self.log_dict['garbage_bin']:
             self.log.info(f'delete {file}')
             if os.path.exists(file):
@@ -529,7 +516,6 @@ def multinest_corner(result, save=False):
     fig.axes[1].text(0, 1, info, verticalalignment='top')
     if save:
         plt.savefig(f"{save}corner.png", dpi=200)
-    # plt.show()
 
 
 def nestle_corner(result, save=False):
@@ -573,10 +559,12 @@ def nestle_corner(result, save=False):
     fig.axes[1].text(0, 1, info, verticalalignment='top')
     if save:
         plt.savefig(f"{save}corner.png", dpi=200)
-    # plt.show()
 
 
 def solve_multinest(LogLikelihood, Prior, n_dims, **kwargs):
+    """
+    See PyMultinest Solve() for documentation
+    """
     from pymultinest.solve import run, Analyzer, solve
     kwargs['n_dims'] = n_dims
     files_temporary = False
@@ -592,7 +580,6 @@ def solve_multinest(LogLikelihood, Prior, n_dims, **kwargs):
         for i in range(n_dims):
             cube[i] = b[i]
 
-
     def SafeLoglikelihood(cube, ndim, nparams, lnew):
         a = np.array([cube[i] for i in range(n_dims)])
         l = float(LogLikelihood(a))
@@ -603,7 +590,6 @@ def solve_multinest(LogLikelihood, Prior, n_dims, **kwargs):
             return -1e100
         return l
 
-
     kwargs['LogLikelihood'] = SafeLoglikelihood
     kwargs['Prior'] = SafePrior
     run(**kwargs)
@@ -611,9 +597,6 @@ def solve_multinest(LogLikelihood, Prior, n_dims, **kwargs):
     analyzer = Analyzer(n_dims, outputfiles_basename=outputfiles_basename)
     stats = analyzer.get_stats()
     samples = analyzer.get_equal_weighted_posterior()[:, :-1]
-
-    # if files_temporary:
-    #     shutil.rmtree(tempdir, ignore_errors=True)
 
     return dict(logZ=stats['nested sampling global log-evidence'],
                 logZerr=stats['nested sampling global log-evidence error'],
