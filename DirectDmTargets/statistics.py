@@ -376,7 +376,7 @@ class StatModel:
             # While computing the spectrum another instance has saved a file with the same name
             pass
 
-    def check_spectrum(self):
+    def check_spectrum(self, poisson=None):
         self.log.info(
             f"StatModel::\tevaluating\n\t\t{self.config['spectrum_class']}"
             f"\n\tfor mw = {10. ** self.config['mw']}, "
@@ -397,7 +397,9 @@ class StatModel:
             self.config['halo_model'],
             self.config['det_params'])
         spectrum.n_bins = self.config['n_energy_bins']
-        binned_spectrum = spectrum.get_data(poisson=self.config['poisson'])
+        binned_spectrum = spectrum.get_data(
+            poisson=self.config['poisson'] if poisson is None else poisson
+        )
 
         if self.config['save_intermediate']:
             self.save_intermediate_result(binned_spectrum, interm_file)
@@ -405,7 +407,7 @@ class StatModel:
 
     def eval_benchmark(self):
         self.log.info(f'StatModel::\tpreparing for running, setting the benchmark')
-        self.benchmark_values = self.check_spectrum()['counts']
+        self.benchmark_values = self.check_spectrum(poisson=False)['counts']
         self.bench_is_set = True
 
     def check_bench_set(self):

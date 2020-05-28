@@ -201,7 +201,7 @@ class GenSpectrum:
         """
         :return: events with poisson noise
         """
-        return np.random.poisson(self.get_events()).astype(np.float)
+        return np.random.exponential(self.get_events()).astype(np.float)
 
     def get_data(self, poisson=True):
         """
