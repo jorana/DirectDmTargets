@@ -94,14 +94,17 @@ def results_to_df(res):
                 df[key] = [res[it][key] for it in items]
             except KeyError:
                 pass
-    tols = []
-    if not 'tol' in df.keys():
-        for it in items:
-            try:
-                tols.append(res[it]['config']['tol'])
-            except KeyError:
-                tols.append(None)
-        df['tol'] = tols
+    
+    for essential in ['tol', 'nlive']: 
+        _res = []
+        if not 'config_' + essential in df.keys():
+            for it in items:
+                try:
+                    _res.append(res[it]['config'][essential])
+                except (KeyError, IndexError) as e:
+                    print(f'{e} for {it}')
+                    _res.append(None)
+            df['config_' + essential] = _res
     df['mw'] = 10 ** df['config_mw']
     df['n_fit_parameters'] = [len(pars) for pars in df['config_fit_parameters']]
     return df
@@ -506,6 +509,8 @@ def find_other_ge(i,
     assert np.sum(df[df['item'] == i]['config_detector'] == det_order[0])
     # First match
     _, _df = match_other_item(i, **kwargs)
+    if not np.iterable(_df) and not _df:
+        return np.full(3, np.nan)
     # Remove xenon
     _df = _df[_df['exp'] == 'Ge']
     # Extract one item per sub-detector type
@@ -529,7 +534,8 @@ def combined_confidence_plot(items,
                              smoothing=None,
                              cbar_notes=None,
                              text_box=False,
-                             cmap = None,
+                             cmap=None,
+                             show_both=False,
                              alpha=0.5,
                              nbins=50):
     if not np.iterable(items):
@@ -561,7 +567,7 @@ def combined_confidence_plot(items,
                 mode='constant')
 
         # Single plot
-        if not combine or len(items) == 1:
+        if not combine or len(items) == 1 or show_both:
             res = _confidence_plot(item, X, Y, _hist, bin_range, text_box=text_box, nsigma=nsigma,
                                cbar_note=cbar_notes[k],
                                cmap=cmap if cmap else colormaps[k],
@@ -577,7 +583,8 @@ def combined_confidence_plot(items,
         H = H / np.sum(H)
         last_item = item  # needed as a placeholder for _confidence_plot
         res = _confidence_plot(last_item, X, Y, H, bin_range,
-                               text_box=text_box, nsigma=nsigma + 1,
+                               text_box=text_box,
+                               nsigma=nsigma,
                                cbar_note=cbar_notes[k + 1],
                                cmap=cmap if cmap else colormaps[k+1],
                                alpha=0.8)
@@ -645,7 +652,7 @@ def exec_show(show=True):
         plt.clf()
 
 
-def def_show_single(it, this_name, name_base, **kwargs):
+def def_show_single(it, this_name, name_base, show = True, **kwargs):
     kwargs['alpha'] = 1
     res = one_confidence_plot(it, corner=False, save_dir='figures/misc/',  **kwargs)
     plot_prior_range(res, it)
@@ -656,7 +663,7 @@ def def_show_single(it, this_name, name_base, **kwargs):
     plt.legend(loc='upper right')
     name = this_name + name_base
     save_canvas(name, save_dir=f'figures/{name_base}/')
-
+    exec_show(show)
 
     name = this_name + 'corner' + name_base
     dddm.multinest_corner(results[it])
@@ -693,7 +700,7 @@ def pop_from_list(l, idx, default="placeholder"):
         except (IndexError, TypeError):
             return default
     else:
-        if len(idx) == 1:
+        if np.iterable(idx) and len(idx) == 1:
             idx = idx[0]
         try:
             return l[idx]
@@ -706,9 +713,9 @@ def combine_sets(items,
                  name_base='test',
                  verbose=False,
                  show=True,
-                 notes=[   [[None], [None]],  # level 0
-                           [],  # Level 1
-                           []  # level 2
+                 notes=[[[None], [None]],  # level 0
+                        [],  # Level 1
+                        []  # level 2
                        ],
                  **combined_kwargs):
     """
@@ -743,6 +750,9 @@ def combine_sets(items,
             print('combine_sets::\t' + string)
 
     f_print(f'Combine items. Mode {mode}')
+    if os.path.exists(f'figures/{name_base}'):
+        f_print(f'remove old figures/{name_base}')
+        shutil.rmtree(f'figures/{name_base}')
     assert len(notes) >= level + 1, f'level {level} requires >= {level} cbar-notes'
     for set_number, sets in enumerate(tqdm(items)):
         f_print(f'Starting with set {set_number}')
@@ -750,10 +760,14 @@ def combine_sets(items,
         combined_hists = []
         # with sets = [[Xe_0, Xe_1],[Ge_0, Ge_1]]
         for sub_number, sub_set in enumerate(sets):
+            f_print(f'doing {sub_set}')
             # with sub_set = [Xe_0, Xe_1]
             for number_i, it in enumerate(sub_set):
+                f_print(f'doing {it}')
+                if pd.isnull(it):
+                    continue
                 # with it = [Xe_0]
-                _name = f'set{set_number}_sub{sub_number}.{number_i}'
+                _name = f'set{set_number}_level0_sub{sub_number}.{number_i}'
                 f_print(f'Plotting {_name}')
                 kwargs = combined_kwargs.copy()
                 kwargs['cbar_notes'] = [pop_from_list(notes, [0, sub_number, number_i])]
@@ -762,20 +776,28 @@ def combine_sets(items,
         if level > 0:
             f_print(f'at 1/{level}')
             for plot_times in range(2):
+                # plot_times == 0 -> plot all sub_sets one canvas each [Xe_1, Xe_2, Xe_com]
+                # plot_time == 1 -> plot all combined sub_set on one canvas [Xe_com, Ge_com]
                 for sub_number, sub_set in enumerate(sets):
+                    if np.any(pd.isnull(sub_set)):
+                        continue
                     # with sub_set = [Xe_0, Xe_1]
                     kwargs = combined_kwargs.copy()
                     _labels = [pop_from_list(notes, [1, sub_number, i]) for i in
                                range(len(sub_set) + int(len(sub_set) > 1))]
                     kwargs['cbar_notes'] = _labels
-                    if plot_times > 0:
-                        kwargs['cmap'] = colormaps[sub_number]
-                        if sub_number == 0:
-                            plt.figure(figsize(9, 6))
+
+                    if plot_times == 0:
+                        plt.figure(figsize(9+1.5*len(sub_set), 6))
+                        kwargs['nsigma'] = min(kwargs['nsigma'], 2)
                     else:
-                        kwargs['alpha'] = 1
+                        if sub_number == 0:
+                            plt.figure(figsize(9+len(sets), 6))
+                        kwargs['cmap'] = colormaps[sub_number]
+                        kwargs['alpha'] = 0.8
 
                     res, _hist = combined_confidence_plot(sub_set, combine=len(sub_set) > 1,
+                                                          show_both=plot_times == 0,
                                                           **kwargs)
 
                     plot_prior_range(res[-1], sub_set[0])
@@ -785,26 +807,29 @@ def combine_sets(items,
                         _c = get_color(j, _range=len(sub_set), it=sub_number)
                         label = 'best fit' if j == len(res) - 1 else 'best sub-fit'
                         if _labels:
-                            label += _labels[j] if len(_labels) >= j else f'\nholder{j}'
+                            if plot_times == 0:
+                                label += pop_from_list(_labels, j, f'\nholder{j}')
+                            else:
+                                label += _labels[-1]
                         plot_fit_res(_res, c=_c, label=label)
                     if plot_times == 0:
                         combined_hists.append([res[-1], _hist])
                         plot_bench(sub_set[0])
                         plot_prior_range(res[-1], sub_set[0])
                         plt.grid(axis='y')
-                        plt.legend(loc='upper right')
-                        name = f'set{set_number}_{mode}_sub{sub_number}_' + name_base
+                        plt.legend(loc='lower left')
+                        name = f'set{set_number}_level1_sub{sub_number}_' + name_base
                         save_canvas(name, save_dir=f'figures/{name_base}/')
                         exec_show(show)
                         f_print(f'Plotting {name}')
-
-            plot_bench(sets[0][0])
-            plt.grid(axis='y')
-            plt.legend(loc='upper right')
-            name = f'set{set_number}_{mode}_' + name_base
-            save_canvas(name, save_dir=f'figures/{name_base}/')
-            exec_show(show)
-            f_print(f'Plotting {name}')
+            if sets and len(sets) and len(sets[0]):
+                plot_bench(sets[0][0])
+                plt.grid(axis='y')
+                plt.legend(loc='upper right')
+                name = f'set{set_number}_level1_' + name_base
+                save_canvas(name, save_dir=f'figures/{name_base}/')
+                exec_show(show)
+                f_print(f'Plotting {name}')
         if level == 2 and len(combined_hists) == len(sets):
             plt.figure(figsize(10, 6))
             combined_hists = []
@@ -814,7 +839,7 @@ def combine_sets(items,
             for sub_number, sub_set in enumerate(sets):
                 kwargs = combined_kwargs.copy()
                 kwargs['cbar_notes'] = [pop_from_list(notes, [2, i]) for i in
-                    range(len(sub_set) + int(len(sub_set) > 1))]
+                                        range(len(sub_set) + int(len(sub_set) > 1))]
                 kwargs['cmap'] = colormaps[sub_number]
                 kwargs['nsigma'] = 2
                 # with sub_set = [Xe_0, Xe_1]
@@ -822,21 +847,21 @@ def combine_sets(items,
                                                       combine=len(sub_set)>1,
                                                       **kwargs)
                 combined_hists.append([res[-1], _hist])
+                _c = get_color(sub_number, len(sets))
+                label = pop_from_list(notes, [2, sub_number])
+                plot_fit_res(res[-1], c=_c, label='best fit' + label)
             for i, (_res, hist) in enumerate(combined_hists):
                 X, Y, H = hist
-                _c = get_color(i, len(combined_hists))
-                label = pop_from_list(notes, [2, i])
-                plot_fit_res(_res, c=_c, label='best fit' + label)
                 prod *= H
             first_item = sets[0][0]
             _note = pop_from_list(notes, [2, i+1], 'combination')
             res = _confidence_plot(first_item,
-                             X, Y, prod,
-                             bin_range=get_binrange(first_item),
-                             nsigma=3,
-                             cbar_note=_note,
-                             cmap=colormaps[i+1],
-                             alpha=1)
+                                   X, Y, prod,
+                                   bin_range=get_binrange(first_item),
+                                   nsigma=3,
+                                   cbar_note=_note,
+                                   cmap=colormaps[i+1],
+                                   alpha=1)
             plot_bench(first_item, c='cyan')
             plot_prior_range(res, first_item)
             plot_fit_res(res, c='green', label='combined fit' + _note)
