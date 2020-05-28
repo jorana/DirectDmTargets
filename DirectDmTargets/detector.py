@@ -79,15 +79,17 @@ def migdal_background_XENON1T(e_min, e_max, nbins):
     """
     :return: background for Xe detector
     """
+    bin_width = (e_max - e_min) / nbins  # keV
     # Assume that:
     #   A) The BG is 10x lower than in https://www.nature.com/articles/s41586-019-1124-4
     #   B) The BG is flat
     bg_rate = 80 / 10  # 1/(keV * t * yr)
     # Assume flat background over entire energy range
     # True to first order below 200 keV
+
     if e_min > e_max or e_max > 200:
         raise ValueError(f'Assume flat background only below 200 keV ({e_min}, {e_max})')
-    return np.full(nbins, bg_rate)
+    return np.full(nbins, bg_rate) * bin_width
 
 
 @numba.jit(nopython=True)
@@ -95,6 +97,7 @@ def migdal_background_CDMS(e_min, e_max, nbins):
     """
     :return: background for Ge detector
     """
+    bin_width = (e_max - e_min) / nbins  # keV
     bins = np.linspace(e_min, e_max, nbins)
     res = []
     conv_units = 1.0e-3 * (1 / 365.25)
@@ -102,7 +105,7 @@ def migdal_background_CDMS(e_min, e_max, nbins):
         res.append(
             CDMS_background_functions(bins[i]) * conv_units)
 
-    return np.array(res)
+    return np.array(res) * bin_width
 
 
 def migdal_background_superCDMS_Ge_HV(e_min, e_max, nbins):
@@ -113,9 +116,10 @@ def migdal_background_superCDMS_Ge_HV(e_min, e_max, nbins):
     # Assume flat bg from 32Si (Fig. 4 & Table V), ignore other isotopes.
     bg_rate = 27  # counts/kg/keV/year
     conv_units = 1.0e3  # Tonne
+    bin_width = (e_max - e_min) / nbins  # keV
     if e_min > e_max or e_max > 20:
         raise ValueError(f'Assume flat background only below 20 keV ({e_min}, {e_max})')
-    return np.full(nbins, bg_rate*conv_units)
+    return np.full(nbins, bg_rate*conv_units) * bin_width
 
 
 def migdal_background_superCDMS_Si_HV(e_min, e_max, nbins):
@@ -127,20 +131,23 @@ def migdal_background_superCDMS_Si_HV(e_min, e_max, nbins):
     # Assume flat bg from 32Si (Fig. 4 & Table V), ignore other isotopes.
     bg_rate = 300  # counts/kg/keV/year
     conv_units = 1.0e3  # Tonne
+    bin_width = (e_max - e_min) / nbins  # keV
     if not e_max < 20:  # 20 keV
             raise ValueError(f'Assume flat background only below 100 keV ({e_min}, {e_max})')
-    return np.full(nbins, bg_rate*conv_units)
+    return np.full(nbins, bg_rate*conv_units) * bin_width
 
 
 def migdal_background_superCDMS_Ge_iZIP(e_min, e_max, nbins):
     """
     :return: background for Ge iZIP detector
     """
+    bin_width = (e_max - e_min) / nbins # keV
     bg_rate = 370  # counts/kg/keV/year
     conv_units = 1.0e3  # Tonne
+    bin_width = (e_max - e_min) / nbins  # keV
     if not e_max < 20:  # 20 keV
         raise ValueError(f'Assume flat background only below 100 keV ({e_min}, {e_max})')
-    return np.full(nbins, bg_rate*conv_units)
+    return np.full(nbins, bg_rate*conv_units) * bin_width
 
 
 def migdal_background_superCDMS_Si_iZIP(e_min, e_max, nbins):
@@ -152,9 +159,49 @@ def migdal_background_superCDMS_Si_iZIP(e_min, e_max, nbins):
     # Assume flat bg from 3H (Fig. 4 & Table V), ignore other isotopes.
     bg_rate = 370  # counts/kg/keV/year
     conv_units = 1.0e3  # Tonne
+    bin_width = (e_max - e_min) / nbins  # keV
     if not e_max < 100:
           raise ValueError(f'Assume flat background only below 100 keV ({e_min}, {e_max})')
-    return np.full(nbins, bg_rate*conv_units)
+    return np.full(nbins, bg_rate*conv_units) * bin_width
+
+
+# TODO
+#  NOTE WE ASSUME FOR BOTH HV AND IZIP THE SAME VALUE BUT ONLY IZIP IS GIVEN
+def nr_background_superCDMS_Ge(e_min, e_max, nbins):
+    """
+    :return: background for Ge iZIP/HV detector
+    """
+    # https://arxiv.org/abs/1610.00006
+    # Assume flat bg from 3H (Fig. 4 & Table V), ignore other isotopes.
+    bg_rate = 3300*1e-6  # counts/kg/keV/year
+    conv_units = 1.0e3  # Tonne
+    bin_width = (e_max - e_min) / nbins  # keV
+
+    # Assume only flat over first 20 keV thereafter negligible.
+    energies = np.linspace(e_min, e_max, nbins)
+    res = np.zeros(nbins)
+    res[energies < 20] = bg_rate*conv_units
+    return res * bin_width
+
+
+# TODO
+#  NOTE WE ASSUME FOR BOTH HV AND IZIP THE SAME VALUE BUT ONLY IZIP IS GIVEN
+def nr_background_superCDMS_Si(e_min, e_max, nbins):
+    """
+    :param E: recoil energy (in keV)
+    :return: background for Si iZIP/HV detector
+    """
+    # https://arxiv.org/abs/1610.00006
+    # Assume flat bg from 3H (Fig. 4 & Table V), ignore other isotopes.
+    bg_rate = 2900*1e-6  # counts/kg/keV/year
+    conv_units = 1.0e3  # Tonne
+    bin_width = (e_max - e_min) / nbins  # keV
+
+    # Assume only flat over first 20 keV thereafter negligible.
+    energies = np.linspace(e_min, e_max, nbins)
+    res = np.zeros(nbins)
+    res[energies < 20] = bg_rate * conv_units
+    return res * bin_width
 
 
 @numba.jit(nopython=True)
@@ -237,7 +284,7 @@ experiment = {
         'exp': 5 * 5,  # aim for 2025 (5 yr * 5 ton)
         'cut_eff': 0.8,
         # TODO
-        #  'nr_eff': 1,  # Not required for ER-type
+        #  'nr_eff': 1,  # Not required for ER-type??
         'nr_eff': 0.5,
         'E_thr': 1.0,  # assume slightly lower than https://arxiv.org/abs/1907.12771
         'location': "XENON",
@@ -296,14 +343,14 @@ experiment = {
         'exp': 5 * 5,  # aim for 2025 (5 yr * 5 ton)
         'cut_eff': 0.8,
         # TODO
-        #  'nr_eff': 1,  # Not required for ER-type
+        #  'nr_eff': 1,  # Not required for ER-type??
         'nr_eff': 0.5,
         'E_thr': 1.0,  # assume slightly lower than https://arxiv.org/abs/1907.12771
         'location': "XENON",
         'res': det_res_XENON1T_update,
         'bg_func': migdal_background_XENON1T,
     },
-}
+    }
 
 # And calculate the effective exposure for each
 for name in experiment.keys():
@@ -311,6 +358,28 @@ for name in experiment.keys():
                                    experiment[name]['cut_eff'] *
                                    experiment[name]['nr_eff'])
     experiment[name]['name'] = name
+
+for det in ['Xe_migd_tmp_bg', 'Ge_migd_HV_Si_bg', 'Ge_migd_HV_bg',
+            'Ge_migd_iZIP_Si_bg', 'Ge_migd_iZIP_bg']:
+    migd_exp = experiment[det].copy()
+    migd_exp['type'] = 'SI_bg'
+    if 'Ge_' in det:
+        migd_exp['E_thr'] = {'Ge_migd_HV_bg': 40. / 1e3,  # table VIII, Enr
+                             'Ge_migd_HV_Si_bg': 78. / 1e3,  # table VIII, Enr
+                             'Ge_migd_iZIP_bg': 272. / 1e3,  # table VIII, Enr
+                             'Ge_migd_iZIP_Si_bg': 166. / 1e3,  # table VIII, Enr
+                             }[det]
+        migd_exp['nr_eff'] = 0.85  # p. 11, left column
+        migd_exp['bg_func'] = {'Ge_migd_HV_bg': nr_background_superCDMS_Ge,
+                               'Ge_migd_iZIP_bg': nr_background_superCDMS_Ge,
+                               'Ge_migd_HV_Si_bg': nr_background_superCDMS_Si,
+                               'Ge_migd_iZIP_Si_bg': nr_background_superCDMS_Si}[det]
+    name = det.replace('_migd', '')
+    if name in experiment:
+        raise ValueError(f'{name} already in {experiment.keys()}')
+    else:
+        experiment.update({name: migd_exp})
+
 
 # Make a copy with setting background to True!
 exp_names = experiment.keys()

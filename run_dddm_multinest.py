@@ -69,7 +69,7 @@ stats.config['n_energy_bins'] = args.bins
 stats.set_prior(args.priors_from)
 stats.set_models()
 stats.config['prior']['log_mass'] = {'range': [int(np.log10(args.mw)) - 2.5, int(np.log10(args.mw)) + 3.5], 'prior_type': 'flat'}
-stats.config['prior']['log_cross_section']= {'range': [int(args.cross_section) - 7, int(args.cross_section) + 5], 'prior_type': 'flat'}
+stats.config['prior']['log_cross_section'] = {'range': [int(args.cross_section) - 7, int(args.cross_section) + 5], 'prior_type': 'flat'}
 stats.config['prior']['log_mass']['param'] = stats.config['prior']['log_mass']['range']
 stats.config['prior']['log_cross_section']['param'] = stats.config['prior']['log_cross_section']['range']
 stats.config['save_intermediate'] = yes_or_no[args.save_intermediate.lower()]
@@ -78,7 +78,8 @@ stats.set_benchmark(mw=args.mw, sigma=args.cross_section)
 stats.fit_parameters = stats.known_parameters[:args.nparams]
 stats.eval_benchmark()
 stats.nlive = args.nlive
-stats.config['nlive']= args.nlive
+# Save the number of live points in config to be sure
+stats.config['nlive'] = args.nlive
 stats.tol = args.tol
 stats.print_before_run()
 
@@ -89,7 +90,7 @@ if stats.sampler == 'multinest':
     stats.run_multinest()
 elif stats.sampler == 'nestle':
     stats.run_nestle()
-if args.multicore_hash == "" or rank == 0:
+if args.multicore_hash == "" or (args.sampler == 'multinest' and rank == 0):
     stats.save_results()
 assert stats.log_dict['did_run']
 

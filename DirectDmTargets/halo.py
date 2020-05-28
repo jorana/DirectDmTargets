@@ -122,12 +122,14 @@ class GenSpectrum:
         self.experiment = det
 
         self.n_bins = 10
-        if self.experiment['type'] == 'SI':
+        if self.experiment['type'] in ['SI', 'SI_bg']:
             self.E_min = 0  # keV
             self.E_max = 100  # keV
         elif self.experiment['type'] in ['migdal', 'migdal_bg']:
             self.E_min = 0  # keV
             self.E_max = 10  # keV
+        else:
+            raise NotImplementedError(f'Exp. type {self.experiment["type"]} is unknown')
 
     def __str__(self):
         """
@@ -155,7 +157,7 @@ class GenSpectrum:
         except KeyError as e:
             print(self.experiment)
             raise e
-        if self.experiment['type'] == 'SI':
+        if self.experiment['type'] in ['SI', 'SI_bg']:
             rate = wr.rate_wimp_std(self.get_bin_centers(),
                                     benchmark["mw"],
                                     benchmark["sigma_nucleon"],
