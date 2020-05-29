@@ -53,6 +53,35 @@ def det_res_superCDMS(E):
     return np.full(len(E), resolution)
 
 
+def _flat_res(E, resolution):
+    # https://arxiv.org/abs/1610.00006
+    return np.full(len(E), resolution)
+
+
+def det_res_superCDMS5(E):
+    return _flat_res(E, 5)
+
+
+def det_res_superCDMS10(E):
+    return _flat_res(E, 10)
+
+
+def det_res_superCDMS25(E):
+    return _flat_res(E, 25)
+
+
+def det_res_superCDMS50(E):
+    return _flat_res(E, 50)
+
+
+def det_res_superCDMS100(E):
+    return _flat_res(E, 100)
+
+
+def det_res_superCDMS110(E):
+    return _flat_res(E, 110)
+
+
 def det_res_XENON1T(E):
     warn('Deprecation warning: use det_res_XENON1T_update')
     return det_res_Xe(E)
@@ -301,7 +330,7 @@ experiment = {
         'E_thr': 350. / 1e3,  # table VIII, Eph
         "location": "SNOLAB",
         'res': det_res_superCDMS,
-        'bg_func': migdal_background_superCDMS_Ge_iZIP,
+        'bg_func': det_res_superCDMS50,
     },
      'Ge_migd_iZIP_Si_bg': {
         'material': 'Si',
@@ -311,7 +340,7 @@ experiment = {
         'nr_eff': 0.675,  # p. 11, left column NOTE: migdal is ER type!
         'E_thr': 175./1e3,  # table VIII, Eph
         "location": "SNOLAB",
-        'res': det_res_superCDMS,
+        'res': det_res_superCDMS25, #  table I
         'bg_func':  migdal_background_superCDMS_Si_iZIP,
     },
     'Ge_migd_HV_bg': {
@@ -322,7 +351,7 @@ experiment = {
         'nr_eff': 0.5,  # p. 11, left column NOTE: migdal is ER type!
         'E_thr':  100. / 1e3,  # table VIII, Eph
         "location": "SNOLAB",
-        'res': det_res_superCDMS,  # TODO
+        'res': det_res_superCDMS10,  #  table I
         'bg_func': migdal_background_superCDMS_Ge_HV,
     },
      'Ge_migd_HV_Si_bg': {
@@ -334,7 +363,7 @@ experiment = {
         'nr_eff': 0.675,  # p. 11, left column NOTE: migdal is ER type!
         'E_thr':  100. / 1e3,  # table VIII, Eph
         "location": "SNOLAB",
-        'res': det_res_superCDMS,
+        'res': det_res_superCDMS5, #  table I
         'bg_func': migdal_background_superCDMS_Si_HV,
     },
     'Xe_migd_tmp_bg': {
@@ -347,7 +376,7 @@ experiment = {
         'nr_eff': 0.5,
         'E_thr': 1.0,  # assume slightly lower than https://arxiv.org/abs/1907.12771
         'location': "XENON",
-        'res': det_res_XENON1T_update,
+        'res': det_res_XENON1T_update, #  table I
         'bg_func': migdal_background_XENON1T,
     },
     }
@@ -370,10 +399,14 @@ for det in ['Xe_migd_tmp_bg', 'Ge_migd_HV_Si_bg', 'Ge_migd_HV_bg',
                              'Ge_migd_iZIP_Si_bg': 166. / 1e3,  # table VIII, Enr
                              }[det]
         migd_exp['nr_eff'] = 0.85  # p. 11, left column
-        migd_exp['bg_func'] = {'Ge_migd_HV_bg': nr_background_superCDMS_Ge,
-                               'Ge_migd_iZIP_bg': nr_background_superCDMS_Ge,
-                               'Ge_migd_HV_Si_bg': nr_background_superCDMS_Si,
-                               'Ge_migd_iZIP_Si_bg': nr_background_superCDMS_Si}[det]
+        if 'iZIP' in det:
+            #  For iZIP update with table V
+            migd_exp['bg_func'] = {'Ge_migd_iZIP_bg': nr_background_superCDMS_Ge,
+                                   'Ge_migd_iZIP_Si_bg': nr_background_superCDMS_Si}[det]
+
+            # For iZIP update with table I
+            migd_exp['res'] = {'Ge_migd_iZIP_bg': det_res_superCDMS100,
+                               'Ge_migd_iZIP_Si_bg': det_res_superCDMS110}[det]
     name = det.replace('_migd', '')
     if name in experiment:
         raise ValueError(f'{name} already in {experiment.keys()}')

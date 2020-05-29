@@ -190,7 +190,7 @@ def get_info(i):
     :return:
     """
     info = ""
-    for str_inf in ['detector', 'notes', 'start', 'fit_time', 'save_intermediate', 'earth_shielding', 'nlive', 'tol']:
+    for str_inf in ['detector', 'notes', 'start', 'fit_time', 'save_intermediate', 'earth_shielding', 'nlive', 'tol', 'poisson']:
         try:
             info += f"\n{str_inf} = %s" % results[i]['config'][str_inf]
             if str_inf == 'start':
@@ -713,10 +713,7 @@ def combine_sets(items,
                  name_base='test',
                  verbose=False,
                  show=True,
-                 notes=[[[None], [None]],  # level 0
-                        [],  # Level 1
-                        []  # level 2
-                       ],
+                 notes=None,  # should be of as in the docstring
                  **combined_kwargs):
     """
 
@@ -744,6 +741,12 @@ def combine_sets(items,
     mode = {0: 'overlay',
             1: 'combine',
             2: 'deep_combine'}[level]
+    if notes is None:
+        notes = [
+            [[None], [None]],  # level 0
+            [],  # Level 1
+            []  # level 2
+        ]
 
     def f_print(string):
         if verbose:
