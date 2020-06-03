@@ -24,7 +24,7 @@ parser = argparse.ArgumentParser(description="Running a fit for a certain set of
 parser.add_argument('-sampler', type=str, default = 'multinest', help="sampler (multinest or nestle)")
 parser.add_argument('-mw', type=np.float, default=50., help="wimp mass")
 parser.add_argument('-cross_section', type=np.float, default=-45, help="wimp cross-section")
-parser.add_argument('-poisson', type=bool, default=False, help="Add poisson noise to the test dataset")
+parser.add_argument('-poisson', type=str, default='no', help="Add poisson noise to the test dataset")
 parser.add_argument('-nlive', type=int, default=1024, help="live points used by multinest")
 parser.add_argument('-tol', type=float, default=0.1, help="tolerance for opimization (see multinest option dlogz)")
 parser.add_argument('-notes', type=str, default="default", help="notes on particular settings")
@@ -62,7 +62,7 @@ if args.shielding != "default":
 else:
     assert False
 #TODO
-stats.config['poisson'] = args.poisson
+stats.config['poisson'] = yes_or_no[args.poisson]
 stats.config['notes'] = args.notes
 stats.config['n_energy_bins'] = args.bins
 
