@@ -195,6 +195,7 @@ class NestedSamplerStatModel(StatModel):
             v_0 = {self.config['halo_model'].v_0 / (nu.km / nu.s)}
             v_esc = {self.config['halo_model'].v_esc / (nu.km / nu.s)}
             rho_dm = {self.config['halo_model'].rho_dm / (nu.GeV / nu.c0 ** 2 / nu.cm ** 3)}
+        self.benchmark_values = {self.benchmark_values}
         --------------------------------------------------
         """)
 
