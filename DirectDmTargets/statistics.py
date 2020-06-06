@@ -79,7 +79,7 @@ def get_param_list():
 
 
 class StatModel:
-    def __init__(self, detector_name, verbose=False):
+    def __init__(self, detector_name, verbose=False, do_init=True):
         """
         Statistical model used for Bayesian interference of detection in multiple experiments.
         :param detector_name: name of the detector (e.g. Xe)
@@ -93,6 +93,7 @@ class StatModel:
         self.config['n_energy_bins'] = 10
         self.config['earth_shielding'] = experiment[detector_name]['type'] == 'migdal'
         self.config['save_intermediate'] = True if self.config['earth_shielding'] else False
+        self.config['E_max'] = 100 if not ('migd' in detector_name or 'Ge' in detector_name) else 10
         self.verbose = verbose
         self.benchmark_values = None
 
@@ -117,7 +118,8 @@ class StatModel:
         self.bench_is_set = False
         self.set_prior("Pato_2010")
         self.log.info(f"initialized for {detector_name} detector. See  print(stat_model) for default settings")
-        self.set_default()
+        if do_init:
+            self.set_default()
 
     def __str__(self):
         return f"StatModel::for {self.config['detector']} detector. For info see the config file:\n{self.config}"
@@ -335,6 +337,12 @@ class StatModel:
             self.config['halo_model'],
             self.config['det_params'])
         spectrum.n_bins = self.config['n_energy_bins']
+        if 'E_max' in self.config:
+            self.log.info(f'StatModel::\tcheck_spectrum\tset E_max to {self.config["E_max"]}')
+            spectrum.E_max = self.config['E_max']
+        if 'E_min' in self.config:
+            self.log.info(f'StatModel::\tcheck_spectrum\tset E_max to {self.config["E_min"]}')
+            spectrum.E_max = self.config['E_min']
         binned_spectrum = spectrum.get_data(
             poisson=self.config['poisson'] if poisson is None else poisson
         )
@@ -347,6 +355,8 @@ class StatModel:
         self.log.info(f'StatModel::\tpreparing for running, setting the benchmark')
         self.benchmark_values = self.check_spectrum(poisson=False)['counts']
         self.bench_is_set = True
+        # Save a copy of the benchmark in the config file
+        self.config['benchmark_values'] = list(self.benchmark_values)
 
     def check_bench_set(self):
         if not self.bench_is_set:
@@ -489,6 +499,12 @@ class StatModel:
                 10. ** x1,
                 fit_shm,
                 self.config['det_params'])
+            if 'E_max' in self.config:
+                self.log.info(f'StatModel::\teval_spectrum\tset E_max to {self.config["E_max"]} for 2 params')
+                spectrum.E_max = self.config['E_max']
+            if 'E_min' in self.config:
+                self.log.info(f'StatModel::\teval_spectrum\tset E_max to {self.config["E_min"]} for 2 params')
+                spectrum.E_max = self.config['E_min']
             spectrum.n_bins = self.config['n_energy_bins']
             self.log.debug(f"StatModel::\tSUPERVERBOSE\tAlright spectrum set. Evaluate now!")
             binned_spectrum = spectrum.get_data(poisson=False)
@@ -529,6 +545,12 @@ class StatModel:
                                                      fit_shm,
                                                      self.config['det_params'])
             spectrum.n_bins = self.config['n_energy_bins']
+            if 'E_max' in self.config:
+                self.log.info(f'StatModel::\teval_spectrum\tset E_max to {self.config["E_max"]} for >2 params')
+                spectrum.E_max = self.config['E_max']
+            if 'E_min' in self.config:
+                self.log.info(f'StatModel::\teval_spectrum\tset E_max to {self.config["E_min"]} for >2 params')
+                spectrum.E_max = self.config['E_min']
             binned_spectrum = spectrum.get_data(poisson=False)
             self.log.debug(f"StatModel::\tSUPERVERBOSE\twe have results!")
 

@@ -59,27 +59,27 @@ def _flat_res(E, resolution):
 
 
 def det_res_superCDMS5(E):
-    return _flat_res(E, 5)
+    return _flat_res(E, 5./1000)
 
 
 def det_res_superCDMS10(E):
-    return _flat_res(E, 10)
+    return _flat_res(E, 10./1000)
 
 
 def det_res_superCDMS25(E):
-    return _flat_res(E, 25)
+    return _flat_res(E, 25./1000)
 
 
 def det_res_superCDMS50(E):
-    return _flat_res(E, 50)
+    return _flat_res(E, 50./1000)
 
 
 def det_res_superCDMS100(E):
-    return _flat_res(E, 100)
+    return _flat_res(E, 100./1000)
 
 
 def det_res_superCDMS110(E):
-    return _flat_res(E, 110)
+    return _flat_res(E, 110./1000)
 
 
 def det_res_XENON1T(E):
@@ -146,8 +146,10 @@ def migdal_background_superCDMS_Ge_HV(e_min, e_max, nbins):
     bg_rate = 27  # counts/kg/keV/year
     conv_units = 1.0e3  # Tonne
     bin_width = (e_max - e_min) / nbins  # keV
-    if e_min > e_max or e_max > 20:
-        raise ValueError(f'Assume flat background only below 20 keV ({e_min}, {e_max})')
+    if not e_max <= 100:  # 100 keV
+        raise ValueError(f'Assume flat background only below 100 keV ({e_min}, {e_max})')
+    if e_max <= 20:  # keV
+        warn(f'migdal_background_superCDMS_Si_HV is not strictly valid up to {e_max} keV!')
     return np.full(nbins, bg_rate*conv_units) * bin_width
 
 
@@ -161,8 +163,10 @@ def migdal_background_superCDMS_Si_HV(e_min, e_max, nbins):
     bg_rate = 300  # counts/kg/keV/year
     conv_units = 1.0e3  # Tonne
     bin_width = (e_max - e_min) / nbins  # keV
-    if not e_max < 20:  # 20 keV
-            raise ValueError(f'Assume flat background only below 100 keV ({e_min}, {e_max})')
+    if not e_max <= 100:  # 100 keV
+        raise ValueError(f'Assume flat background only below 100 keV ({e_min}, {e_max})')
+    if e_max <= 20:  # keV
+        warn(f'migdal_background_superCDMS_Si_HV is not strictly valid up to {e_max} keV!')
     return np.full(nbins, bg_rate*conv_units) * bin_width
 
 
@@ -175,7 +179,7 @@ def migdal_background_superCDMS_Ge_iZIP(e_min, e_max, nbins):
     conv_units = 1.0e3  # Tonne
     bin_width = (e_max - e_min) / nbins  # keV
     if not e_max < 20:  # 20 keV
-        raise ValueError(f'Assume flat background only below 100 keV ({e_min}, {e_max})')
+        raise ValueError(f'Assume flat background only below 10 keV ({e_min}, {e_max})')
     return np.full(nbins, bg_rate*conv_units) * bin_width
 
 
@@ -408,6 +412,7 @@ for det in ['Xe_migd_tmp_bg', 'Ge_migd_HV_Si_bg', 'Ge_migd_HV_bg',
             migd_exp['res'] = {'Ge_migd_iZIP_bg': det_res_superCDMS100,
                                'Ge_migd_iZIP_Si_bg': det_res_superCDMS110}[det]
     name = det.replace('_migd', '')
+    migd_exp['name'] = name
     if name in experiment:
         raise ValueError(f'{name} already in {experiment.keys()}')
     else:
@@ -417,11 +422,13 @@ for det in ['Xe_migd_tmp_bg', 'Ge_migd_HV_Si_bg', 'Ge_migd_HV_bg',
 # Make a copy with setting background to True!
 exp_names = experiment.keys()
 for name in list(exp_names):
-    bg_name = name + '_bg'
-    if bg_name not in exp_names:
-        experiment[bg_name] = experiment[name].copy()
-        experiment[bg_name]['type'] = experiment[bg_name]['type'] + '_bg'
+    if not '_bg' in name:
+        bg_name = name + '_bg'
+        if bg_name not in exp_names:
+            experiment[bg_name] = experiment[name].copy()
+            experiment[bg_name]['type'] = experiment[bg_name]['type'] + '_bg'
 
+experiment['Combined'] = {'type': 'combined'}
 
 @numba.njit
 def smear_signal(rate, energy, sigma, bin_width):
@@ -440,12 +447,12 @@ def smear_signal(rate, energy, sigma, bin_width):
     """
     result = []
     for i in range(len(energy)):
-        res = 0
+        res = 0.
         for j in range(len(rate)):
             # see formula (5) in https://arxiv.org/abs/1012.3458
             res = res + (bin_width * rate[j] *
-                         (1 / (np.sqrt(2 * np.pi) * sigma[j])) *
-                         np.exp(-((energy[i] - energy[j]) ** 2 / (2 * sigma[j] ** 2)))
+                         (1. / (np.sqrt(2. * np.pi) * sigma[j])) *
+                         np.exp(-((energy[i] - energy[j]) ** 2. / (2. * sigma[j] ** 2.)))
                          )
             # TODO
             #  # at the end of the spectrum the bg-rate drops as the convolution does
