@@ -92,7 +92,7 @@ class StatModel:
         self.config['poisson'] = False
         self.config['n_energy_bins'] = 10
         self.config['earth_shielding'] = experiment[detector_name]['type'] == 'migdal'
-        self.config['save_intermediate'] = True if self.config['earth_shielding'] else False
+        self.config['save_intermediate'] = False
         self.config['E_max'] = 100 if not ('migd' in detector_name or 'Ge' in detector_name) else 10
         self.verbose = verbose
         self.benchmark_values = None
