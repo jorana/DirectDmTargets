@@ -413,13 +413,26 @@ class CombinedInference(NestedSamplerStatModel):
                 raise ValueError(f'One or more of {keys} not in {list(self.config.keys())}')
         copy_of_config = {k: self.config[k] for k in keys}
         print(f'update config with {copy_of_config}')
-        print('\n\n\n\n')
         for c in self.sub_classes:
             c.config.update(copy_of_config)
             c.read_priors_mean()
             c.eval_benchmark()
             c.set_models()
             c.print_before_run()
+
+    def save_sub_configs(self,force_index=False):
+        save_dir = self.get_save_dir(force_index=force_index)
+        self.log.info(f'CombinedInference::\tSave configs of sub_experiments')
+        # save the config
+        save_dir = save_dir + '/sub_exp_configs'
+        os.mkdir(save_dir)
+        for c in self.sub_classes:
+            save_as = f'{save_dir}/{c.config["detector"]}'
+            with open(save_as + 'config.json', 'w') as file:
+                json.dump(convert_dic_to_savable(c.config), file, indent=4)
+            np.save(save_as + 'config.npy', convert_dic_to_savable(c.config))
+            shutil.copy(c.config['logging'], save_as + c.config['logging'].split('/')[-1])
+            self.log.info(f'save_sub_configs::\tdone_saving')
 
 
 def is_savable_type(item):

@@ -107,6 +107,7 @@ if args.multicore_hash == "" or (args.sampler == 'multinest' and rank == 0):
     stats.save_results()
 assert stats.log_dict['did_run']
 
+stats.save_sub_configs()
 
 print(f"run_dddm_multinest.py::\tfinished for mw = {args.mw}, sigma = {args.cross_section}")
 print("finished, bye bye")
