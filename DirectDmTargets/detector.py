@@ -334,7 +334,7 @@ experiment = {
         'E_thr': 350. / 1e3,  # table VIII, Eph
         "location": "SNOLAB",
         'res': det_res_superCDMS,
-        'bg_func': det_res_superCDMS50,
+        'bg_func': migdal_background_superCDMS_Ge_iZIP,
     },
      'Ge_migd_iZIP_Si_bg': {
         'material': 'Si',

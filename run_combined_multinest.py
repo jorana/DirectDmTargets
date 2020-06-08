@@ -67,7 +67,7 @@ stats = dddm.CombinedInference(tuple(args.sub_experiments),
 update_config = {
     'mw': np.log10(args.mw),
     'sigma': args.cross_section,
-    'samper': args.sampler,
+    'sampler': args.sampler,
     'poisson': args.poisson,
     'notes': args.notes,
     'n_energy_bins': args.bins,
