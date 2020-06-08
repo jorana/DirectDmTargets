@@ -427,7 +427,7 @@ class CombinedInference(NestedSamplerStatModel):
         save_dir = save_dir + '/sub_exp_configs'
         os.mkdir(save_dir)
         for c in self.sub_classes:
-            save_as = f'{save_dir}/{c.config["detector"]}'
+            save_as = f'{save_dir}/{c.config["detector"]}_'
             with open(save_as + 'config.json', 'w') as file:
                 json.dump(convert_dic_to_savable(c.config), file, indent=4)
             np.save(save_as + 'config.npy', convert_dic_to_savable(c.config))
