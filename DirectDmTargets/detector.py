@@ -31,63 +31,42 @@ def det_res_Ge(E):
     return np.sqrt(0.3 ** 2 + (0.06 ** 2) * E)
 
 
-def det_res_CDMS(E):
-    # For CDMS-lite
-    # From https://arxiv.org/pdf/1808.09098.pdf (table II.)
-    """
-    :return: detector resolution for Ge detector
-    """
-    sigma_e = 10. / 1e3  # eV to keV
-    param_a = 5.0e-3  # dimensionless
-    param_b = 0.85 / 1e3  # eV to keV
-    # TODO does this give the right dimensions?
-    return np.sqrt(sigma_e ** 2 +
-                   param_b * E +
-                   (param_a * E) ** 2)
-
-
-def det_res_superCDMS(E):
-    resolution = 10  # eV
-    resolution /= 1e3  # keV
-    # https://arxiv.org/abs/1610.00006
-    return np.full(len(E), resolution)
-
-
 def _flat_res(E, resolution):
-    # https://arxiv.org/abs/1610.00006
+    """Retrurn a flat resolution spectrum over energy range"""
     return np.full(len(E), resolution)
 
 
 def det_res_superCDMS5(E):
+    # https://arxiv.org/abs/1610.00006
     return _flat_res(E, 5./1000)
 
 
 def det_res_superCDMS10(E):
+    # https://arxiv.org/abs/1610.00006
     return _flat_res(E, 10./1000)
 
 
 def det_res_superCDMS25(E):
+    # https://arxiv.org/abs/1610.00006
     return _flat_res(E, 25./1000)
 
 
 def det_res_superCDMS50(E):
+    # https://arxiv.org/abs/1610.00006
     return _flat_res(E, 50./1000)
 
 
 def det_res_superCDMS100(E):
+    # https://arxiv.org/abs/1610.00006
     return _flat_res(E, 100./1000)
 
 
 def det_res_superCDMS110(E):
+    # https://arxiv.org/abs/1610.00006
     return _flat_res(E, 110./1000)
 
 
 def det_res_XENON1T(E):
-    warn('Deprecation warning: use det_res_XENON1T_update')
-    return det_res_Xe(E)
-
-
-def det_res_XENON1T_update(E):
     """
     Detector resolution of XENON1T. See caption figure 6 https://arxiv.org/abs/2003.03825
     :param E: energy in keV
@@ -99,16 +78,10 @@ def det_res_XENON1T_update(E):
     return E * sigma_over_E_percent / 100
 
 
-def det_res_DarkSide(E):
-    warn('Warning use det_res_XENON1T_update() instead')
-    return det_res_Ar(E)
-
-
 def migdal_background_XENON1T(e_min, e_max, nbins):
     """
-    :return: background for Xe detector
+    :return: background for Xe detector in events/keV/t/yr
     """
-    bin_width = (e_max - e_min) / nbins  # keV
     # Assume that:
     #   A) The BG is 10x lower than in https://www.nature.com/articles/s41586-019-1124-4
     #   B) The BG is flat
@@ -118,15 +91,14 @@ def migdal_background_XENON1T(e_min, e_max, nbins):
 
     if e_min > e_max or e_max > 200:
         raise ValueError(f'Assume flat background only below 200 keV ({e_min}, {e_max})')
-    return np.full(nbins, bg_rate) * bin_width
+    return np.full(nbins, bg_rate) 
 
 
 @numba.jit(nopython=True)
 def migdal_background_CDMS(e_min, e_max, nbins):
     """
-    :return: background for Ge detector
+    :return: background for Ge detector in events/keV/t/yr
     """
-    bin_width = (e_max - e_min) / nbins  # keV
     bins = np.linspace(e_min, e_max, nbins)
     res = []
     conv_units = 1.0e-3 * (1 / 365.25)
@@ -134,107 +106,96 @@ def migdal_background_CDMS(e_min, e_max, nbins):
         res.append(
             CDMS_background_functions(bins[i]) * conv_units)
 
-    return np.array(res) * bin_width
+    return np.array(res)
 
 
 def migdal_background_superCDMS_Ge_HV(e_min, e_max, nbins):
     """
-    :return: background for Ge HV detector
+    :return: background for Ge HV detector in events/keV/t/yr
     """
     # https://arxiv.org/abs/1610.00006
     # Assume flat bg from 32Si (Fig. 4 & Table V), ignore other isotopes.
     bg_rate = 27  # counts/kg/keV/year
     conv_units = 1.0e3  # Tonne
-    bin_width = (e_max - e_min) / nbins  # keV
     if not e_max <= 100:  # 100 keV
         raise ValueError(f'Assume flat background only below 100 keV ({e_min}, {e_max})')
-    if e_max <= 20:  # keV
+    if e_max >= 20:  # keV
         warn(f'migdal_background_superCDMS_Si_HV is not strictly valid up to {e_max} keV!')
-    return np.full(nbins, bg_rate*conv_units) * bin_width
+    return np.full(nbins, bg_rate*conv_units) 
 
 
 def migdal_background_superCDMS_Si_HV(e_min, e_max, nbins):
     """
     :param E: recoil energy (in keV)
-    :return: background for Si HV detector
+    :return: background for Si HV detector in events/keV/t/yr
     """
     # https://arxiv.org/abs/1610.00006
     # Assume flat bg from 32Si (Fig. 4 & Table V), ignore other isotopes.
     bg_rate = 300  # counts/kg/keV/year
     conv_units = 1.0e3  # Tonne
-    bin_width = (e_max - e_min) / nbins  # keV
     if not e_max <= 100:  # 100 keV
         raise ValueError(f'Assume flat background only below 100 keV ({e_min}, {e_max})')
-    if e_max <= 20:  # keV
+    if e_max >= 20:  # keV
         warn(f'migdal_background_superCDMS_Si_HV is not strictly valid up to {e_max} keV!')
-    return np.full(nbins, bg_rate*conv_units) * bin_width
+    return np.full(nbins, bg_rate*conv_units) 
 
 
 def migdal_background_superCDMS_Ge_iZIP(e_min, e_max, nbins):
     """
-    :return: background for Ge iZIP detector
+    :return: background for Ge iZIP detector in events/keV/t/yr
     """
-    bin_width = (e_max - e_min) / nbins # keV
     bg_rate = 370  # counts/kg/keV/year
     conv_units = 1.0e3  # Tonne
-    bin_width = (e_max - e_min) / nbins  # keV
     if not e_max < 20:  # 20 keV
         raise ValueError(f'Assume flat background only below 10 keV ({e_min}, {e_max})')
-    return np.full(nbins, bg_rate*conv_units) * bin_width
+    return np.full(nbins, bg_rate*conv_units)
 
 
 def migdal_background_superCDMS_Si_iZIP(e_min, e_max, nbins):
     """
     :param E: recoil energy (in keV)
-    :return: background for Si iZIP detector
+    :return: background for Si iZIP detector in events/keV/t/yr
     """
     # https://arxiv.org/abs/1610.00006
     # Assume flat bg from 3H (Fig. 4 & Table V), ignore other isotopes.
     bg_rate = 370  # counts/kg/keV/year
     conv_units = 1.0e3  # Tonne
-    bin_width = (e_max - e_min) / nbins  # keV
     if not e_max < 100:
           raise ValueError(f'Assume flat background only below 100 keV ({e_min}, {e_max})')
-    return np.full(nbins, bg_rate*conv_units) * bin_width
+    return np.full(nbins, bg_rate*conv_units) 
 
 
-# TODO
-#  NOTE WE ASSUME FOR BOTH HV AND IZIP THE SAME VALUE BUT ONLY IZIP IS GIVEN
 def nr_background_superCDMS_Ge(e_min, e_max, nbins):
     """
-    :return: background for Ge iZIP/HV detector
+    :return: background for Ge iZIP/HV detector in events/keV/t/yr
     """
     # https://arxiv.org/abs/1610.00006
     # Assume flat bg from 3H (Fig. 4 & Table V), ignore other isotopes.
     bg_rate = 3300*1e-6  # counts/kg/keV/year
     conv_units = 1.0e3  # Tonne
-    bin_width = (e_max - e_min) / nbins  # keV
 
     # Assume only flat over first 20 keV thereafter negligible.
     energies = np.linspace(e_min, e_max, nbins)
     res = np.zeros(nbins)
     res[energies < 20] = bg_rate*conv_units
-    return res * bin_width
+    return res
 
 
-# TODO
-#  NOTE WE ASSUME FOR BOTH HV AND IZIP THE SAME VALUE BUT ONLY IZIP IS GIVEN
 def nr_background_superCDMS_Si(e_min, e_max, nbins):
     """
     :param E: recoil energy (in keV)
-    :return: background for Si iZIP/HV detector
+    :return: background for Si iZIP/HV detector in events/keV/t/yr
     """
     # https://arxiv.org/abs/1610.00006
     # Assume flat bg from 3H (Fig. 4 & Table V), ignore other isotopes.
     bg_rate = 2900*1e-6  # counts/kg/keV/year
     conv_units = 1.0e3  # Tonne
-    bin_width = (e_max - e_min) / nbins  # keV
 
     # Assume only flat over first 20 keV thereafter negligible.
     energies = np.linspace(e_min, e_max, nbins)
     res = np.zeros(nbins)
     res[energies < 20] = bg_rate * conv_units
-    return res * bin_width
+    return res
 
 
 @numba.jit(nopython=True)
@@ -251,13 +212,6 @@ def CDMS_background_functions(E):
         return 0.01
 
 
-def migdal_background_Darkside(e_min, e_max, nbins):
-    # TODO this is crude
-    # background in XENON1T
-    # p. 140 https://pure.uva.nl/ws/files/31193425/Thesis.pdf
-    return 1e4 * migdal_background_XENON1T(e_min, e_max, nbins)
-
-
 # Set the default benchmark for a 50 GeV WIMP with a cross-section of 1e-45 cm^2
 benchmark = {'mw': 50., 'sigma_nucleon': 1e-45}
 
@@ -265,66 +219,28 @@ benchmark = {'mw': 50., 'sigma_nucleon': 1e-45}
 # Each experiment below lists:
 # Name :{Interaction type (type0, exposure [ton x yr] (exp.), cut efficiency (cut_eff),
 # nuclear recoil acceptance (nr_eff), energy threshold [keV] (E_thr), resolution function (res)
+
 experiment = {
     'Xe': {'material': 'Xe', 'type': 'SI', 'exp': 5., 'cut_eff': 0.8, 'nr_eff': 0.5, 'E_thr': 10.,
-            'location': "XENON",
-           'res': det_res_Xe},
+           'location': "XENON", 'res': det_res_Xe},
     'Ge': {'material': 'Ge', 'type': 'SI', 'exp': 3., 'cut_eff': 0.8, 'nr_eff': 0.9, 'E_thr': 10.,
-            'location': "SUF",
-           'res': det_res_Ge},
+           'location': "SUF", 'res': det_res_Ge},
     'Ar': {'material': 'Ar', 'type': 'SI', 'exp': 10., 'cut_eff': 0.8, 'nr_eff': 0.8, 'E_thr': 30.,
-            'location': "XENON",
-           'res': det_res_Ar},
-    'Xe_migd': {
-        'material': 'Xe',
-        'type': 'migdal',
-        'exp': 5 * 5,  # aim for 2025 (5 yr * 5 ton)
-        'cut_eff': 0.8,
-        'nr_eff': 0.5,
-        'E_thr': 1.4,  # https://arxiv.org/abs/1907.12771
-        'location': "XENON",
-        'res': det_res_XENON1T,
-        'bg_func': migdal_background_XENON1T,
-    },
-    'Ge_migd': {
+           'location': "XENON", 'res': det_res_Ar},
+    # --- Ge iZIP bg --- #
+    'Ge_iZIP_bg': {
         'material': 'Ge',
-        'type': 'migdal',
-        # TODO 100 kg yr (for 56 + 44 Ge in Table I.)
-        'exp': 100 * 1.e-3,
-        # https://www.slac.stanford.edu/exp/cdms/ScienceResults/Publications/PhysRevD.95.082002.pdf
-        'cut_eff': 0.8,
-        'nr_eff': 0.9,
-        'E_thr': 70. / 1e3,  # Assume similar to CDMSlite https://arxiv.org/pdf/1808.09098.pdf
-        "location": "SUF",
-        'res': det_res_CDMS,
-        'bg_func': migdal_background_CDMS,
+        'type': 'SI_bg',
+        'exp': 56 * 1.e-3,  # Tonne year
+        'cut_eff': 0.75,  # p. 11, right column
+        'nr_eff': 0.85,  # p. 11, left column
+        'E_thr': 272. / 1e3,  # table VIII, Enr
+        "location": "SNOLAB",
+        'res': det_res_superCDMS100,  # table I
+        'bg_func': nr_background_superCDMS_Ge,
+        'E_max': 2,
+        'n_energy_bins': 50,
     },
-    'Ar_migd': {
-        'material': 'Ar',
-        'type': 'migdal',
-        'exp': 10. * 5,
-        'cut_eff': 0.8,
-        'nr_eff': 0.8,
-        # TODO otherwise no results at all, but they really don't have a 5 keV threshold
-        'E_thr': 3.,
-        "location": "XENON",
-        'res': det_res_DarkSide,
-        'bg_func': migdal_background_Darkside,
-    },
-    'Xe_migd_bg': {
-        'material': 'Xe',
-        'type': 'migdal_bg',
-        'exp': 5 * 5,  # aim for 2025 (5 yr * 5 ton)
-        'cut_eff': 0.8,
-        # TODO
-        #  'nr_eff': 1,  # Not required for ER-type??
-        'nr_eff': 0.5,
-        'E_thr': 1.0,  # assume slightly lower than https://arxiv.org/abs/1907.12771
-        'location': "XENON",
-        'res': det_res_XENON1T,
-        'bg_func': migdal_background_XENON1T,
-    },
-    # https://arxiv.org/abs/1610.00006
     'Ge_migd_iZIP_bg': {
         'material': 'Ge',
         'type': 'migdal_bg',
@@ -333,10 +249,26 @@ experiment = {
         'nr_eff': 0.5,  # p. 11, left column NOTE: migdal is ER type!
         'E_thr': 350. / 1e3,  # table VIII, Eph
         "location": "SNOLAB",
-        'res': det_res_superCDMS,
+        'res': det_res_superCDMS50,  # table I
         'bg_func': migdal_background_superCDMS_Ge_iZIP,
+        'E_max': 2,
+        'n_energy_bins': 50,
     },
-     'Ge_migd_iZIP_Si_bg': {
+    # --- Si iZIP bg --- #
+    'Ge_iZIP_Si_bg': {
+        'material': 'Si',
+        'type': 'SI_bg',
+        'exp': 4.8 * 1.e-3,  # Tonne year
+        'cut_eff': 0.75,  # p. 11, right column
+        'nr_eff': 0.85,  # p. 11, left column
+        'E_thr': 166. / 1e3,  # table VIII, Enr
+        "location": "SNOLAB",
+        'res': det_res_superCDMS110,  # table I
+        'bg_func':  nr_background_superCDMS_Si,
+        'E_max': 2,
+        'n_energy_bins': 50,
+    },
+    'Ge_migd_iZIP_Si_bg': {
         'material': 'Si',
         'type': 'migdal_bg',
         'exp': 4.8 * 1.e-3,  # Tonne year
@@ -344,8 +276,24 @@ experiment = {
         'nr_eff': 0.675,  # p. 11, left column NOTE: migdal is ER type!
         'E_thr': 175./1e3,  # table VIII, Eph
         "location": "SNOLAB",
-        'res': det_res_superCDMS25, #  table I
+        'res': det_res_superCDMS25,  # table I
         'bg_func':  migdal_background_superCDMS_Si_iZIP,
+        'E_max': 2,
+        'n_energy_bins': 50,
+    },
+    # --- Ge HV bg --- #
+    'Ge_HV_bg': {
+        'material': 'Ge',
+        'type': 'SI_bg',
+        'exp': 44 * 1.e-3,  # Tonne year
+        'cut_eff': 0.85,  # p. 11, right column
+        'nr_eff': 0.85,  # p. 11, left column NOTE: ER type!
+        'E_thr':  40. / 1e3,  # table VIII, Enr
+        "location": "SNOLAB",
+        'res': det_res_superCDMS10,  # table I
+        'bg_func': migdal_background_superCDMS_Ge_HV,
+        'E_max': 2,
+        'n_energy_bins': 50,
     },
     'Ge_migd_HV_bg': {
         'material': 'Ge',
@@ -353,12 +301,29 @@ experiment = {
         'exp': 44 * 1.e-3,  # Tonne year
         'cut_eff': 0.85,  # p. 11, right column
         'nr_eff': 0.5,  # p. 11, left column NOTE: migdal is ER type!
-        'E_thr':  100. / 1e3,  # table VIII, Eph
+        'E_thr': 100. / 1e3,  # table VIII, Eph
         "location": "SNOLAB",
-        'res': det_res_superCDMS10,  #  table I
+        'res': det_res_superCDMS10,  # table I
         'bg_func': migdal_background_superCDMS_Ge_HV,
+        'E_max': 2,
+        'n_energy_bins': 50,
     },
-     'Ge_migd_HV_Si_bg': {
+    # --- Si HV bg --- #
+    'Ge_HV_Si_bg': {
+        'material': 'Si',
+        'type': 'SI_bg',
+        'exp': 9.6 * 1.e-3,  # Tonne year
+        # https://www.slac.stanford.edu/exp/cdms/ScienceResults/Publications/PhysRevD.95.082002.pdf
+        'cut_eff': 0.85,  # p. 11, right column
+        'nr_eff': 0.85,  # p. 11, left column NOTE: ER type!
+        'E_thr':  78. / 1e3,  # table VIII, Enr
+        "location": "SNOLAB",
+        'res': det_res_superCDMS5, # table I
+        'bg_func': migdal_background_superCDMS_Si_HV,
+        'E_max': 2,
+        'n_energy_bins': 50,
+    },
+    'Ge_migd_HV_Si_bg': {
         'material': 'Si',
         'type': 'migdal_bg',
         'exp': 9.6 * 1.e-3,  # Tonne year
@@ -367,56 +332,44 @@ experiment = {
         'nr_eff': 0.675,  # p. 11, left column NOTE: migdal is ER type!
         'E_thr':  100. / 1e3,  # table VIII, Eph
         "location": "SNOLAB",
-        'res': det_res_superCDMS5, #  table I
+        'res': det_res_superCDMS5,  # table I
         'bg_func': migdal_background_superCDMS_Si_HV,
+        'E_max': 2,
+        'n_energy_bins': 50,
     },
-    'Xe_migd_tmp_bg': {
+    'Xe_migd_bg': {
         'material': 'Xe',
         'type': 'migdal_bg',
         'exp': 5 * 5,  # aim for 2025 (5 yr * 5 ton)
         'cut_eff': 0.8,
-        # TODO
-        #  'nr_eff': 1,  # Not required for ER-type??
+        'nr_eff': 0.90,
+        'E_thr': 1.0,  # assume slightly lower than https://arxiv.org/abs/1907.12771
+        'location': "XENON",
+        'res': det_res_XENON1T,  # table I
+        'bg_func': migdal_background_XENON1T,
+        'E_max': 5,
+        'n_energy_bins': 50,
+    },
+    'Xe_bg': {
+        'material': 'Xe',
+        'type': 'SI_bg',
+        'exp': 5 * 5,  # aim for 2025 (5 yr * 5 ton)
+        'cut_eff': 0.8,
         'nr_eff': 0.5,
         'E_thr': 1.0,  # assume slightly lower than https://arxiv.org/abs/1907.12771
         'location': "XENON",
-        'res': det_res_XENON1T_update, #  table I
+        'res': det_res_XENON1T, # table I
         'bg_func': migdal_background_XENON1T,
+        'E_max': 5,
+        'n_energy_bins': 50,
     },
     }
-
 # And calculate the effective exposure for each
 for name in experiment.keys():
     experiment[name]['exp_eff'] = (experiment[name]['exp'] *
                                    experiment[name]['cut_eff'] *
                                    experiment[name]['nr_eff'])
     experiment[name]['name'] = name
-
-for det in ['Xe_migd_tmp_bg', 'Ge_migd_HV_Si_bg', 'Ge_migd_HV_bg',
-            'Ge_migd_iZIP_Si_bg', 'Ge_migd_iZIP_bg']:
-    migd_exp = experiment[det].copy()
-    migd_exp['type'] = 'SI_bg'
-    if 'Ge_' in det:
-        migd_exp['E_thr'] = {'Ge_migd_HV_bg': 40. / 1e3,  # table VIII, Enr
-                             'Ge_migd_HV_Si_bg': 78. / 1e3,  # table VIII, Enr
-                             'Ge_migd_iZIP_bg': 272. / 1e3,  # table VIII, Enr
-                             'Ge_migd_iZIP_Si_bg': 166. / 1e3,  # table VIII, Enr
-                             }[det]
-        migd_exp['nr_eff'] = 0.85  # p. 11, left column
-        if 'iZIP' in det:
-            #  For iZIP update with table V
-            migd_exp['bg_func'] = {'Ge_migd_iZIP_bg': nr_background_superCDMS_Ge,
-                                   'Ge_migd_iZIP_Si_bg': nr_background_superCDMS_Si}[det]
-
-            # For iZIP update with table I
-            migd_exp['res'] = {'Ge_migd_iZIP_bg': det_res_superCDMS100,
-                               'Ge_migd_iZIP_Si_bg': det_res_superCDMS110}[det]
-    name = det.replace('_migd', '')
-    migd_exp['name'] = name
-    if name in experiment:
-        raise ValueError(f'{name} already in {experiment.keys()}')
-    else:
-        experiment.update({name: migd_exp})
 
 
 # Make a copy with setting background to True!
@@ -428,10 +381,12 @@ for name in list(exp_names):
             experiment[bg_name] = experiment[name].copy()
             experiment[bg_name]['type'] = experiment[bg_name]['type'] + '_bg'
 
+# Make a new experiment that is a placeholder for the CombinedInference class.
 experiment['Combined'] = {'type': 'combined'}
 
+
 @numba.njit
-def smear_signal(rate, energy, sigma, bin_width):
+def _smear_signal(rate, energy, sigma, bin_width):
     """
 
     :param rate: counts/bin
@@ -452,7 +407,7 @@ def smear_signal(rate, energy, sigma, bin_width):
             # see formula (5) in https://arxiv.org/abs/1012.3458
             res = res + (bin_width * rate[j] *
                          (1. / (np.sqrt(2. * np.pi) * sigma[j])) *
-                         np.exp(-((energy[i] - energy[j]) ** 2. / (2. * sigma[j] ** 2.)))
+                         np.exp(-(((energy[i] - energy[j]) ** 2.) / (2. * sigma[j] ** 2.)))
                          )
             # TODO
             #  # at the end of the spectrum the bg-rate drops as the convolution does
@@ -463,6 +418,14 @@ def smear_signal(rate, energy, sigma, bin_width):
     return np.array(result)
 
 
+def smear_signal(rate, energy, sigma, bin_width):
+    if np.mean(sigma) < bin_width:
+        # print(f'Resolution {np.mean(sigma)} better than bin_width {bin_width}!')
+        return rate
+    else:
+        return _smear_signal(rate, energy, sigma, bin_width)
+
+
 class DetectorSpectrum(GenSpectrum):
     def __init__(self, *args):
         GenSpectrum.__init__(self, *args)
@@ -471,7 +434,7 @@ class DetectorSpectrum(GenSpectrum):
         # number is multiplied here.
         self.rebin_factor = 10
         self.n_bins_result = None
-        # Please not that this is NOT pretty. It was a monkey patch implemented since
+        # Please note that this is NOT pretty. It was a monkey patch implemented since
         # many spectra were already computed using this naming hence we have to deal
         # with this lack of clarity in earlier coding in this manner.
         self.add_background = True if 'bg' in self.experiment['type'] else False
@@ -493,7 +456,7 @@ class DetectorSpectrum(GenSpectrum):
         """
         res = np.zeros(len(bins))
         for i, bin_i in enumerate(bins):
-            # bin_i should be right bin and left bin
+            # bin_i should be [right bin,  left bin]
             mask = (energies > bin_i[0]) & (energies < bin_i[1])
             bin_width = np.average(np.diff(energies[mask]))
             res[i] = np.sum(rates[mask] * bin_width)
@@ -550,7 +513,7 @@ class DetectorSpectrum(GenSpectrum):
         """
         :return: events with poisson noise
         """
-        return np.random.poisson(self.get_events()).astype(np.float)
+        return np.random.exponential(self.get_events()).astype(np.float)
 
     def get_data(self, poisson=True):
         """

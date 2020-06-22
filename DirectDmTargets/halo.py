@@ -131,6 +131,11 @@ class GenSpectrum:
         else:
             raise NotImplementedError(f'Exp. type {self.experiment["type"]} is unknown')
 
+        if 'E_min' in self.experiment:
+            self.E_min = self.experiment['E_min']
+        if 'E_max' in self.experiment:
+            self.E_max = self.experiment['E_max']
+
     def __str__(self):
         """
         :return: info

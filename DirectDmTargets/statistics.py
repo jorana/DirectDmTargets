@@ -79,21 +79,24 @@ def get_param_list():
 
 
 class StatModel:
-    def __init__(self, detector_name, verbose=False, do_init=True):
+    def __init__(self, detector_name, verbose=False, detector_config=None, do_init=True):
         """
         Statistical model used for Bayesian interference of detection in multiple experiments.
         :param detector_name: name of the detector (e.g. Xe)
         """
+        if detector_name not in experiment and detector_config is None:
+            raise ValueError('Please provide detector that is preconfigured or provide new one with detector_dict')
+        elif detector_config is None:
+            detector_config = experiment[detector_name]
 
-        assert (type(detector_name) is str and
-                detector_name in experiment.keys()), "Invalid detector name"
         self.config = dict()
         self.config['detector'] = detector_name
+        self.config['detector_config'] = detector_config
         self.config['poisson'] = False
-        self.config['n_energy_bins'] = 10
-        self.config['earth_shielding'] = experiment[detector_name]['type'] == 'migdal'
+        self.config['n_energy_bins'] = detector_config.get('n_energy_bins', 10)
+        self.config['earth_shielding'] = False
         self.config['save_intermediate'] = False
-        self.config['E_max'] = 100 if not ('migd' in detector_name or 'Ge' in detector_name) else 10
+        self.config['E_max'] = detector_config.get('E_max', 100)
         self.verbose = verbose
         self.benchmark_values = None
 
