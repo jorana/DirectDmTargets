@@ -420,7 +420,7 @@ class CombinedInference(NestedSamplerStatModel):
             c.set_models()
             c.print_before_run()
 
-    def save_sub_configs(self,force_index=False):
+    def save_sub_configs(self, force_index=False):
         save_dir = self.get_save_dir(force_index=force_index)
         self.log.info(f'CombinedInference::\tSave configs of sub_experiments')
         # save the config

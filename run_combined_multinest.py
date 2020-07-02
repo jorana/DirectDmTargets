@@ -87,12 +87,13 @@ stats.config['prior']['log_cross_section'] = {
 stats.config['prior']['log_mass']['param'] = stats.config['prior']['log_mass']['range']
 stats.config['prior']['log_cross_section']['param'] = stats.config['prior']['log_cross_section']['range']
 
+if args.shielding:
+    update_config['halo_model'] = dddm.VerneSHM()
+
 stats.config.update(update_config)
 update_keys = list(update_config.keys())
 update_keys.append('prior')
-stats.set_models()
 update_keys.append('halo_model')
-
 stats.copy_config(update_keys)
 stats.print_before_run()
 
