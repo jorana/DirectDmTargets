@@ -70,6 +70,7 @@ update_config = {
     'sampler': args.sampler,
     'poisson': args.poisson,
     'notes': args.notes,
+    'earth_shielding': args.shielding,
     'n_energy_bins': args.bins,
     'save_intermediate': args.save_intermediate,
     'fit_parameters': stats.known_parameters[:args.nparams],
