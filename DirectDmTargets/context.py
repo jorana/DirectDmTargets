@@ -5,7 +5,7 @@ software_dir: path of installation
 from socket import getfqdn
 import os
 from warnings import warn
-import DirectDmTargets
+# import DirectDmTargets
 # import verne
 
 host = getfqdn()
@@ -59,13 +59,15 @@ elif host == 'DESKTOP-EC5OUSI.localdomain' or host == 'DESKTOP-URE1BBI.localdoma
 else:
     # Generally people will end up here
     print(f'context.py::\tunknown host {host} be careful here')
-    installation_folder = DirectDmTargets.__path__[0]
+    # installation_folder = DirectDmTargets.__path__[0]
+    installation_folder = os.path.abspath('./..')
     # vene_folder = verne.__path__[0]
     context = {'software_dir': installation_folder,
-               'results_dir': f'{installation_folder}/DD_DM_targets_data/',
-               'spectra_files': f'{installation_folder}/DD_DM_targets_spectra/',
-               'verne_folder': f'{installation_folder}/../verne/',
-               'verne_files': f'{installation_folder}/../verne/'}
+               'results_dir': os.path.join(installation_folder, 'DD_DM_targets_data/'),
+               'spectra_files': os.path.join(installation_folder, 'DD_DM_targets_spectra/'),
+               'verne_folder': os.path.join(installation_folder, '../verne/'),
+               'verne_files': os.path.join(installation_folder, '../verne/'),
+               }
 
     if os.path.exists('/tmp/'):
         print("Setting tmp folder to /tmp/")
@@ -82,8 +84,9 @@ else:
         print(f'context.py::\tlooking for {name} in {context}')
         if not os.path.exists(context[name]):
             try:
-                os.mkdir(context[name] + '/.')
+                os.mkdir(context[name])
             except Exception as e:
+                raise e
                 warn(f'Could not find nor make {context[name]}')
                 warn(f"Tailor context.py to your needs. Couldn't initialize folders correctly because of {e}.")
     for key in context.keys():

@@ -5,6 +5,7 @@ from sys import platform
 def _is_windows():
     return 'win' in platform
 
+
 def test_nested_simple_multinest():
     if _is_windows():
         return
@@ -27,6 +28,7 @@ def test_nested_astrophysics_multinest():
     fit_unconstrained.run_multinest()
     fit_unconstrained.get_summary()
 
+
 def test_nested_astrophysics_nestle():
     if _is_windows():
         return
@@ -39,9 +41,9 @@ def test_nested_astrophysics_nestle():
     fit_unconstrained.run_nestle()
     fit_unconstrained.get_summary()
 
+
 def test_emcee():
     fit_class = dddm.MCMCStatModel('Xe')
     fit_class.nwalkers = 4
     fit_class.nsteps = 10
     fit_class.run_emcee()
-
