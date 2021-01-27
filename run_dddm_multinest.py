@@ -24,7 +24,7 @@ parser = argparse.ArgumentParser(description="Running a fit for a certain set of
 parser.add_argument('-sampler', type=str, default = 'multinest', help="sampler (multinest or nestle)")
 parser.add_argument('-mw', type=np.float, default=50., help="wimp mass")
 parser.add_argument('-cross_section', type=np.float, default=-45, help="wimp cross-section")
-parser.add_argument('-poisson', type=str, default='no', help="Add poisson noise to the test dataset")
+# parser.add_argument('-poisson', type=str, default='no', help="Add poisson noise to the test dataset")
 parser.add_argument('-nlive', type=int, default=1024, help="live points used by multinest")
 parser.add_argument('-tol', type=float, default=0.1, help="tolerance for opimization (see multinest option dlogz)")
 parser.add_argument('-notes', type=str, default="default", help="notes on particular settings")
@@ -37,6 +37,8 @@ parser.add_argument('-shielding', type=str, default="default", help="yes / no / 
 parser.add_argument('-save_intermediate', type=str, default="no", help="yes / no / default, override internal determination if we need to take into account earth shielding.")
 parser.add_argument('-multicore_hash', type=str, default="", help="no / default, override internal determination if we need to take into account earth shielding.")
 
+parser.add_argument('--poisson', action='store_true',
+                    help="add poisson noise to data")
 args = parser.parse_args()
 yes_or_no = {"yes": True, "no": False}
 
@@ -56,13 +58,13 @@ print(f"run_dddm_multinest.py::\tstart for mw = {args.mw}, sigma = "
 stats = dddm.NestedSamplerStatModel(args.target, args.verbose)
 stats.sampler = args.sampler
 
-if args.shielding != "default":
-    stats.config['earth_shielding'] = yes_or_no[args.shielding.lower()]
-    stats.set_models()
-else:
-    assert False
+# if args.shielding != "default":
+#     stats.config['earth_shielding'] = yes_or_no[args.shielding.lower()]
+#     stats.set_models()
+# else:
+#     assert False
 #TODO
-stats.config['poisson'] = yes_or_no[args.poisson]
+stats.config['poisson'] = args.poisson
 stats.config['notes'] = args.notes
 stats.config['n_energy_bins'] = args.bins
 

@@ -79,21 +79,24 @@ def get_param_list():
 
 
 class StatModel:
-    def __init__(self, detector_name, verbose=False, do_init=True):
+    def __init__(self, detector_name, verbose=False, detector_config=None, do_init=True):
         """
         Statistical model used for Bayesian interference of detection in multiple experiments.
         :param detector_name: name of the detector (e.g. Xe)
         """
+        if detector_name not in experiment and detector_config is None:
+            raise ValueError('Please provide detector that is preconfigured or provide new one with detector_dict')
+        elif detector_config is None:
+            detector_config = experiment[detector_name]
 
-        assert (type(detector_name) is str and
-                detector_name in experiment.keys()), "Invalid detector name"
         self.config = dict()
         self.config['detector'] = detector_name
+        self.config['detector_config'] = detector_config
         self.config['poisson'] = False
-        self.config['n_energy_bins'] = 10
-        self.config['earth_shielding'] = experiment[detector_name]['type'] == 'migdal'
+        self.config['n_energy_bins'] = detector_config.get('n_energy_bins', 10)
+        self.config['earth_shielding'] = False
         self.config['save_intermediate'] = False
-        self.config['E_max'] = 100 if not ('migd' in detector_name or 'Ge' in detector_name) else 10
+        self.config['E_max'] = detector_config.get('E_max', 100)
         self.verbose = verbose
         self.benchmark_values = None
 
@@ -173,14 +176,14 @@ class StatModel:
                 f'StatModel::\tsetting model to VERNE model. Using:'
                 f"\nlog_mass={self.config['mw']}," 
                 f"\nlog_cross_section={self.config['sigma']},"
-                f"\nlocation={experiment[self.config['detector']]['location']}," 
+                f"\nlocation={self.config['detector_config']['location']}," 
                 f'\nv_0={self.config["v_0"]} * nu.km / nu.s,' 
                 f'\nv_esc={self.config["v_esc"]} * nu.km / nu.s,' 
                 f'\nrho_dm={self.config["density"]} * nu.GeV / nu.c0 ** 2 / nu.cm ** 3')
             model = VerneSHM(
                 log_mass=self.config['mw'],
                 log_cross_section=self.config['sigma'],
-                location=experiment[self.config['detector']]['location'],
+                location=self.config['detector_config']['location'],
                 v_0=self.config['v_0'] * nu.km / nu.s,
                 v_esc=self.config['v_esc'] * nu.km / nu.s,
                 rho_dm=self.config['density'] * nu.GeV / nu.c0 ** 2 / nu.cm ** 3)
@@ -211,7 +214,8 @@ class StatModel:
 
     def set_det_params(self):
         self.log.info(f'StatModel::\treading detector parameters')
-        self.config['det_params'] = experiment[self.config['detector']]
+        # This is a legacy statement
+        self.config['det_params'] = self.config['detector_config']
 
     def set_default(self):
         self.log.info(f'StatModel::\tinitializing')
@@ -248,11 +252,11 @@ class StatModel:
 
         # Add all other parameters that are in the detector config
         if det_conf is None:
-            det_conf = self.config['det_params']
+            det_conf = self.config['detector_config']
         for key in det_conf.keys():
-            if type(self.config['det_params'][key]) == types.FunctionType:
+            if type(self.config['detector_config'][key]) == types.FunctionType:
                 continue
-            file_name = file_name + '_' + str(self.config['det_params'][key])
+            file_name = file_name + '_' + str(self.config['detector_config'][key])
         file_name = file_name.replace(' ', '_')
         file_name = file_name + '.csv'
         data_at_path, file_path = add_identifier_to_safe(file_name)
@@ -322,7 +326,7 @@ class StatModel:
             f"\n\tfor mw = {10. ** self.config['mw']}, "
             f"\n\tsig = {10. ** self.config['sigma']}, "
             f"\n\thalo model = \n\t\t{self.config['halo_model']} and "
-            f"\n\tdetector = \n\t\t{self.config['det_params']}")
+            f"\n\tdetector = \n\t\t{self.config['detector_config']}")
         if self.config['save_intermediate']:
             self.log.info(f"StatModel::\tlooking for intermediate results")
             interm_exists, interm_file, interm_spec = self.find_intermediate_result()
@@ -335,7 +339,7 @@ class StatModel:
             10. ** self.config['mw'],
             10. ** self.config['sigma'],
             self.config['halo_model'],
-            self.config['det_params'])
+            self.config['detector_config'])
         spectrum.n_bins = self.config['n_energy_bins']
         if 'E_max' in self.config:
             self.log.info(f'StatModel::\tcheck_spectrum\tset E_max to {self.config["E_max"]}')
@@ -461,7 +465,7 @@ class StatModel:
                 v_esc=checked_values[3] if len(checked_values) > 3 else self.config['v_esc'],
                 rho=checked_values[4] if len(checked_values) > 4 else self.config['density'],
                 poisson=False,
-                det_conf=self.config['det_params']
+                det_conf=self.config['detector_config']
             )
             if interm_exists:
                 return interm_spec
@@ -481,13 +485,13 @@ class StatModel:
             self.log.info(
                 f"StatModel::\tevaluating{self.config['spectrum_class']} for mw = {10. ** x0}, "
                 f"sig = {10. ** x1}, halo model = {self.config['halo_model']} and "
-                f"detector = {self.config['det_params']}")
+                f"detector = {self.config['detector_config']}")
             if self.config['earth_shielding']:
                 self.log.debug(f"StatModel::\tSetting spectrum to Verne in likelihood code")
                 fit_shm = VerneSHM(
                     log_mass=x0,  # self.config['mw'],
                     log_cross_section=x1,  # self.config['sigma'],
-                    location=experiment[self.config['detector']]['location'],
+                    location=self.config['detector_config']['location'],
                     v_0=self.config['v_0'] * nu.km / nu.s,
                     v_esc=self.config['v_esc'] * nu.km / nu.s,
                     rho_dm=self.config['density'] * nu.GeV / nu.c0 ** 2 / nu.cm ** 3)
@@ -498,7 +502,7 @@ class StatModel:
                 10. ** x0,
                 10. ** x1,
                 fit_shm,
-                self.config['det_params'])
+                self.config['detector_config'])
             if 'E_max' in self.config:
                 self.log.info(f'StatModel::\teval_spectrum\tset E_max to {self.config["E_max"]} for 2 params')
                 spectrum.E_max = self.config['E_max']
@@ -525,7 +529,7 @@ class StatModel:
                     fit_shm = VerneSHM(
                         log_mass=checked_values[0],  # self.config['mw'],
                         log_cross_section=checked_values[1],  # self.config['sigma'],
-                        location=experiment[self.config['detector']]['location'],
+                        location=self.config['detector_config']['location'],
                         v_0=checked_values[2] * nu.km / nu.s,  # self.config['v_0'],
                         v_esc=checked_values[3] * nu.km / nu.s,  # self.config['v_esc'],
                         rho_dm=checked_values[4] * nu.GeV / nu.c0 ** 2 / nu.cm ** 3)  # self.config['density'])
@@ -543,7 +547,7 @@ class StatModel:
             spectrum = self.config['spectrum_class'](10. ** checked_values[0],
                                                      10. ** checked_values[1],
                                                      fit_shm,
-                                                     self.config['det_params'])
+                                                     self.config['detector_config'])
             spectrum.n_bins = self.config['n_energy_bins']
             if 'E_max' in self.config:
                 self.log.info(f'StatModel::\teval_spectrum\tset E_max to {self.config["E_max"]} for >2 params')

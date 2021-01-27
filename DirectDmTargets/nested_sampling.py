@@ -182,7 +182,7 @@ class NestedSamplerStatModel(StatModel):
         self.log.info(f'NestedSamplerStatModel::\tFinished with running optimizer!')
 
     def print_before_run(self):
-        self.log.info(f"""--------------------------------------------------
+        self.log.error(f"""--------------------------------------------------
         NestedSamplerStatModel::\t{now(self.config['start'])}\n\tFinal print of all of the set options:
         self.config['tol'] = {self.config['tol']}
         self.config['nlive'] = {self.config['nlive']}
@@ -420,12 +420,13 @@ class CombinedInference(NestedSamplerStatModel):
             c.set_models()
             c.print_before_run()
 
-    def save_sub_configs(self,force_index=False):
+    def save_sub_configs(self, force_index=False):
         save_dir = self.get_save_dir(force_index=force_index)
         self.log.info(f'CombinedInference::\tSave configs of sub_experiments')
         # save the config
         save_dir = save_dir + '/sub_exp_configs'
-        os.mkdir(save_dir)
+        if not os.path.exists(save_dir):
+            os.mkdir(save_dir)
         for c in self.sub_classes:
             save_as = f'{save_dir}/{c.config["detector"]}_'
             with open(save_as + 'config.json', 'w') as file:
