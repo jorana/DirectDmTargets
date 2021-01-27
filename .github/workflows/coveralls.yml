@@ -35,4 +35,5 @@ jobs:
       env:
         GITHUB_TOKEN: ${{ secrets.COVERALLS_TOKEN }}
       run: |
-        coveralls
+        export LD_LIBRARY_PATH=/home/runner/work/DirectDmTargets/DirectDmTargets/MultiNest/lib
+        coveralls --service=github
