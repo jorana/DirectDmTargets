@@ -1,3 +1,4 @@
+#!/usr/bin/env python
 import DirectDmTargets as dddm
 import wimprates as wr
 import numpy as np

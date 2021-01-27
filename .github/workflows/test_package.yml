@@ -1,0 +1,58 @@
+# Test package every time
+
+name: Test package
+
+# Controls when the action will run.
+
+# Trigger this code when a new release is published
+on:
+  workflow_dispatch:
+  release:
+    types: [created]
+  pull_request:
+    branches:
+      - master
+
+jobs:
+  update:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        os: ["ubuntu-latest", "windows-latest"]
+        python-version: ["3.8"]
+    steps:
+      - name: Setup python
+        uses: actions/setup-python@v2 # https://github.com/marketplace/actions/setup-miniconda
+        with:
+          python-version: ${{ matrix.python-version }}
+      - uses: conda-incubator/setup-miniconda@v2
+        with:
+          auto-activate-base: true
+          activate-environment: dddm
+      - name: Checkout repo
+        uses: actions/checkout@v2
+      - name: Install conda stuff
+        run: |
+          yes | conda install -c conda-forge/label/cf202003 multinest
+          yes | conda install -c anaconda mpi4py
+          yes | conda install -c conda-forge emcee
+          yes | pip install git+https://github.com/jorana/wimprates
+          yes | pip install git+https://github.com/jorana/verne
+          yes | pip install git+https://github.com/JohannesBuchner/PyMultiNest
+      - name: Install python dependencies
+        uses: py-actions/py-dependency-install@v2
+      - name: Install DirectDmTargets
+        run: python setup.py develop
+      - name: Install pytest and hypothesis
+        run: pip install pytest hypothesis flake8 pytest-cov
+      - name: Test package
+        run: |
+          pytest
+      - name: Build coverage file
+        run: |
+          pytest --cache-clear --cov=pytest > pytest-coverage.txt
+      - name: Comment coverage
+        uses: coroo/pytest-coverage-commentator@v1.0.2
+      - name: goodbye
+        run: echo goodbye
