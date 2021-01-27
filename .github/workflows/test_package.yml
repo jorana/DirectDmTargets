@@ -36,7 +36,9 @@ jobs:
         if: matrix.os == 'ubuntu-latest'
         run: |
              bash .github/scripts/install_on_linux.sh
-             export LD_LIBRARY_PATH=/home/runner/work/DirectDmTargets/MultiNest/lib
+             ls `$LD_LIBRARY_PATH`
+             export LD_LIBRARY_PATH=/home/runner/work/DirectDmTargets/DirectDmTargets/MultiNest/lib
+             ls `$LD_LIBRARY_PATH`
       - name: Install conda stuff on windows
         if: matrix.os == 'windows-latest'
         run: |

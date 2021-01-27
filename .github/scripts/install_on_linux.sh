@@ -17,7 +17,7 @@ ls
 pwd
 cd ..
 echo "Setting evn var"
-export LD_LIBRARY_PATH=/home/runner/work/DirectDmTargets/MultiNest/lib
+export LD_LIBRARY_PATH=/home/runner/work/DirectDmTargets/DirectDmTargets/MultiNest/lib
 echo "set LD_LIBRARY_PATH to" $LD_LIBRARY_PATH
 echo "in that folder is:"
 ls `$LD_LIBRARY_PATH`
