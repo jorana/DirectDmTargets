@@ -32,7 +32,7 @@ jobs:
     - name: Install DirectDmTargets
       run: python setup.py develop
     - name: Coveralls
+      env:
+        GITHUB_TOKEN: ${{ secrets.COVERALLS_TOKEN }}
       run: |
         coveralls
-      with:
-        github-token: ${{ secrets.COVERALLS_TOKEN }}

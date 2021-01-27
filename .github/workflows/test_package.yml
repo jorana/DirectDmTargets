@@ -54,7 +54,7 @@ jobs:
         run: |
           pytest
       - name: Build coverage file (windows)
-          run: |
+        run: |
             pytest --cache-clear --cov=DirectDmTargets > pytest-coverage.txt
       - name: Test package (linux)
         if: matrix.os == 'ubuntu-latest'
