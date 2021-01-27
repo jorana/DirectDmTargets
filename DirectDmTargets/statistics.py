@@ -6,7 +6,7 @@ from .halo import *
 import numericalunits as nu
 import numpy as np
 from scipy.special import loggamma
-from .utils import now, get_result_folder, add_identifier_to_safe
+from .utils import now, get_result_folder, add_identifier_to_safe, is_savable_type
 import time
 import types
 import logging
@@ -86,7 +86,7 @@ class StatModel:
         """
         if detector_name not in experiment and detector_config is None:
             raise ValueError('Please provide detector that is preconfigured or provide new one with detector_dict')
-        elif detector_config is None:
+        if detector_config is None:
             detector_config = experiment[detector_name]
 
         self.config = dict()
@@ -254,7 +254,7 @@ class StatModel:
         if det_conf is None:
             det_conf = self.config['detector_config']
         for key in det_conf.keys():
-            if type(self.config['detector_config'][key]) == types.FunctionType:
+            if callable(self.config['detector_config'][key]):
                 continue
             file_name = file_name + '_' + str(self.config['detector_config'][key])
         file_name = file_name.replace(' ', '_')
@@ -318,7 +318,6 @@ class StatModel:
         except PermissionError as e:
             self.log.warning(f'{e} occurred, ignoring that for now.')
             # While computing the spectrum another instance has saved a file with the same name
-            pass
 
     def check_spectrum(self, poisson=None):
         self.log.info(
@@ -378,7 +377,7 @@ class StatModel:
         self.check_bench_set()
 
         # single parameter to fit
-        if type(parameter_names) == str:
+        if isinstance(parameter_names, str):
             lp = self.log_prior(parameter_vals, parameter_names)
 
         # check the input and compute the prior
@@ -447,7 +446,7 @@ class StatModel:
         assert len(values) == len(parameter_names), f'trying to fit {len(values)} ' \
                                                     f'parameters but {parameter_names} are given.'
         default_order = ['log_mass', 'log_cross_section', 'v_0', 'v_esc', 'density', 'k']
-        if type(parameter_names) is str:
+        if isinstance(parameter_names, str):
             raise NotImplementedError(
                 f"Trying to fit a single parameter ({parameter_names}), such a "
                 f"feature is not implemented.")
@@ -469,9 +468,8 @@ class StatModel:
             )
             if interm_exists:
                 return interm_spec
-            else:
-                self.log.info(f"StatModel::\teval_spectrum\tNo file found, proceed and "
-                              f"save intermediate result later")
+            self.log.info(f"StatModel::\teval_spectrum\tNo file found, proceed and "
+                          f"save intermediate result later")
         if len(parameter_names) == 2:
             x0, x1 = checked_values
             if parameter_names[0] == 'log_mass' and parameter_names[1] == 'log_cross_section':
@@ -673,14 +671,13 @@ def remove_nan(x, maskable=False):
     inf from x
     :return: x where x is well defined (not NaN or inf)
     """
-    if type(maskable) is not bool:
+    if not isinstance(maskable, bool):
         assert_string = f"match length maskable ({len(maskable)}) to length array ({len(x)})"
         assert len(x) == len(maskable), assert_string
-    if type(maskable) is bool and maskable is False:
+    if maskable is False:
         mask = ~not_nan_inf(x)
         return masking(x, mask)
-    else:
-        return masking(x, ~not_nan_inf(maskable) ^ not_nan_inf(x))
+    return masking(x, ~not_nan_inf(maskable) ^ not_nan_inf(x))
 
 
 def flat_prior_distribution(_range):
@@ -700,7 +697,7 @@ def check_shape(xs):
     if not len(xs) > 0:
         raise TypeError(
             f"Provided incorrect type of {xs}. Takes either np.array or list")
-    if not type(xs) == np.array:
+    if not isinstance(xs, np.array):
         xs = np.array(xs)
     for i, x in enumerate(xs):
         if np.shape(x) == (1,):
@@ -719,8 +716,7 @@ def log_flat(a, b, x):
     try:
         if a < x < b:
             return 0
-        else:
-            return -np.inf
+        return -np.inf
     except ValueError:
         result = np.zeros(len(x))
         mask = (x > a) & (x < b)
@@ -744,8 +740,7 @@ def log_gauss(a, b, mu, sigma, x):
         if a < x < b:
             return -0.5 * np.sum(
                 (x - mu) ** 2 / (sigma ** 2) + np.log(sigma ** 2))
-        else:
-            return -np.inf
+        return -np.inf
     except ValueError:
         # for array like objects return as follows
         result = np.zeros(len(x))

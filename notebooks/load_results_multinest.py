@@ -3,7 +3,7 @@
 print("load_results_multinest.py\tstart")
 
 from common_init import *
-import scipy as sp
+import scipy
 from matplotlib import cm
 import DirectDmTargets as dddm
 import numpy as np
@@ -12,6 +12,7 @@ import colorsys
 from tqdm import tqdm
 import pandas as pd
 import warnings
+
 
 pd.set_option('display.width', 1000)
 pd.set_option('display.max_columns', 150)
@@ -24,7 +25,6 @@ import datetime
 import seaborn as sns
 import matplotlib.pyplot as plt
 from matplotlib.patches import Rectangle
-import pandas as pd
 import scipy.optimize
 import shutil
 from IPython.core.pylabtools import figsize
@@ -45,12 +45,12 @@ no_result = []
 load_errors = []
 for i, resdir in enumerate(tqdm(res_dirs)):
     try:
-        result = dddm.load_multinest_samples_from_file(all_res + '/' + resdir + '/');
+        result = dddm.load_multinest_samples_from_file(all_res + '/' + resdir + '/')
     except Exception as e:
         print(f'Error {e} in loading {resdir}')
         load_errors.append([i, all_res + '/' + resdir, e])
         continue
-    if len(result.keys()):
+    if result.keys():
         result['dir'] = all_res + '/' + resdir + '/'
         results[i] = result
     else:
@@ -73,7 +73,7 @@ def results_to_df(res):
             for sub_key in res[items[0]][key].keys():
                 if sub_key == 'prior':
                     for sub_sub_key in res[items[0]][key][sub_key].keys():
-                        if type(res[items[0]][key][sub_key][sub_sub_key]) == dict:
+                        if isinstance(res[items[0]][key][sub_key][sub_sub_key], dict):
                             for sub_sub_sub_key in res[items[0]][key][sub_key][sub_sub_key].keys():
                                 try:
                                     df[key + '_' + sub_key + '_' + sub_sub_key + '_' + sub_sub_sub_key] = [
@@ -122,17 +122,16 @@ def delete_empty(paths, delete=False, only_old=True):
     """Delete data from a given set of paths. Checks if they are empty and older than
     100 h if only_old == True"""
     for path in tqdm(paths):
-        cmd = f"rm -rf {path}"
         if not delete:
-            print(cmd)
+            print(f'delete {path}')
         if os.path.exists(path) and len(os.listdir(path)) == 0 and delete:
             if only_old:
                 t_create = datetime.datetime.fromtimestamp(os.path.getmtime(path))
                 dt = datetime.datetime.now() - t_create
                 if dt > datetime.timedelta(hours=100):
-                    os.system(cmd)
+                    shutil.rmtree(path)
             else:
-                os.system(cmd)
+                shutil.rmtree(path)
 
 
 def delete_with_note(df, note, delete=False):
@@ -147,7 +146,7 @@ def delete_with_note(df, note, delete=False):
         cmd = f"rm -rf {path}"
         print(cmd)
         if delete:
-            os.system(cmd)
+            shutil.rmtree(path)
 
 
 def delete_with_mask(df, mask, delete=False):
@@ -156,7 +155,7 @@ def delete_with_mask(df, mask, delete=False):
         cmd = f"rm -rf {path}"
         print(cmd)
         if delete:
-            os.system(cmd)
+            shutil.rmtree(path)
 
 
 print("load_results_multinest.py\tIntroduced helperfunctions.\n\tSee delete_empty, "
@@ -386,7 +385,7 @@ def match_other_item(i, verbose=False, diff_det_type=False,
 
     ## Remove some keys, they are not interesting for the matching
     match_keys = df.keys()
-    if type(ommit_matching) == str:
+    if isinstance(ommit_matching, str):
         ommit_matching = [ommit_matching]
     for _k in ['item', 'config_det_params', 'config_start', 'config_notes',
                'config_fit_time', 'config_fit_parameters', 'global evidence error',
@@ -434,7 +433,8 @@ def match_other_item(i, verbose=False, diff_det_type=False,
             continue
         if key in anti_match_for:
             continue
-        if verbose: print(f'looking for {key}:{val}\t\ttotlen:{len(sub_df)}')
+        if verbose:
+            print(f'looking for {key}:{val}\t\ttotlen:{len(sub_df)}')
         if np.iterable(val) and len(val) == 2:
             mask = [((_val[0] == val[0]) and (_val[1] == val[1])) for _val in sub_df[key]]
         else:
@@ -448,14 +448,16 @@ def match_other_item(i, verbose=False, diff_det_type=False,
     if anti_match_for:
         for key in anti_match_for:
             if key not in match_keys:
-                if verbose: print(f'looked for {key} in {match_keys}. No such key')
+                if verbose:
+                    print(f'looked for {key} in {match_keys}. No such key')
                 raise ValueError(f"No such key {key} to match to any of match_keys")
             try:
                 val = this_df[key].values[0]
             except TypeError as e:
                 print(val, this_df.keys())
                 raise e
-            if verbose: print(f'looking for {key}: not {val}\t\ttotlen:{len(sub_df)}')
+            if verbose:
+                print(f'looking for {key}: not {val}\t\ttotlen:{len(sub_df)}')
             if np.iterable(val) and len(val) == 2:
                 mask = np.array([((_val[0] == val[0]) and (_val[1] == val[1])) for _val
                                  in sub_df[key]])
@@ -483,12 +485,11 @@ def match_other_item(i, verbose=False, diff_det_type=False,
                     return sub_df, mask
     if len(sub_df) == 1:
         return sub_df['item'].values, sub_df
-    elif len(sub_df) == 0:
+    if len(sub_df) == 0:
         warnings.warn("WARNING: NO MATCH")
         return None, None
-    else:
-        warnings.warn("WARNING: MULTIPLE MATHCES\nreturning: items, result DataFrame")
-        return sub_df.item.values, sub_df
+    warnings.warn("WARNING: MULTIPLE MATHCES\nreturning: items, result DataFrame")
+    return sub_df.item.values, sub_df
 
 
 def find_single_other(i, **kwargs):
@@ -504,7 +505,7 @@ def find_single_other(i, **kwargs):
 
 
 def find_other_ge(i,
-                  det_order=['Ge_migd_HV_Si_bg', 'Ge_migd_HV_bg', 'Ge_migd_iZIP_Si_bg', 'Ge_migd_iZIP_bg'],
+                  det_order=('Ge_migd_HV_Si_bg', 'Ge_migd_HV_bg', 'Ge_migd_iZIP_Si_bg', 'Ge_migd_iZIP_bg'),
                   **kwargs):
     assert np.sum(df[df['item'] == i]['config_detector'] == det_order[0])
     # First match
@@ -561,7 +562,7 @@ def combined_confidence_plot(items,
         X, Y = bin_center(xedges, yedges)
         _hist = _hist.T
         if smoothing:
-            _hist = sp.ndimage.filters.gaussian_filter(
+            _hist = scipy.ndimage.filters.gaussian_filter(
                 _hist,
                 [np.sqrt(nbins) / 10, np.sqrt(nbins) / 10],
                 mode='constant')
@@ -581,8 +582,7 @@ def combined_confidence_plot(items,
         for _h in hists:
             H *= _h
         H = H / np.sum(H)
-        last_item = item  # needed as a placeholder for _confidence_plot
-        res = _confidence_plot(last_item, X, Y, H, bin_range,
+        res = _confidence_plot(item, X, Y, H, bin_range,
                                text_box=text_box,
                                nsigma=nsigma,
                                cbar_note=cbar_notes[k + 1],
@@ -825,7 +825,7 @@ def combine_sets(items,
                         save_canvas(name, save_dir=f'figures/{name_base}/')
                         exec_show(show)
                         f_print(f'Plotting {name}')
-            if sets and len(sets) and len(sets[0]):
+            if sets and len(sets[0]):
                 plot_bench(sets[0][0])
                 plt.grid(axis='y')
                 plt.legend(loc='upper right')

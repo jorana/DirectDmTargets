@@ -4,7 +4,7 @@ from __future__ import absolute_import, unicode_literals, print_function
 from .halo import *
 from .statistics import *
 from .context import *
-from .utils import *
+from .utils import is_savable_type
 from datetime import datetime
 import json
 import os
@@ -43,7 +43,7 @@ class NestedSamplerStatModel(StatModel):
     def set_fit_parameters(self, params):
         self.log.info(f'NestedSamplerStatModel::\tsetting fit'
                       f' parameters to {params}')
-        if not type(params) == list:
+        if not isinstance(params, (list, tuple)):
             raise TypeError("Set the parameter names in a list of strings")
         for param in params:
             if param not in self.known_parameters:
@@ -103,7 +103,7 @@ class NestedSamplerStatModel(StatModel):
             a, b = self.config['prior'][x_name]['param']
             # Prior transform of a flat prior is a simple line.
             return x * (b - a) + a
-        elif self.config['prior'][x_name]['prior_type'] == 'gauss':
+        if self.config['prior'][x_name]['prior_type'] == 'gauss':
             # Get the range from the config file
             a, b = self.config['prior'][x_name]['range']
             m, s = self.config['prior'][x_name]['param']
@@ -115,10 +115,9 @@ class NestedSamplerStatModel(StatModel):
             xprime = x * (bprime - aprime) + aprime
             res = m + s * spsp.ndtri(xprime)
             return res
-        else:
-            err_message = f"unknown prior type '{self.config['prior'][x_name]['prior_type']}', " \
-                          f"choose either gauss or flat"
-            raise TypeError(err_message)
+        err_message = (f"unknown prior type '{self.config['prior'][x_name]['prior_type']}',"
+                       f" choose either gauss or flat")
+        raise TypeError(err_message)
 
     def _log_probability_nested(self, theta):
         ndim = len(theta)
@@ -331,17 +330,17 @@ class NestedSamplerStatModel(StatModel):
                       f"let's return it to whomever asked for it")
         return resdict
 
-    def get_save_dir(self, force_index=False, hash=None):
+    def get_save_dir(self, force_index=False, _hash=None):
         if (not self.log_dict['saved_in']) or force_index:
             self.log_dict['saved_in'] = open_save_dir(f'nes_{self.config["sampler"][:2]}',
-                                                      force_index=force_index, hash=hash)
+                                                      force_index=force_index, _hash=_hash)
         self.log.info(f'NestedSamplerStatModel::\tget_save_dir\tsave_dir = {self.log_dict["saved_in"]}')
         return self.log_dict['saved_in']
 
-    def get_tmp_dir(self, force_index=False, hash=None):
+    def get_tmp_dir(self, force_index=False, _hash=None):
         if (not self.log_dict['tmp_dir']) or force_index:
             self.log_dict['tmp_dir'] = open_save_dir(f'{self.config["sampler"]}', base=context['tmp_folder'],
-                                                     force_index=force_index, hash=hash)
+                                                     force_index=force_index, _hash=hash)
         self.log.info(f'NestedSamplerStatModel::\tget_tmp_dir\ttmp_dir = {self.log_dict["tmp_dir"]}')
         return self.log_dict['tmp_dir']
 
@@ -364,7 +363,7 @@ class NestedSamplerStatModel(StatModel):
         np.save(save_dir + 'config.npy', convert_dic_to_savable(self.config))
         np.save(save_dir + 'res_dict.npy', convert_dic_to_savable(fit_summary))
         for col in self.result.keys():
-            if col == 'samples' or type(col) is not dict:
+            if col == 'samples' or not isinstance(col, dict):
                 if self.config["sampler"] == 'multinest' and col == 'samples':
                     # in contrast to nestle, multinest returns the weighted samples.
                     np.save(save_dir + 'weighted_samples.npy', self.result[col])
@@ -424,11 +423,11 @@ class CombinedInference(NestedSamplerStatModel):
         save_dir = self.get_save_dir(force_index=force_index)
         self.log.info(f'CombinedInference::\tSave configs of sub_experiments')
         # save the config
-        save_dir = save_dir + '/sub_exp_configs'
+        save_dir = os.path.join(save_dir, '/sub_exp_configs')
         if not os.path.exists(save_dir):
             os.mkdir(save_dir)
         for c in self.sub_classes:
-            save_as = f'{save_dir}/{c.config["detector"]}_'
+            save_as = os.path.join(f'{save_dir}', f'{c.config["detector"]}_')
             with open(save_as + 'config.json', 'w') as file:
                 json.dump(convert_dic_to_savable(c.config), file, indent=4)
             np.save(save_as + 'config.npy', convert_dic_to_savable(c.config))
@@ -436,18 +435,12 @@ class CombinedInference(NestedSamplerStatModel):
             self.log.info(f'save_sub_configs::\tdone_saving')
 
 
-def is_savable_type(item):
-    if type(item) in [list, np.array, np.ndarray, int, str, np.int, np.float, bool, np.float64]:
-        return True
-    return False
-
-
 def convert_dic_to_savable(config):
     result = config.copy()
     for key in result.keys():
         if is_savable_type(result[key]):
             pass
-        elif type(result[key]) == dict:
+        elif isinstance(result[key], dict):
             result[key] = convert_dic_to_savable(result[key])
         else:
             result[key] = str(result[key])
@@ -503,10 +496,10 @@ def do_strip_from_pid(string):
     """
     if 'pid' not in string:
         return string
-    else:
-        new_key = string.split("_")
-        new_key = "_".join(new_key[1:])
-        return new_key
+
+    new_key = string.split("_")
+    new_key = "_".join(new_key[1:])
+    return new_key
 
 
 def load_multinest_samples(load_from=default_nested_save_dir(), item='latest'):

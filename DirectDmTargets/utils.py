@@ -17,34 +17,31 @@ def check_folder_for_file(file_path, max_iterations=30, verbose=1):
     if os.path.exists(last_folder):
         # Folder does exist. No need do anything.
         return
+    if file_path[0] == '/':
+        base_dir = '/' + file_path.split("/")[1]
+        start_i = 2
     else:
-        
-        if file_path[0] == '/':
-            base_dir = '/' + file_path.split("/")[1]
-            start_i = 2
-        else:
-            base_dir = file_path.split("/")[0]
-            start_i = 1
-            assert_str = f"check_folder_for_file::\tstarting from a folder " \
-                         f"({base_dir}) that cannot be found"
-            assert os.path.exists(base_dir), assert_str
-        # Start from 1 (since that is basedir) go until second to last since that is the file name
-        for sub_dir in file_path.split("/")[start_i:max_iterations]:
-            # TODO
-            if ".csv" in sub_dir:
-                print("Error in this code, manually breaking but one should not end up here")
-                break
-            this_dir = base_dir + "/" + sub_dir
-            if not os.path.exists(this_dir):
-                if verbose:
-                    print(f'check_folder_for_file::\tmaking {this_dir}')
-                try:
-                    os.mkdir(this_dir)
-                except FileExistsError:
-                    print("This is strange. We got a FileExistsError for a path to be "
-                          "made, maybe another instance has created this path too")
-                    pass
-            base_dir = this_dir
+        base_dir = file_path.split("/")[0]
+        start_i = 1
+        assert_str = f"check_folder_for_file::\tstarting from a folder " \
+                     f"({base_dir}) that cannot be found"
+        assert os.path.exists(base_dir), assert_str
+    # Start from 1 (since that is basedir) go until second to last since that is the file name
+    for sub_dir in file_path.split("/")[start_i:max_iterations]:
+        # TODO
+        if ".csv" in sub_dir:
+            print("Error in this code, manually breaking but one should not end up here")
+            break
+        this_dir = base_dir + "/" + sub_dir
+        if not os.path.exists(this_dir):
+            if verbose:
+                print(f'check_folder_for_file::\tmaking {this_dir}')
+            try:
+                os.mkdir(this_dir)
+            except FileExistsError:
+                print("This is strange. We got a FileExistsError for a path to be "
+                      "made, maybe another instance has created this path too")
+        base_dir = this_dir
         assert_str = f'check_folder_for_file::\tsomething failed. Cannot find {last_folder}'
 
         if not os.path.exists(last_folder):
@@ -106,8 +103,8 @@ def is_savable_type(item):
     :param item: input of any type.
     :return: bool if the type is saveable by checking if it is in a limitative list
     """
-    if type(item) in [list, np.array, np.ndarray, int, str, np.int, np.float,
-                      bool, np.float64]:
+    if isinstance(item, (list, np.array, np.ndarray, int, str, np.int,
+                         np.float, bool, np.float64)):
         return True
     return False
 
@@ -129,13 +126,13 @@ def convert_dic_to_savable(config):
     return result
 
 
-def open_save_dir(save_dir, base=None, force_index=False, hash=None):
+def open_save_dir(save_dir, base=None, force_index=False, _hash=None):
     """
 
     :param save_dir: requested name of folder to open in the result folder
     :param base: folder where the save dir is to be saved in. This is the results folder by default
     :param force_index: option to force to write to a number (must be an override!)
-    :param hash: add a has to save dir to avoid duplicate naming conventions while running multiple jobs
+    :param _hash: add a has to save dir to avoid duplicate naming conventions while running multiple jobs
     :return: the name of the folder as was saveable (usually input + some number)
     """
     if base is None:
@@ -160,9 +157,9 @@ def open_save_dir(save_dir, base=None, force_index=False, hash=None):
         index = force_index
     # this is where we going to save
     save_dir = base + save + str(index) + '/'
-    if hash:
-        assert force_index is False, f'do not set hash to {hash} and force_index to {force_index} simultaneously'
-        save_dir = base + save + '_HASH' + str(hash) + '/'
+    if _hash:
+        assert force_index is False, f'do not set _hash to {_hash} and force_index to {force_index} simultaneously'
+        save_dir = base + save + '_HASH' + str(_hash) + '/'
         if not os.path.exists(save_dir):
             try:
                 os.mkdir(save_dir)
@@ -209,9 +206,8 @@ def is_str_in_list(string, _list, verbose=0):
             if verbose:
                 print(f'is_str_in_list::\t{string} is in  {name}!')
             return True
-        else:
-            if verbose:
-                print(f'is_str_in_list::\t{string} is not in  {name}')
+        if verbose:
+            print(f'is_str_in_list::\t{string} is not in  {name}')
     return False
 
 
