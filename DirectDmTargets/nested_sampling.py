@@ -4,7 +4,7 @@ from __future__ import absolute_import, unicode_literals, print_function
 from .halo import *
 from .statistics import *
 from .context import *
-from .utils import is_savable_type
+from .utils import is_savable_type, open_save_dir
 from datetime import datetime
 import json
 import os

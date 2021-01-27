@@ -1,6 +1,6 @@
 # Test package every time
 
-name: Test package
+name: Pytest
 
 # Controls when the action will run.
 
@@ -35,28 +35,27 @@ jobs:
       - name: Install conda stuff on windows
         if: matrix.os == 'windows-latest'
         run: |
-            pip install emcee
-            pip install git+https://github.com/jorana/wimprates
-            pip install git+https://github.com/jorana/verne
-            pip install git+https://github.com/JohannesBuchner/PyMultiNest
-      - name: Install python dependencies
-        uses: py-actions/py-dependency-install@v2
-      - name: Install DirectDmTargets
-        run: python setup.py develop
-      - name: Install pytest and hypothesis
-        run: pip install pytest hypothesis flake8 pytest-cov
+          pip install emcee
+          pip install git+https://github.com/jorana/wimprates
+          pip install git+https://github.com/jorana/verne
+          pip install git+https://github.com/JohannesBuchner/PyMultiNest
       - name: Install conda stuff on linux
         if: matrix.os == 'ubuntu-latest'
         run: |
           bash .github/scripts/install_on_linux.sh
-          ls $LD_LIBRARY_PATH
-          export LD_LIBRARY_PATH=/home/runner/work/DirectDmTargets/DirectDmTargets/MultiNest/lib
-          ls $LD_LIBRARY_PATH
-      - name: Test package
+      - name: Install python dependencies
+        uses: py-actions/py-dependency-install@v2
+        run: pip install pytest hypothesis flake8 pytest-cov
+      - name: Install DirectDmTargets
+        run: python setup.py develop
+      - name: Test package (windows)
+        if: matrix.os == 'windows-latest'
         run: |
-          echo $LD_LIBRARY_PATH
+          pytest
+      - name: Test package (linux)
+        if: matrix.os == 'ubuntu-latest'
+        run: |
           export LD_LIBRARY_PATH=/home/runner/work/DirectDmTargets/DirectDmTargets/MultiNest/lib
-          echo $LD_LIBRARY_PATH
           pytest
       - name: Build coverage file
         run: |
