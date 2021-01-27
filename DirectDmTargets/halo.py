@@ -2,14 +2,16 @@
 account any detector effects"""
 
 from .context import *
-from .utils import get_verne_folder, check_folder_for_file, is_str_in_list, str_in_list, add_identifier_to_safe
+from .utils import get_verne_folder, check_folder_for_file, is_str_in_list, str_in_list, add_identifier_to_safe, unique_hash
 import numpy as np
 import pandas as pd
 import wimprates as wr
 import numericalunits as nu
 import os
 from scipy.interpolate import interp1d
-
+import datetime
+import time
+import socket
 # # be able to load from the verne folder using this work around.
 # sys.path.insert(1, get_verne_folder()+'/src/')
 # # python-file in verne folder
@@ -39,6 +41,72 @@ def get_bins(a, b, n):
     return np.transpose(result)
 
 
+def file_ready(name, cmd, max_time=30, max_age=300):
+    """
+    Check the file is ready when we execute cmd
+    Author: A. Pickford
+    :param name: name of the file that is to be written
+    :param cmd: the command used to create that file
+    :param max_time: max. minutes this process waits for the file to be written
+    :param max_age: max. age (in minutes) of the file, if the file is older than this, remove it
+    :return: is the file written within max time. type(bool)
+    """
+    print('file_ready: start')
+    endTime = datetime.datetime.now() + datetime.timedelta(minutes=max_time)
+    flagName = '{0}.flag'.format(name)
+    if (os.path.exists(flagName) and
+            time.time() - os.path.getmtime(flagName) > max_age * 60):
+        print(f'file_ready: found old flag {flagName}. Remove it')
+        os.remove(flagName)
+    print('file_ready: begin while loop')
+    while datetime.datetime.now() < endTime:
+        if os.path.exists(name):
+            print('file_ready: file exists')
+            # file exists, check for flag file
+            if os.path.exists(flagName):
+                print ('file_ready: flag file exists')
+                # file and flag file both exist, another process should be
+                # creating the file, so wait 30 seconds for other process
+                # to finish and delete flag file then retry file checks
+                time.sleep(30)
+                continue
+            else:
+                print('file_ready: flag file does not exist')
+                # file and exists and no flag file, all is good use the file
+                return True
+        else:
+            print('file_ready: file does not exist')
+            # file does not exist, try and make the flag file
+            try:
+                with open(flagName, 'w') as flag:
+                    flag.write('0\n')
+            except IOError as e:
+                # error creating flag file, most likely another process has just
+                # opened the file, this relies on dcache throwing us an
+                # IOError back if we try to write to an existing file so in a race
+                # to write the file someone is first and someone gets the error
+                # we got the error so wait 30 seconds and retry the file checks
+                print('file_ready: error creating flag file')
+                time.sleep(30)
+                continue
+            # we wrote the flag file and should now create the real file
+            # execute 'cmd' to generate the file
+            print(f'file_ready: exec {cmd}')
+            os.system(cmd)
+            print('file_ready: flag file created')
+            print('file_ready: file write end')
+
+            # delete flag file
+            print('file_ready: delete flag file')
+            os.remove(flagName)
+            print('file_ready: end true')
+            return True
+
+    # if the file isn't ready after maxtime minutes give up and return false
+    print('file_ready: end false')
+    return False
+
+
 class GenSpectrum:
     def __init__(self, mw, sig, model, det):
         """
@@ -54,12 +122,14 @@ class GenSpectrum:
         self.experiment = det
 
         self.n_bins = 10
-        if self.experiment['type'] == 'SI':
+        if self.experiment['type'] in ['SI', 'SI_bg']:
             self.E_min = 0  # keV
             self.E_max = 100  # keV
         elif self.experiment['type'] in ['migdal', 'migdal_bg']:
             self.E_min = 0  # keV
             self.E_max = 10  # keV
+        else:
+            raise NotImplementedError(f'Exp. type {self.experiment["type"]} is unknown')
 
     def __str__(self):
         """
@@ -87,7 +157,7 @@ class GenSpectrum:
         except KeyError as e:
             print(self.experiment)
             raise e
-        if self.experiment['type'] == 'SI':
+        if self.experiment['type'] in ['SI', 'SI_bg']:
             rate = wr.rate_wimp_std(self.get_bin_centers(),
                                     benchmark["mw"],
                                     benchmark["sigma_nucleon"],
@@ -131,7 +201,7 @@ class GenSpectrum:
         """
         :return: events with poisson noise
         """
-        return np.random.poisson(self.get_events()).astype(np.float)
+        return np.random.exponential(self.get_events()).astype(np.float)
 
     def get_data(self, poisson=True):
         """
@@ -261,7 +331,7 @@ class VerneSHM:
 
         if not exist_csv:
             pyfile = '/src/CalcVelDist.py'
-            file_name = abs_file_name 
+            file_name = tmp_folder + unique_hash() + '.csv'
             args = f'-m_x {10. ** self.log_mass} ' \
                    f'-sigma_p {10. ** self.log_cross_section} ' \
                    f'-loc {self.location} ' \
@@ -273,14 +343,24 @@ class VerneSHM:
             cmd = f'python "{software_folder}"{pyfile} {args}'
             print(f'No spectrum found at:\n{file_name}\nGenerating spectrum, '
                   f'this can take a minute. Execute:\n{cmd}')
-            os.system(cmd)
+            assert file_ready(file_name, cmd), f"{file_name} could not be written"
+            mv_cmd = f'mv {file_name} {abs_file_name}'
+            if not os.path.exists(abs_file_name):
+                print(f'load_f:\tcopy from temp-folder to verne_folder')
+                file_ready(abs_file_name, mv_cmd, max_time=1)
+            else:
+                warn(f'load_f:\twhile writing {file_name}, {abs_file_name} was created')
         else:
             print(f'Using {abs_file_name} for the velocity distribution')
 
         # Alright now load the data and interpolate that. This is the output that wimprates need
         if not os.path.exists(abs_file_name):
             raise OSError(f'{abs_file_name} should exist')
-        df = pd.read_csv(abs_file_name)
+        try:
+            df = pd.read_csv(abs_file_name)
+        except pd.io.common.EmptyDataError as pandas_error:
+            os.remove(abs_file_name)
+            raise pandas_error
 
         if not len(df):
             # Somehow we got an empty dataframe, we cannot continue
