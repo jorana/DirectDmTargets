@@ -50,7 +50,7 @@ jobs:
         run: |
           bash .github/scripts/install_on_linux.sh
           ls $LD_LIBRARY_PATH
-          export LD_LIBRARY_PATH=/home/runner/work/DirectDmTargets/DirectDmTargets/MultiNest/lib
+          export $LD_LIBRARY_PATH=/home/runner/work/DirectDmTargets/DirectDmTargets/MultiNest/lib
           ls $LD_LIBRARY_PATH
       - name: Test package
         run: |
