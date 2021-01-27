@@ -11,6 +11,7 @@ import time
 import types
 import logging
 from datetime import datetime
+from sys import platform
 
 # Set a lower bound to the log-likelihood (this becomes a problem due to machine precision).
 LL_LOW_BOUND = 1e-99
@@ -109,14 +110,17 @@ class StatModel:
             print(f'StatModel::\tVERBOSE ENABLED')
         else:
             level = logging.WARNING
-        self.config['logging'] = f"{context['tmp_folder']}/log_{datetime.now().isoformat()}.log"
-        print(f'StatModel::\tSave log to {self.config["logging"]}')
-        logging.basicConfig(
-            handlers=[
-                logging.FileHandler(self.config['logging']),
-                logging.StreamHandler()],
-            level=level,
-            format='%(relativeCreated)6d %(threadName)s %(name)s %(message)s')
+
+        if 'win' not in platform:
+            self.config['logging'] = os.path.join(context['tmp_folder'],
+                                                  f"log_{datetime.now().isoformat()}.log")
+            print(f'StatModel::\tSave log to {self.config["logging"]}')
+            logging.basicConfig(
+                handlers=[
+                    logging.FileHandler(self.config['logging']),
+                    logging.StreamHandler()],
+                level=level,
+                format='%(relativeCreated)6d %(threadName)s %(name)s %(message)s')
         self.log = logging.getLogger()
         self.bench_is_set = False
         self.set_prior("Pato_2010")

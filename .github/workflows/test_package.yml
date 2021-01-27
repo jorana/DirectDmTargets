@@ -35,10 +35,8 @@ jobs:
       - name: Install conda stuff on linux
         if: matrix.os == 'ubuntu-latest'
         run: |
-             ls
-             ls .github
-             ls .github/scripts
              bash .github/scripts/install_on_linux.sh
+             export LD_LIBRARY_PATH=/home/runner/work/DirectDmTargets/MultiNest/lib
       - name: Install conda stuff on windows
         if: matrix.os == 'windows-latest'
         run: |
