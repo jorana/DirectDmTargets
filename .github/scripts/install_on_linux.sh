@@ -1,8 +1,10 @@
 
 # Installing multinest
+ls
 sudo apt-get install -qq libblas{3,-dev} liblapack{3,-dev} cmake build-essential git gfortran
 sudo apt-get install -qq openmpi-bin libopenmpi-dev python-mpi4py
 pip install pymultinest
+cd ..
 git clone https://github.com/JohannesBuchner/MultiNest
 cd MultiNest/build
 cmake ..
@@ -10,8 +12,9 @@ make
 cd ..
 ls
 pwd
-export LD_LIBRARY_PATH=./lib
 cd ..
+export LD_LIBRARY_PATH=/home/runner/work/DirectDmTargets/MultiNest/lib
+cd DirectDmTargets
 ls
 pwd
 

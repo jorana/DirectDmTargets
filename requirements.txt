@@ -14,10 +14,10 @@ seaborn
 coveralls
 hypothesis
 jupyter-resource-usage   # Memory viewer for notebooks
-cmake
-scikit-build
-scikit-learn
-line_profiler
+# cmake
+# scikit-build
+# scikit-learn
+# line_profiler
 parso==0.7.1
 pytest
 pytest-runner
