@@ -45,6 +45,7 @@ jobs:
           bash .github/scripts/install_on_linux.sh
       - name: Install python dependencies
         uses: py-actions/py-dependency-install@v2
+      - name: Install other stuff
         run: pip install pytest hypothesis flake8 pytest-cov
       - name: Install DirectDmTargets
         run: python setup.py develop
