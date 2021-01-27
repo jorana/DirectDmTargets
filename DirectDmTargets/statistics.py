@@ -697,7 +697,7 @@ def check_shape(xs):
     if not len(xs) > 0:
         raise TypeError(
             f"Provided incorrect type of {xs}. Takes either np.array or list")
-    if not isinstance(xs, np.array):
+    if not isinstance(xs, np.ndarray):
         xs = np.array(xs)
     for i, x in enumerate(xs):
         if np.shape(x) == (1,):

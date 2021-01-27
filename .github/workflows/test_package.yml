@@ -42,10 +42,10 @@ jobs:
       - name: Install conda stuff on windows
         if: matrix.os == 'windows-latest'
         run: |
-            yes | conda install -c conda-forge emcee
-            yes | pip install git+https://github.com/jorana/wimprates
-            yes | pip install git+https://github.com/jorana/verne
-            yes | pip install git+https://github.com/JohannesBuchner/PyMultiNest
+            pip install emcee
+            pip install git+https://github.com/jorana/wimprates
+            pip install git+https://github.com/jorana/verne
+            pip install git+https://github.com/JohannesBuchner/PyMultiNest
       - name: Install python dependencies
         uses: py-actions/py-dependency-install@v2
       - name: Install DirectDmTargets

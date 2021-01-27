@@ -8,7 +8,12 @@ cd MultiNest/build
 cmake ..
 make
 cd ..
+ls
+pwd
 export LD_LIBRARY_PATH=./lib
+cd ..
+ls
+pwd
 
 # Installing others
 yes | conda install -c conda-forge emcee
