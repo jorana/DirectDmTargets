@@ -20,8 +20,26 @@ jobs:
       run: |
         npm install
         make test-coverage
-
+    - name: Setup python
+      uses: actions/setup-python@v2 # https://github.com/marketplace/actions/setup-miniconda
+      with:
+        python-version: [3.8]
+    - uses: conda-incubator/setup-miniconda@v2
+      with:
+        auto-activate-base: true
+        activate-environment: dddm
+    - name: Checkout repo
+      uses: actions/checkout@v2
+    - name: Install conda stuff on linux
+      run: |
+        bash .github/scripts/install_on_linux.sh
+    - name: Install python dependencies
+      uses: py-actions/py-dependency-install@v2
+    - name: Install other stuff
+      run: pip install pytest hypothesis flake8 pytest-cov
+    - name: Install DirectDmTargets
+      run: python setup.py develop
     - name: Coveralls
       uses: coverallsapp/github-action@master
       with:
-        github-token: ${{ secrets.GITHUB_TOKEN }}
+        github-token: ${{ secrets.COVERALLS_TOKEN }}
