@@ -27,13 +27,15 @@ jobs:
       uses: py-actions/py-dependency-install@v2
     - name: Install other stuff
       run: |
-          pip install pytest hypothesis flake8 pytest-cov
+          pip install pytest hypothesis flake8 pytest-cov coveralls
           pip install git+https://github.com/TimoRoth/coveralls-python.git
     - name: Install DirectDmTargets
       run: python setup.py develop
     - name: Coveralls
       env:
         GITHUB_TOKEN: ${{ secrets.COVERALLS_TOKEN }}
+        COVERALLS_REPO_TOKEN: ${{ secrets.COVERALLS_TOKEN }}
       run: |
         export LD_LIBRARY_PATH=/home/runner/work/DirectDmTargets/DirectDmTargets/MultiNest/lib
+        coverage run --source=DirectDmTargets setup.py test
         coveralls --service=github
