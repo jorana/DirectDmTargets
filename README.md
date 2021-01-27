@@ -1,6 +1,9 @@
 # DD_DM_targets
-[![Build Status](https://travis-ci.com/jorana/DD_DM_targets.svg?token=2MSppqzrkto9C3uuoWiK&branch=master)](https://travis-ci.com/jorana/DirectDmTargets)
+[![CodeFactor](https://www.codefactor.io/repository/github/jorana/directdmtargets/badge)](https://www.codefactor.io/repository/github/jorana/directdmtargets)
+[![Test package](https://github.com/jorana/DirectDmTargets/workflows/Test%20package/badge.svg)](https://github.com/jorana/DirectDmTargets/actions?query=workflow%3A%22Test+package%22)
+
 Probing the complementarity of several targets used in Direct Detection Experiments for Dark Matter
+
 # Author
 Joran Angevaare <j.angevaare@nikhef.nl>
 
