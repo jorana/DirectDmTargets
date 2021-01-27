@@ -32,10 +32,11 @@ jobs:
           activate-environment: dddm
       - name: Checkout repo
         uses: actions/checkout@v2
-      - name: Install conda stuff
+      - name: Install conda stuff on linux
         if: matrix.os == 'ubuntu-latest'
           run: bash ../scripts/install_on_linux.sh
-        elif: matrix.os == 'windows-latest'
+      - name: Install conda stuff on windows
+        if: matrix.os == 'windows-latest'
           run: |
             yes | conda install -c conda-forge/label/cf202003 multinest
             yes | conda install -c anaconda mpi4py
