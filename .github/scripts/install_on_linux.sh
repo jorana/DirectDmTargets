@@ -20,7 +20,7 @@ echo "Setting evn var"
 export LD_LIBRARY_PATH=/home/runner/work/DirectDmTargets/DirectDmTargets/MultiNest/lib
 echo "set LD_LIBRARY_PATH to" $LD_LIBRARY_PATH
 echo "in that folder is:"
-ls `$LD_LIBRARY_PATH`
+ls $LD_LIBRARY_PATH
 echo "go back to installation; ls ; pwd "
 cd DirectDmTargets
 ls
