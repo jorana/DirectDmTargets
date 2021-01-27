@@ -33,13 +33,16 @@ jobs:
       - name: Checkout repo
         uses: actions/checkout@v2
       - name: Install conda stuff
-        run: |
-          yes | conda install -c conda-forge/label/cf202003 multinest
-          yes | conda install -c anaconda mpi4py
-          yes | conda install -c conda-forge emcee
-          yes | pip install git+https://github.com/jorana/wimprates
-          yes | pip install git+https://github.com/jorana/verne
-          yes | pip install git+https://github.com/JohannesBuchner/PyMultiNest
+        if: matrix.os == 'ubuntu-latest'
+          run: bash ../scripts/install_on_linux.sh
+        elif: matrix.os == 'windows-latest'
+          run: |
+            yes | conda install -c conda-forge/label/cf202003 multinest
+            yes | conda install -c anaconda mpi4py
+            yes | conda install -c conda-forge emcee
+            yes | pip install git+https://github.com/jorana/wimprates
+            yes | pip install git+https://github.com/jorana/verne
+            yes | pip install git+https://github.com/JohannesBuchner/PyMultiNest
       - name: Install python dependencies
         uses: py-actions/py-dependency-install@v2
       - name: Install DirectDmTargets

@@ -4,8 +4,9 @@ software_dir: path of installation
 
 from socket import getfqdn
 import os
-# from .utils import check_folder_for_file
 from warnings import warn
+import DirectDmTargets
+# import verne
 
 host = getfqdn()
 print(f'Host: {host}')
@@ -27,7 +28,7 @@ if 'stbc' in host or 'nikhef' in host:
             pass
         else:
             # Not fine, we cannot use the /tmp/ folder on the stoomboot nodes
-            print(f'No tmp folder found on {host}. Envorionment vars:')
+            print(f'No tmp folder found on {host}. Environment vars:')
             for key in os.environ.keys():
                 print(key)
             assert False                 
@@ -58,11 +59,13 @@ elif host == 'DESKTOP-EC5OUSI.localdomain' or host == 'DESKTOP-URE1BBI.localdoma
 else:
     # Generally people will end up here
     print(f'context.py::\tunknown host {host} be careful here')
-    context = {'software_dir': '../../DD_DM_targets/',
-               'results_dir': '../../DD_DM_targets_data/',
-               'spectra_files': '../../DD_DM_targets_spectra/',
-               'verne_folder': '../../verne/',
-               'verne_files': '../../verne/'}
+    installation_folder = DirectDmTargets.__path__[0]
+    # vene_folder = verne.__path__[0]
+    context = {'software_dir': installation_folder,
+               'results_dir': f'{installation_folder}/DD_DM_targets_data/',
+               'spectra_files': f'{installation_folder}/DD_DM_targets_spectra/',
+               'verne_folder': f'{installation_folder}/../verne/',
+               'verne_files': f'{installation_folder}/../verne/'}
 
     if os.path.exists('/tmp/'):
         print("Setting tmp folder to /tmp/")

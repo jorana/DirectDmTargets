@@ -1,8 +1,9 @@
 """For a given detector get a WIMPrate for a given detector (not taking into
 account any detector effects"""
 
-from .context import *
-from .utils import get_verne_folder, check_folder_for_file, is_str_in_list, str_in_list, add_identifier_to_safe, unique_hash
+from warnings import warn
+from DirectDmTargets.context import tmp_folder, context
+from DirectDmTargets.utils import get_verne_folder, check_folder_for_file, is_str_in_list, str_in_list, add_identifier_to_safe, unique_hash
 import numpy as np
 import pandas as pd
 import wimprates as wr
@@ -11,11 +12,6 @@ import os
 from scipy.interpolate import interp1d
 import datetime
 import time
-import socket
-# # be able to load from the verne folder using this work around.
-# sys.path.insert(1, get_verne_folder()+'/src/')
-# # python-file in verne folder
-# import CalcVelDist_per_v
 
 
 def bin_edges(a, b, n):
@@ -233,8 +229,7 @@ class GenSpectrum:
             print('\n\n----\nWARNING::\nfinding negative rates. Doing hard override!!\n----\n\n')
             result['counts'][mask] = 0
             return result
-        else:
-            return result
+        return result
 
 
 class SHM:

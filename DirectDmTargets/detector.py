@@ -204,12 +204,11 @@ def CDMS_background_functions(E):
     # p. 140 https://pure.uva.nl/ws/files/31193425/Thesis.pdf
     if E < 3:  # keV
         return 0.9  # kg day / keV
-    elif E < 5:
+    if E < 5:
         return 0.1
-    elif E < 8:
+    if E < 8:
         return 0.01
-    else:
-        return 0.01
+    return 0.01
 
 
 # Set the default benchmark for a 50 GeV WIMP with a cross-section of 1e-45 cm^2
@@ -422,8 +421,7 @@ def smear_signal(rate, energy, sigma, bin_width):
     if np.mean(sigma) < bin_width:
         # print(f'Resolution {np.mean(sigma)} better than bin_width {bin_width}!')
         return rate
-    else:
-        return _smear_signal(rate, energy, sigma, bin_width)
+    return _smear_signal(rate, energy, sigma, bin_width)
 
 
 class DetectorSpectrum(GenSpectrum):
