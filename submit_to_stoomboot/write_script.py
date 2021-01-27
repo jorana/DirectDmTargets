@@ -2,13 +2,12 @@
 # J. Angevaare 21-10-2019 <j.angevaare@nikhef.nl> 
 
 # from DirectDmTargets import context
-print("write_script.py::\t start writing script and submit it to the queue")
+print("write_script.py::\tstart writing script and submit it to the queue")
 
 #
 ### basic options
 #
-base_dir = "/project/xenon/jorana/software/DD_DM_targets/" #/data/xenon/joranang/software/DD_DM_targets/"
-# log_dir  = base_dir + "/submit_to_stoomboot/log_files/"
+base_dir = "/project/xenon/jorana/software/DD_DM_targets/"
 log_dir = "/data/xenon/joranang/log_files/dddm/"
 prof_dir  = base_dir + "/submit_to_stoomboot/profiles/"
 default_conda = "/project/xenon/jorana/software/miniconda3/bin:$PATH"
@@ -51,19 +50,18 @@ args = parser.parse_args()
 #
 ### where to write
 #
-scriptfile = '%s_%s.sh'%('dddm', args.arguments.replace("-", "_"))
+_scriptfile = '%s_%s.sh'%('dddm', args.arguments.replace("-", "_"))
 if 'multicore_hash' in args.arguments:
-    print(f'write_script.py::\tChange scriptfile name from \t{scriptfile} to hash')
-    script_split = scriptfile.strip('.sh').split('multicore_hash')
-    scriptfile = "".join([script_split[-1], script_split[0]]) + '.sh'
-    print(f'write_script.py::\tChange scriptfile name changed to \t{scriptfile}')
-scriptfile = scriptfile.replace(" ", "").replace("__", "_")
-if scriptfile[-1] == "_":
-    scriptfile = scriptfile[:-1]
-log_file = 'log_%s_'%scriptfile
-prof_file = prof_dir + scriptfile.replace('.sh', '.prof')
+    print(f'write_script.py::\tChange scriptfile name')
+    script_split = _scriptfile.strip('.sh').split('multicore_hash')
+    _scriptfile = "".join([script_split[-1], script_split[0]]) + '.sh'
+_scriptfile = _scriptfile.replace(" ", "").replace("__", "_")
+if _scriptfile[-1] == "_":
+    _scriptfile = _scriptfile[:-1]
+log_file = 'log_%s_'%_scriptfile
+prof_file = prof_dir + _scriptfile.replace('.sh', '.prof')
 log_done = 'done_%s'%log_file
-scriptfile = 'scripts/' + scriptfile 
+scriptfile = 'scripts/' + _scriptfile 
 #
 ### Check that the paths exist
 #
@@ -79,7 +77,7 @@ n_machines = 1
 #
 ### Write the script
 #
-print(f"write_script.py::\t start writing {scriptfile}")
+# print(f"write_script.py::\t start writing {scriptfile}")
 
 fout = open(scriptfile,'w')
 fout.write('#!/bin/bash \n')
@@ -87,28 +85,20 @@ fout.write('# setup anaconda \n')
 fout.write('export PATH=%s \n' %(args.conda))
 fout.write('source activate %s\n'%(args.environment))
 if os.path.exists(log_dir + log_done) or os.path.exists(log_dir + log_file):
-    print('MAIN::remove ' + log_done)
-    fout.write('cd ' +  log_dir  +' \n')
+    print(f'MAIN::remove {log_done} and/or {log_file}')
     if os.path.exists(log_dir + log_file): 
-      fout.write('rm -f ' +  log_file +' \n')
+      fout.write('rm -f ' + log_dir + log_file +' \n')
     if os.path.exists(log_dir + log_done): 
-      fout.write('rm -f ' +  log_done +' \n')
-    fout.write('cd ' +  base_dir +' \n' )
+      fout.write('rm -f ' + log_dir + log_done +' \n')
 
 fout.write('exec 1> ' + log_dir + log_file + ' \n' )
 fout.write('exec 2>&1 \n')
-fout.write('# goto base directory \n')
-fout.write('cd '+base_dir+' \n')
-fout.write('# do the job \n')
 if args.n_cores > 1:
-#     if not args.q =='multicore':
-#         print('WARNING setting queue to multicore')
-#         args.q =='multicore'
-    fout.write('mpiexec -n %i python %s %s\n' %(n_machines * args.n_cores, args.target, args.arguments))
+    fout.write('mpiexec -v -n %i python %s/%s %s\n' %(n_machines * args.n_cores, base_dir, args.target, args.arguments))
 elif args.profiler:
-    fout.write('python -m cProfile -o %s %s %s\n' %(prof_file, args.target, args.arguments))
+    fout.write('python -m cProfile -o %s %s/%s %s\n' %(prof_file, base_dir, args.target, args.arguments))
 else:
-    fout.write('python %s %s\n' %(args.target, args.arguments))
+    fout.write('python %s/%s %s\n' %(base_dir, args.target, args.arguments))
 fout.write('cd ' + log_dir +' \n')
 fout.write('mv ' + log_file + ' ' + log_done + ' \n') 
 fout.close()
@@ -127,10 +117,11 @@ if True: # args.n_cores > 1:
 else:
 #     basic_options += f' -l pvmem={str(args.mem*1000)}'
     pass
-# basic_options += ' -p -1023'# for priority
 cmd = 'qsub %s %s %s'%(basic_options,  "-q " + args.q, scriptfile)
-
-print(cmd)
 os.system(cmd)
-
+sub_cmd = f'scripts/stbc/sub_{_scriptfile.split("_")[0]}.sh'
+print(f'Write command to {sub_cmd}')
+fout = open(sub_cmd,'w')
+fout.write(cmd + '\n')
+fout.close()
 print("write_script.py::\t job written and submitted. Bye bye")

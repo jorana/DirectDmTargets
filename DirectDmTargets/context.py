@@ -12,7 +12,7 @@ print(f'Host: {host}')
 
 if 'stbc' in host or 'nikhef' in host:
     context = {'software_dir': '/project/xenon/jorana/software/DD_DM_targets/',
-               'results_dir': '/dcache/xenon/jorana/dddm/results/',
+               'results_dir': '/data/xenon/joranang/dddm/results/',
                'spectra_files': '/dcache/xenon/jorana/dddm/spectra/',
                'verne_folder': '/project/xenon/jorana/software/verne/',
                'verne_files': '/dcache/xenon/jorana/dddm/verne/'}
@@ -59,8 +59,8 @@ else:
     # Generally people will end up here
     print(f'context.py::\tunknown host {host} be careful here')
     context = {'software_dir': '../../DD_DM_targets/',
-               'results_dir': '../../DD_DM_targets/data/results/',
-               'spectra_files': '../../DD_DM_targets/data/results/spectra/',
+               'results_dir': '../../DD_DM_targets_data/',
+               'spectra_files': '../../DD_DM_targets_spectra/',
                'verne_folder': '../../verne/',
                'verne_files': '../../verne/'}
 

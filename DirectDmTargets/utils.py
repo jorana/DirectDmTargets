@@ -4,7 +4,7 @@ from .context import *
 import numpy as np
 import os
 from datetime import datetime
-
+import uuid
 
 def check_folder_for_file(file_path, max_iterations=30, verbose=1):
     """
@@ -272,3 +272,6 @@ def add_identifier_to_safe(name, verbose=1):
 
     # return abs_file_name, exist_csv
 
+
+def unique_hash():
+    return uuid.uuid4().hex[15:]
