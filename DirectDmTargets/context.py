@@ -86,7 +86,6 @@ else:
             try:
                 os.mkdir(context[name])
             except Exception as e:
-                raise e
                 warn(f'Could not find nor make {context[name]}')
                 warn(f"Tailor context.py to your needs. Couldn't initialize folders correctly because of {e}.")
     for key in context.keys():
