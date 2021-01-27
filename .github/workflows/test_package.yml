@@ -57,7 +57,7 @@ jobs:
           pytest
       - name: Build coverage file
         run: |
-          pytest --cache-clear --cov=pytest > pytest-coverage.txt
+          pytest --cache-clear --cov=DirectDmTargets > pytest-coverage.txt
       - name: Comment coverage
         uses: coroo/pytest-coverage-commentator@v1.0.2
       - name: goodbye
