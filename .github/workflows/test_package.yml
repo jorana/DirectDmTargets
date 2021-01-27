@@ -54,6 +54,7 @@ jobs:
         run: pip install pytest hypothesis flake8 pytest-cov
       - name: Test package
         run: |
+          ls $LD_LIBRARY_PATH
           pytest
       - name: Build coverage file
         run: |
