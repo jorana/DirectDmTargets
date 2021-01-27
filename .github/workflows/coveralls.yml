@@ -26,10 +26,13 @@ jobs:
     - name: Install python dependencies
       uses: py-actions/py-dependency-install@v2
     - name: Install other stuff
-      run: pip install pytest hypothesis flake8 pytest-cov
+      run: |
+          pip install pytest hypothesis flake8 pytest-cov
+          pip install git+https://github.com/TimoRoth/coveralls-python.git
     - name: Install DirectDmTargets
       run: python setup.py develop
     - name: Coveralls
-      uses: coverallsapp/github-action@master
+      run: |
+        coveralls
       with:
         github-token: ${{ secrets.COVERALLS_TOKEN }}
