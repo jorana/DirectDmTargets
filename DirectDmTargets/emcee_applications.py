@@ -187,7 +187,7 @@ def load_chain_emcee(load_from=default_emcee_save_dir(), item='latest'):
     base = get_result_folder()
     save = load_from
     files = os.listdir(base)
-    if item is 'latest':
+    if item == 'latest':
         item = max([int(f.split(save)[-1]) for f in files if save in f])
     result = {}
     load_dir = base + save + str(item) + '/'
@@ -224,7 +224,7 @@ def emcee_plots(result, save=False, plot_walkers=True):
                     'n_energy_bins']:
         try:
             info += f"\n{str_inf} = %s" % result['config'][str_inf]
-            if str_inf is 'start':
+            if str_inf == 'start':
                 info = info[:-7]
             if str_inf == 'fit_time':
                 info += 's (%.1f h)' % (result['config'][str_inf] / 3600.)

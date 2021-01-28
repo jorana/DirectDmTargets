@@ -1,8 +1,9 @@
 """For a given detector get a WIMPrate for a given detector (not taking into
 account any detector effects"""
 
-from .context import *
-from .utils import get_verne_folder, check_folder_for_file, is_str_in_list, str_in_list, add_identifier_to_safe, unique_hash
+from warnings import warn
+from DirectDmTargets.context import tmp_folder, context
+from DirectDmTargets.utils import get_verne_folder, check_folder_for_file, is_str_in_list, str_in_list, add_identifier_to_safe, unique_hash
 import numpy as np
 import pandas as pd
 import wimprates as wr
@@ -11,11 +12,6 @@ import os
 from scipy.interpolate import interp1d
 import datetime
 import time
-import socket
-# # be able to load from the verne folder using this work around.
-# sys.path.insert(1, get_verne_folder()+'/src/')
-# # python-file in verne folder
-# import CalcVelDist_per_v
 
 
 def bin_edges(a, b, n):
@@ -115,7 +111,7 @@ class GenSpectrum:
         :param model: the dark matter model
         :param det: detector name
         """
-        assert type(det) is dict, "Invalid detector type. Please provide dict."
+        assert isinstance(det, dict), "Invalid detector type. Please provide dict."
         self.mw = mw  # note that this is not in log scale!
         self.sigma_nucleon = sig  # note that this is not in log scale!
         self.dm_model = model
@@ -152,10 +148,8 @@ class GenSpectrum:
          and cross-section)
         :return: returns the rate
         """
-        if ((not type(benchmark) is dict) or (
-                not type(benchmark) is pd.DataFrame)):
-            benchmark = {'mw': benchmark[0],
-                         'sigma_nucleon': benchmark[1]}
+        if not isinstance(benchmark, (dict, pd.DataFrame)):
+            benchmark = {'mw': benchmark[0], 'sigma_nucleon': benchmark[1]}
 
         try:
             kwargs = {'material': self.experiment['material']}
@@ -233,8 +227,7 @@ class GenSpectrum:
             print('\n\n----\nWARNING::\nfinding negative rates. Doing hard override!!\n----\n\n')
             result['counts'][mask] = 0
             return result
-        else:
-            return result
+        return result
 
 
 class SHM:
@@ -332,18 +325,18 @@ class VerneSHM:
         exist_csv, abs_file_name = add_identifier_to_safe(file_name)
         assertion_string = f'abs file {abs_file_name} should be a string\n'
         assertion_string += f'exists csv {exist_csv} should be a bool'
-        assert type(abs_file_name) == str and type(exist_csv) == bool, assertion_string
+        assert isinstance(abs_file_name, str) and isinstance(exist_csv, bool), assertion_string
 
         if not exist_csv:
             pyfile = '/src/CalcVelDist.py'
             file_name = tmp_folder + unique_hash() + '.csv'
-            args = f'-m_x {10. ** self.log_mass} ' \
-                   f'-sigma_p {10. ** self.log_cross_section} ' \
-                   f'-loc {self.location} ' \
-                   f'-path "{software_folder}/src/" ' \
-                   f'-v_0 {self.v_0_nodim} ' \
-                   f'-v_esc {self.v_esc_nodim} ' \
-                   f'-save_as "{file_name}" '
+            args = (f'-m_x {10. ** self.log_mass} '
+                    f'-sigma_p {10. ** self.log_cross_section} '
+                    f'-loc ''{self.location} '
+                    f'-path "{software_folder}/src/" '
+                    f'-v_0 {self.v_0_nodim} '
+                    f'-v_esc {self.v_esc_nodim} '
+                    f'-save_as "{file_name}" )')
 
             cmd = f'python "{software_folder}"{pyfile} {args}'
             print(f'No spectrum found at:\n{file_name}\nGenerating spectrum, '
@@ -367,7 +360,7 @@ class VerneSHM:
             os.remove(abs_file_name)
             raise pandas_error
 
-        if not len(df):
+        if not df:
             # Somehow we got an empty dataframe, we cannot continue
             os.remove(abs_file_name)
             raise ValueError(f'Was trying to read an empty dataframe from {abs_file_name}')

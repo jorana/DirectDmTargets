@@ -1,6 +1,6 @@
 # Test package every time
 
-name: Test package
+name: Pytest
 
 # Controls when the action will run.
 
@@ -15,7 +15,7 @@ on:
 
 jobs:
   update:
-    runs-on: ubuntu-latest
+    runs-on: ${{ matrix.os }}
     strategy:
       fail-fast: false
       matrix:
@@ -32,26 +32,41 @@ jobs:
           activate-environment: dddm
       - name: Checkout repo
         uses: actions/checkout@v2
-      - name: Install conda stuff
+      - name: Install conda stuff on windows
+        if: matrix.os == 'windows-latest'
         run: |
-          yes | conda install -c conda-forge/label/cf202003 multinest
-          yes | conda install -c anaconda mpi4py
-          yes | conda install -c conda-forge emcee
-          yes | pip install git+https://github.com/jorana/wimprates
-          yes | pip install git+https://github.com/jorana/verne
-          yes | pip install git+https://github.com/JohannesBuchner/PyMultiNest
+          pip install emcee
+          pip install git+https://github.com/jorana/wimprates
+          pip install git+https://github.com/jorana/verne
+          pip install git+https://github.com/JohannesBuchner/PyMultiNest
+      - name: Install conda stuff on linux
+        if: matrix.os == 'ubuntu-latest'
+        run: |
+          bash .github/scripts/install_on_linux.sh
       - name: Install python dependencies
         uses: py-actions/py-dependency-install@v2
+      - name: Install other stuff
+        run: pip install pytest hypothesis flake8 pytest-cov
       - name: Install DirectDmTargets
         run: python setup.py develop
-      - name: Install pytest and hypothesis
-        run: pip install pytest hypothesis flake8 pytest-cov
-      - name: Test package
+      - name: Test package (windows)
+        if: matrix.os == 'windows-latest'
         run: |
           pytest
-      - name: Build coverage file
+      - name: Build coverage file (windows)
+        if: matrix.os == 'windows-latest'
         run: |
-          pytest --cache-clear --cov=pytest > pytest-coverage.txt
+            pytest --cache-clear --cov=DirectDmTargets > pytest-coverage.txt
+      - name: Test package (linux)
+        if: matrix.os == 'ubuntu-latest'
+        run: |
+          export LD_LIBRARY_PATH=/home/runner/work/DirectDmTargets/DirectDmTargets/MultiNest/lib
+          pytest
+      - name: Build coverage file (linux)
+        if: matrix.os == 'ubuntu-latest'
+        run: |
+          export LD_LIBRARY_PATH=/home/runner/work/DirectDmTargets/DirectDmTargets/MultiNest/lib
+          pytest --cache-clear --cov=DirectDmTargets > pytest-coverage.txt
       - name: Comment coverage
         uses: coroo/pytest-coverage-commentator@v1.0.2
       - name: goodbye

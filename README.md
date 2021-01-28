@@ -26,11 +26,12 @@ Joran Angevaare <j.angevaare@nikhef.nl>
 # Installation (linux)
 ```bash
 echo 'Quick installing in conda env'
-conda install -c conda-forge/label/cf202003 multinest
-conda install -c anaconda mpi4py
-conda install -c conda-forge emcee
+pip install pymultinest
+yes | conda install -c conda-forge multinest
+yes | conda install -c anaconda mpi4py
+yes | conda install -c conda-forge emcee
 pip install git+https://github.com/jorana/wimprates
 pip install git+https://github.com/jorana/verne
-pip install git+https://github.com/JohannesBuchner/PyMultiNest
+pip install git+https://github.com/jorana/wimprates
 ```
 
