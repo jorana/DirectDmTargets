@@ -1,17 +1,15 @@
 """Statistical model giving likelihoods for detecting a spectrum given a benchmark to compare it with."""
 
-from .context import *
-from .detector import *
-from .halo import *
+from DirectDmTargets import context, detector, halo, utils
 import numericalunits as nu
 import numpy as np
 from scipy.special import loggamma
-from .utils import now, get_result_folder, add_identifier_to_safe, is_savable_type
 import time
-import types
 import logging
-from datetime import datetime
+import datetime
 from sys import platform
+import os
+import pandas as pd
 
 # Set a lower bound to the log-likelihood (this becomes a problem due to machine precision).
 LL_LOW_BOUND = 1e-99
@@ -24,7 +22,8 @@ def get_priors(priors_from="Evans_2019"):
     if priors_from == "Pato_2010":
         priors = {'log_mass': {'range': [0.1, 3], 'prior_type': 'flat'},
                   'log_cross_section': {'range': [-46, -42], 'prior_type': 'flat'},
-                  'density': {'range': [0.001, 0.9], 'prior_type': 'gauss', 'mean': 0.4, 'std': 0.1},
+                  'density': {'range': [0.001, 0.9], 'prior_type': 'gauss', 'mean': 0.4,
+                              'std': 0.1},
                   'v_0': {'range': [80, 380], 'prior_type': 'gauss', 'mean': 230, 'std': 30},
                   'v_esc': {'range': [379, 709], 'prior_type': 'gauss', 'mean': 544, 'std': 33},
                   'k': {'range': [0.5, 3.5], 'prior_type': 'flat'}}
@@ -32,14 +31,16 @@ def get_priors(priors_from="Evans_2019"):
         # https://arxiv.org/abs/1901.02016
         priors = {'log_mass': {'range': [0.1, 3], 'prior_type': 'flat'},
                   'log_cross_section': {'range': [-46, -42], 'prior_type': 'flat'},
-                  'density': {'range': [0.001, 0.9], 'prior_type': 'gauss', 'mean': 0.55, 'std': 0.17},
+                  'density': {'range': [0.001, 0.9], 'prior_type': 'gauss', 'mean': 0.55,
+                              'std': 0.17},
                   'v_0': {'range': [80, 380], 'prior_type': 'gauss', 'mean': 233, 'std': 3},
                   'v_esc': {'range': [379, 709], 'prior_type': 'gauss', 'mean': 528, 'std': 24.5}}
     elif priors_from == "migdal_wide":
         priors = {'log_mass': {'range': [-1.5, 1.5], 'prior_type': 'flat'},
                   'log_cross_section': {'range': [-48, -37], 'prior_type': 'flat'},
                   # see Evans_2019_constraint
-                  'density': {'range': [0.001, 0.9], 'prior_type': 'gauss', 'mean': 0.55, 'std': 0.17},
+                  'density': {'range': [0.001, 0.9], 'prior_type': 'gauss', 'mean': 0.55,
+                              'std': 0.17},
                   'v_0': {'range': [80, 380], 'prior_type': 'gauss', 'mean': 233, 'std': 20},
                   'v_esc': {'range': [379, 709], 'prior_type': 'gauss', 'mean': 528, 'std': 24.5},
                   'k': {'range': [0.5, 3.5], 'prior_type': 'flat'}}
@@ -47,13 +48,16 @@ def get_priors(priors_from="Evans_2019"):
         priors = {'log_mass': {'range': [-1.5, 1.5], 'prior_type': 'flat'},
                   'log_cross_section': {'range': [-48, -37], 'prior_type': 'flat'},
                   # see Evans_2019_constraint
-                  'density': {'range': [0.0001, 1], 'prior_type': 'gauss', 'mean': 0.55, 'std': 0.17},
+                  'density': {'range': [0.0001, 1], 'prior_type': 'gauss', 'mean': 0.55,
+                              'std': 0.17},
                   'v_0': {'range': [133, 333], 'prior_type': 'gauss', 'mean': 233, 'std': 20},
-                  'v_esc': {'range': [405.5, 650.5], 'prior_type': 'gauss', 'mean': 528, 'std': 24.5}}
+                  'v_esc': {'range': [405.5, 650.5], 'prior_type': 'gauss', 'mean': 528,
+                            'std': 24.5}}
     elif priors_from == "migdal_extremely_wide":
         priors = {'log_mass': {'range': [-2, 3], 'prior_type': 'flat'},
                   'log_cross_section': {'range': [-50, -30], 'prior_type': 'flat'},
-                  'density': {'range': [0.001, 0.9], 'prior_type': 'gauss', 'mean': 0.55, 'std': 0.5},
+                  'density': {'range': [0.001, 0.9], 'prior_type': 'gauss', 'mean': 0.55,
+                              'std': 0.5},
                   'v_0': {'range': [80, 380], 'prior_type': 'gauss', 'mean': 233, 'std': 90},
                   'v_esc': {'range': [379, 709], 'prior_type': 'gauss', 'mean': 528, 'std': 99},
                   'k': {'range': [0.5, 3.5], 'prior_type': 'flat'}}
@@ -64,10 +68,10 @@ def get_priors(priors_from="Evans_2019"):
         param = priors[key]
         if param['prior_type'] == 'flat':
             param['param'] = param['range']
-            param['dist'] = lambda x: flat_prior_distribution(x)
+            param['dist'] = flat_prior_distribution
         elif param['prior_type'] == 'gauss':
             param['param'] = param['mean'], param['std']
-            param['dist'] = lambda x: gauss_prior_distribution(x)
+            param['dist'] = gauss_prior_distribution
     return priors
 
 
@@ -85,10 +89,11 @@ class StatModel:
         Statistical model used for Bayesian interference of detection in multiple experiments.
         :param detector_name: name of the detector (e.g. Xe)
         """
-        if detector_name not in experiment and detector_config is None:
-            raise ValueError('Please provide detector that is preconfigured or provide new one with detector_dict')
+        if detector_name not in detector.experiment and detector_config is None:
+            raise ValueError(
+                'Please provide detector that is preconfigured or provide new one with detector_dict')
         if detector_config is None:
-            detector_config = experiment[detector_name]
+            detector_config = detector.experiment[detector_name]
 
         self.config = dict()
         self.config['detector'] = detector_name
@@ -112,8 +117,8 @@ class StatModel:
             level = logging.WARNING
 
         if 'win' not in platform:
-            self.config['logging'] = os.path.join(context['tmp_folder'],
-                                                  f"log_{datetime.now().isoformat()}.log")
+            self.config['logging'] = os.path.join(context.context['tmp_folder'],
+                                                  f"log_{utils.now()}.log")
             print(f'StatModel::\tSave log to {self.config["logging"]}')
             logging.basicConfig(
                 handlers=[
@@ -124,7 +129,8 @@ class StatModel:
         self.log = logging.getLogger()
         self.bench_is_set = False
         self.set_prior("Pato_2010")
-        self.log.info(f"initialized for {detector_name} detector. See  print(stat_model) for default settings")
+        self.log.info(
+            f"initialized for {detector_name} detector. See  print(stat_model) for default settings")
         if do_init:
             self.set_default()
 
@@ -178,13 +184,13 @@ class StatModel:
         if self.config['earth_shielding']:
             self.log.info(
                 f'StatModel::\tsetting model to VERNE model. Using:'
-                f"\nlog_mass={self.config['mw']}," 
+                f"\nlog_mass={self.config['mw']},"
                 f"\nlog_cross_section={self.config['sigma']},"
-                f"\nlocation={self.config['detector_config']['location']}," 
-                f'\nv_0={self.config["v_0"]} * nu.km / nu.s,' 
-                f'\nv_esc={self.config["v_esc"]} * nu.km / nu.s,' 
+                f"\nlocation={self.config['detector_config']['location']},"
+                f'\nv_0={self.config["v_0"]} * nu.km / nu.s,'
+                f'\nv_esc={self.config["v_esc"]} * nu.km / nu.s,'
                 f'\nrho_dm={self.config["density"]} * nu.GeV / nu.c0 ** 2 / nu.cm ** 3')
-            model = VerneSHM(
+            model = halo.VerneSHM(
                 log_mass=self.config['mw'],
                 log_cross_section=self.config['sigma'],
                 location=self.config['detector_config']['location'],
@@ -195,11 +201,11 @@ class StatModel:
             self.config['halo_model'] = halo_model if halo_model != 'default' else model
             self.log.info(f'StatModel::\tmodel is set to: {self.config["halo_model"]}')
         else:
-            self.log.info(f'StatModel::\tSetting model to SHM. Using:' 
-                          f'\nv_0={self.config["v_0"]} * nu.km / nu.s,' 
-                          f'\nv_esc={self.config["v_esc"]} * nu.km / nu.s,' 
+            self.log.info(f'StatModel::\tSetting model to SHM. Using:'
+                          f'\nv_0={self.config["v_0"]} * nu.km / nu.s,'
+                          f'\nv_esc={self.config["v_esc"]} * nu.km / nu.s,'
                           f'\nrho_dm={self.config["density"]} * nu.GeV / nu.c0 ** 2 / nu.cm ** 3')
-            self.config['halo_model'] = halo_model if halo_model != 'default' else SHM(
+            self.config['halo_model'] = halo_model if halo_model != 'default' else halo.SHM(
                 v_0=self.config['v_0'] * nu.km / nu.s,
                 v_esc=self.config['v_esc'] * nu.km / nu.s,
                 rho_dm=self.config['density'] * nu.GeV / nu.c0 ** 2 / nu.cm ** 3
@@ -210,7 +216,7 @@ class StatModel:
             self.config['save_intermediate'] = False
         self.log.info(f'StatModel::\tsave_intermediate:\n\t\t{self.config["save_intermediate"]}')
 
-        self.config['spectrum_class'] = spec if spec != 'default' else DetectorSpectrum
+        self.config['spectrum_class'] = spec if spec != 'default' else detector.DetectorSpectrum
 
         if halo_model != 'default' or spec != 'default':
             self.log.warning(f"StatModel::\tre-evaluate benchmark")
@@ -244,14 +250,14 @@ class StatModel:
         file_name = (
                 context['spectra_files'] +
                 '/nbin-%i/model-%s/mw-%.2f/log_s-%.2f/rho-%.2f/v_0-%.1f/v_esc-%i/poisson_%i/spectrum' % (
-                        self.config['n_energy_bins'] if nbin is None else nbin,
-                        str(self.config['halo_model']) if model is None else str(model),
-                        10. ** self.config['mw'] if mw is None else 10. ** mw,
-                        self.config['sigma'] if sigma is None else sigma,
-                        self.config['density'] if rho is None else rho,
-                        self.config['v_0'] if v_0 is None else v_0,
-                        self.config['v_esc'] if v_esc is None else v_esc,
-                        int(self.config['poisson'] if poisson is None else poisson)
+                    self.config['n_energy_bins'] if nbin is None else nbin,
+                    str(self.config['halo_model']) if model is None else str(model),
+                    10. ** self.config['mw'] if mw is None else 10. ** mw,
+                    self.config['sigma'] if sigma is None else sigma,
+                    self.config['density'] if rho is None else rho,
+                    self.config['v_0'] if v_0 is None else v_0,
+                    self.config['v_esc'] if v_esc is None else v_esc,
+                    int(self.config['poisson'] if poisson is None else poisson)
                 ))
 
         # Add all other parameters that are in the detector config
@@ -263,7 +269,7 @@ class StatModel:
             file_name = file_name + '_' + str(self.config['detector_config'][key])
         file_name = file_name.replace(' ', '_')
         file_name = file_name + '.csv'
-        data_at_path, file_path = add_identifier_to_safe(file_name)
+        data_at_path, file_path = utils.add_identifier_to_safe(file_name)
 
         # There have been some issues with mixed results for these two densities. Remove those files.
         if rho == 0.55 or rho == 0.4:
@@ -273,7 +279,7 @@ class StatModel:
                 if write_time < feb17_2020:
                     self.log.error(f'StatModel::\tWARNING REMOVING {file_path}')
                     os.remove(file_path)
-                    data_at_path, file_path = add_identifier_to_safe(file_name)
+                    data_at_path, file_path = utils.add_identifier_to_safe(file_name)
                     self.log.warning(
                         f'StatModel::\tRe-evatulate, now we have {file_path}. Is there data: {data_at_path}')
 
@@ -288,7 +294,7 @@ class StatModel:
         else:
             self.log.warning("StatModel::\tNo data at path. Will have to make it.")
             binned_spectrum = None
-            check_folder_for_file(file_path, max_iterations=20, verbose=0)
+            utils.check_folder_for_file(file_path, max_iterations=20, verbose=0)
 
         self.log.info(f"StatModel::\tdata at {file_path} = {data_at_path}")
         return data_at_path, file_path, binned_spectrum
@@ -307,8 +313,8 @@ class StatModel:
         try:
             # rename the file to also reflect the hosts name such that we don't make two
             # copies at the same place with from two different hosts
-            if not (host in spectrum_file):
-                spectrum_file = spectrum_file.replace('.csv', host + '.csv')
+            if not (context.host in spectrum_file):
+                spectrum_file = spectrum_file.replace('.csv', context.host + '.csv')
             try:
                 binned_spectrum.to_csv(spectrum_file, index=False)
             except Exception as e:
@@ -432,8 +438,9 @@ class StatModel:
             m, s = self.config['prior'][variable_name]['param']
             return log_gauss(a, b, m, s, value)
         else:
-            raise TypeError(f"unknown prior type '{self.config['prior'][variable_name]['prior_type']}',"
-                            f" choose either gauss or flat")
+            raise TypeError(
+                f"unknown prior type '{self.config['prior'][variable_name]['prior_type']}',"
+                f" choose either gauss or flat")
 
     def eval_spectrum(self, values, parameter_names):
         """
@@ -458,7 +465,8 @@ class StatModel:
         if self.config['save_intermediate']:
             self.log.info(f"StatModel::\teval_spectrum\tload results from intermediate file")
             # TODO why is this line needed?
-            spec_class = VerneSHM() if self.config['earth_shielding'] else self.config['halo_model']
+            spec_class = halo.VerneSHM() if self.config['earth_shielding'] else self.config[
+                'halo_model']
             interm_exists, interm_file, interm_spec = self.find_intermediate_result(
                 nbin=self.config['n_energy_bins'],
                 model=str(spec_class),
@@ -490,7 +498,7 @@ class StatModel:
                 f"detector = {self.config['detector_config']}")
             if self.config['earth_shielding']:
                 self.log.debug(f"StatModel::\tSetting spectrum to Verne in likelihood code")
-                fit_shm = VerneSHM(
+                fit_shm = halo.VerneSHM(
                     log_mass=x0,  # self.config['mw'],
                     log_cross_section=x1,  # self.config['sigma'],
                     location=self.config['detector_config']['location'],
@@ -506,10 +514,12 @@ class StatModel:
                 fit_shm,
                 self.config['detector_config'])
             if 'E_max' in self.config:
-                self.log.info(f'StatModel::\teval_spectrum\tset E_max to {self.config["E_max"]} for 2 params')
+                self.log.info(
+                    f'StatModel::\teval_spectrum\tset E_max to {self.config["E_max"]} for 2 params')
                 spectrum.E_max = self.config['E_max']
             if 'E_min' in self.config:
-                self.log.info(f'StatModel::\teval_spectrum\tset E_max to {self.config["E_min"]} for 2 params')
+                self.log.info(
+                    f'StatModel::\teval_spectrum\tset E_max to {self.config["E_min"]} for 2 params')
                 spectrum.E_max = self.config['E_min']
             spectrum.n_bins = self.config['n_energy_bins']
             self.log.debug(f"StatModel::\tSUPERVERBOSE\tAlright spectrum set. Evaluate now!")
@@ -527,17 +537,19 @@ class StatModel:
             checked_values = check_shape(values)
             if len(parameter_names) == 5:
                 if self.config['earth_shielding']:
-                    self.log.debug(f"StatModel::\tSUPERVERBOSE\tSetting spectrum to Verne in likelihood code")
-                    fit_shm = VerneSHM(
+                    self.log.debug(
+                        f"StatModel::\tSUPERVERBOSE\tSetting spectrum to Verne in likelihood code")
+                    fit_shm = halo.VerneSHM(
                         log_mass=checked_values[0],  # self.config['mw'],
                         log_cross_section=checked_values[1],  # self.config['sigma'],
                         location=self.config['detector_config']['location'],
                         v_0=checked_values[2] * nu.km / nu.s,  # self.config['v_0'],
                         v_esc=checked_values[3] * nu.km / nu.s,  # self.config['v_esc'],
-                        rho_dm=checked_values[4] * nu.GeV / nu.c0 ** 2 / nu.cm ** 3)  # self.config['density'])
+                        rho_dm=checked_values[
+                                   4] * nu.GeV / nu.c0 ** 2 / nu.cm ** 3)  # self.config['density'])
                 else:
                     self.log.debug(f"StatModel::\tSUPERVERBOSE\tUsing SHM in likelihood code")
-                    fit_shm = SHM(
+                    fit_shm = halo.SHM(
                         v_0=checked_values[2] * nu.km / nu.s,
                         v_esc=checked_values[3] * nu.km / nu.s,
                         rho_dm=checked_values[4] * nu.GeV / nu.c0 ** 2 / nu.cm ** 3)
@@ -552,10 +564,12 @@ class StatModel:
                                                      self.config['detector_config'])
             spectrum.n_bins = self.config['n_energy_bins']
             if 'E_max' in self.config:
-                self.log.info(f'StatModel::\teval_spectrum\tset E_max to {self.config["E_max"]} for >2 params')
+                self.log.info(
+                    f'StatModel::\teval_spectrum\tset E_max to {self.config["E_max"]} for >2 params')
                 spectrum.E_max = self.config['E_max']
             if 'E_min' in self.config:
-                self.log.info(f'StatModel::\teval_spectrum\tset E_max to {self.config["E_min"]} for >2 params')
+                self.log.info(
+                    f'StatModel::\teval_spectrum\tset E_max to {self.config["E_min"]} for >2 params')
                 spectrum.E_max = self.config['E_min']
             binned_spectrum = spectrum.get_data(poisson=False)
             self.log.debug(f"StatModel::\tSUPERVERBOSE\twe have results!")
@@ -587,7 +601,8 @@ class StatModel:
             if self.config['save_intermediate']:
                 self.save_intermediate_result(binned_spectrum, interm_file)
             return binned_spectrum
-        elif len(parameter_names) > 2 and not len(parameter_names) == 5 and not len(parameter_names) == 6:
+        elif len(parameter_names) > 2 and not len(parameter_names) == 5 and not len(
+                parameter_names) == 6:
             raise NotImplementedError(
                 f"Not so quickly cowboy, before you code fitting "
                 f"{len(parameter_names)} parameters or more, first code it! "
@@ -626,6 +641,7 @@ def log_likelihood(model, y):
     assert len(y) == len(model), assert_string
 
     res = 0
+    # pylint: disable=consider-using-enumerate
     for i in range(len(y)):
         Nr = y[i]
         Nb = model[i]
@@ -639,49 +655,6 @@ def log_likelihood(model, y):
             return -np.inf
         res += res_bin
     return res
-
-
-def not_nan_inf(x):
-    """
-    :param x: float or array
-    :return: array of True and/or False indicating if x is nan/inf
-    """
-    if np.shape(x) == () and x is None:
-        x = np.nan
-    try:
-        return np.isnan(x) ^ np.isinf(x)
-    except TypeError:
-        return np.array([not_nan_inf(xi) for xi in x])
-
-
-def masking(x, mask):
-    """
-    :param x: float or array
-    :param mask: array of True and/or False
-    :return: x[mask]
-    """
-    assert len(x) == len(
-        mask), f"match length mask {len(mask)} to length array {len(x)}"
-    try:
-        return x[mask]
-    except TypeError:
-        return np.array([x[i] for i in range(len(x)) if mask[i]])
-
-
-def remove_nan(x, maskable=False):
-    """
-    :param x: float or array
-    :param maskable: array to take into consideration when removing NaN and/or
-    inf from x
-    :return: x where x is well defined (not NaN or inf)
-    """
-    if not isinstance(maskable, bool):
-        assert_string = f"match length maskable ({len(maskable)}) to length array ({len(x)})"
-        assert len(x) == len(maskable), assert_string
-    if maskable is False:
-        mask = ~not_nan_inf(x)
-        return masking(x, mask)
-    return masking(x, ~not_nan_inf(maskable) ^ not_nan_inf(x))
 
 
 def flat_prior_distribution(_range):

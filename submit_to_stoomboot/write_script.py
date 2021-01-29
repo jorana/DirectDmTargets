@@ -14,6 +14,7 @@ default_conda = "/project/xenon/jorana/software/miniconda3/bin:$PATH"
 default_envr  = "dddm2"
 import argparse
 import os
+import subprocess
    
 #
 ### parse the arguments
@@ -72,7 +73,7 @@ if not os.path.exists(base_dir):
 if not os.path.exists(log_dir):
     cmd = 'mkdir %s'%log_dir
     print("make %s since no folder was found there"%log_dir)
-    os.system(cmd)
+    subprocess.call(cmd, shell=False)
 n_machines = 1    
 #
 ### Write the script
@@ -112,16 +113,12 @@ err_logs = log_dir + 'error_' + log_file
 basic_options = '-W group_list=xenon -e %s -o %s -j eo '%(err_logs, err_logs)
 if args.walltime != 'false':
     basic_options = basic_options + ' -l walltime=' + args.walltime
-if True: # args.n_cores > 1:
-    basic_options += f' -l nodes={n_machines}:ppn={args.n_cores} -l pvmem={args.mem}gb'
-else:
-#     basic_options += f' -l pvmem={str(args.mem*1000)}'
-    pass
+basic_options += f' -l nodes={n_machines}:ppn={args.n_cores} -l pvmem={args.mem}gb'
 cmd = 'qsub %s %s %s'%(basic_options,  "-q " + args.q, scriptfile)
-os.system(cmd)
+subprocess.call(cmd, shell=False)
 sub_cmd = f'scripts/stbc/sub_{_scriptfile.split("_")[0]}.sh'
 print(f'Write command to {sub_cmd}')
-fout = open(sub_cmd,'w')
+fout = open(sub_cmd, 'w')
 fout.write(cmd + '\n')
 fout.close()
 print("write_script.py::\t job written and submitted. Bye bye")

@@ -8,15 +8,14 @@ MCMC is:
 Nevertheless, the walkers give great insight in how the likelihood-function is
 felt by the steps that the walkers make"""
 
-from .context import *
 import json
 import multiprocessing
 import corner
 import matplotlib.pyplot as plt
-from .statistics import *
-from DirectDmTargets import utils
+from DirectDmTargets import statistics, utils, context
 import os
-from datetime import datetime
+import datetime
+import numpy as np
 
 
 def default_emcee_save_dir():
@@ -24,11 +23,11 @@ def default_emcee_save_dir():
     return 'emcee'
 
 
-class MCMCStatModel(StatModel):
+class MCMCStatModel(statistics.StatModel):
     known_parameters = ['log_mass', 'log_cross_section', 'v_0', 'v_esc', 'density']
 
     def __init__(self, *args):
-        StatModel.__init__(self, *args)
+        super().__init__(*args)
         self.nwalkers = 50
         self.nsteps = 100
         self.fit_parameters = ['log_mass', 'log_cross_section']
@@ -37,7 +36,7 @@ class MCMCStatModel(StatModel):
         self.log_dict = {'sampler': False, 'did_run': False, 'pos': False}
         self.remove_frac = 0.2
         self.thin = 15
-        self.config['start'] = datetime.now()
+        self.config['start'] = datetime.datetime.now()
         self.config['notes'] = "default"
 
     def set_fit_parameters(self, params):
@@ -76,7 +75,7 @@ class MCMCStatModel(StatModel):
             self.pos = use_pos
             return
         nparameters = len(self.fit_parameters)
-        keys = get_prior_list()[:nparameters]
+        keys = statistics.get_prior_list()[:nparameters]
 
         ranges = [self.config['prior'][self.fit_parameters[i]]['range']
                   for i in range(nparameters)]
@@ -116,9 +115,9 @@ class MCMCStatModel(StatModel):
         if not self.log_dict['pos']:
             self.set_pos()
         try:
-            start = datetime.now()
+            start = datetime.datetime.now()
             self.sampler.run_mcmc(self.pos, self.nsteps, progress=False)
-            end = datetime.now()
+            end = datetime.datetime.now()
         except ValueError as e:
             print(f"MCMC did not finish due to a ValueError. Was running with\n"
                   f"pos={self.pos.shape} nsteps = {self.nsteps}, walkers = "
@@ -141,7 +140,7 @@ class MCMCStatModel(StatModel):
         labels = self.fit_parameters
         fig, axes = plt.subplots(len(labels), figsize=(10, 7), sharex=True)
         samples = self.sampler.get_chain()
-        for i, label_i in range(labels)):
+        for i, label_i in enumerate(labels):
             ax = axes[i]
             ax.plot(samples[:, :, i], "k", alpha=0.3)
             ax.set_xlim(0, len(samples))
@@ -160,7 +159,7 @@ class MCMCStatModel(StatModel):
             flat=True
         )
         truths = [self.config[prior_name] for prior_name in
-                  get_prior_list()[:len(self.fit_parameters)]]
+                  statistics.get_prior_list()[:len(self.fit_parameters)]]
 
         corner.corner(flat_samples, labels=self.fit_parameters, truths=truths)
 
@@ -184,7 +183,7 @@ class MCMCStatModel(StatModel):
 
 
 def load_chain_emcee(load_from=default_emcee_save_dir(), item='latest'):
-    base = get_result_folder()
+    base = statistics.get_result_folder()
     save = load_from
     files = os.listdir(base)
     if item == 'latest':
@@ -233,9 +232,9 @@ def emcee_plots(result, save=False, plot_walkers=True):
             pass
     info += "\nnwalkers = %s" % nwalkers
     info += "\nnsteps = %s" % nsteps
-    labels = get_param_list()[:ndim]
+    labels = statistics.get_param_list()[:ndim]
     truths = [result['config'][prior_name] for prior_name in
-              get_prior_list()[:ndim]]
+              statistics.get_prior_list()[:ndim]]
     fig = corner.corner(
         result['flat_chain'],
         labels=labels,

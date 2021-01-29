@@ -2,15 +2,9 @@
 the likelihood function is well behaved"""
 
 import numpy as np
-import pandas as pd
-import scipy
 from tqdm import tqdm
 import matplotlib.pyplot as plt
-
-from . import __init__
-from .halo import *
-from .statistics import *
-from .detector import *
+from DirectDmTargets import statistics, halo, detector, utils
 
 
 def error_bar_hist(ax, data, data_range=None, nbins=50, **kwargs):
@@ -23,8 +17,7 @@ def hist_data(data, data_range=None, nbins=50):
         data_range = [np.min(data), np.max(data)]
     else:
         assert_str = "make sure data_range is of fmt [x_min, x_max]"
-        assert (type(data_range) == list or type(data_range) == tuple) and len(
-            data_range) == 2, assert_str
+        assert isinstance(data_range, (list, tuple)) and len(data_range) == 2, assert_str
 
     counts, _bin_edges = np.histogram(data, range=data_range, bins=nbins)
     bin_centers = (_bin_edges[:-1] + _bin_edges[1:]) / 2
@@ -36,7 +29,7 @@ def simple_hist(y):
     plt.figure(figsize=(19, 6))
     ax = plt.gca()
     data_all = hist_data(y)
-    ax.plot(data_all[0], data_all[1], linestyle='steps-mid',
+    ax.plot(data_all[0], data_all[1], drawstyle='steps-mid',
             label="Pass through")
     error_bar_hist(ax, y)
 
@@ -47,7 +40,7 @@ def ll_element_wise(x, y, clip_val=-1e4):
     r = np.zeros((rows, cols))
     for i in tqdm(range(rows)):
         for j in range(cols):
-            r[i][j] = log_likelihood_function(x[i][j], y[i][j])
+            r[i][j] = statistics.log_likelihood_function(x[i][j], y[i][j])
     return np.clip(r, clip_val, 0)
 
 
@@ -70,8 +63,8 @@ def show_ll_function(npoints=1e4, clip_val=-1e4, min_val=0.1):
 
 def plt_ll_sigma_mass(spec_clas, vary, det='Xe', bins=10, m=50, sig=1e-45):
     assert vary in ['mass', 'sig'], "use sig or mass"
-    use_SHM = SHM()
-    events = spec_clas(m, sig, use_SHM, experiment[det])
+    use_SHM = halo.SHM()
+    events = spec_clas(m, sig, use_SHM, detector.experiment[det])
     events.n_bins = bins
     data = events.get_data(poisson=False)
     if vary == 'sig':
@@ -80,7 +73,7 @@ def plt_ll_sigma_mass(spec_clas, vary, det='Xe', bins=10, m=50, sig=1e-45):
         var = np.linspace(0.1 * 1e-45, 10 * 1e-45, 30)
 
         def model(x):
-            res = spec_clas(m, x, use_SHM, experiment[det])
+            res = spec_clas(m, x, use_SHM, detector.experiment[det])
             res.n_bins = bins
             return res.get_data(poisson=False)['counts']
 
@@ -92,39 +85,39 @@ def plt_ll_sigma_mass(spec_clas, vary, det='Xe', bins=10, m=50, sig=1e-45):
                               np.linspace(33, 300, 50)))
 
         def model(x):
-            res = spec_clas(x, sig, use_SHM, experiment[det])
+            res = spec_clas(x, sig, use_SHM, detector.experiment[det])
             res.n_bins = bins
             return res.get_data(poisson=False)['counts']
     else:
         raise ValueError(f'Can not vary {vary}')
-    plr = [log_likelihood(data['counts'], model(x)) for x in
+    plr = [statistics.log_likelihood(data['counts'], model(x)) for x in
            tqdm(var)]
 
     plt.xlim(var[0], var[-1])
-    var, plr = remove_nan(var, plr), remove_nan(plr, var)
-    plt.plot(var, plr, linestyle='steps-mid')
+    var, plr = utils.remove_nan(var, plr), utils.remove_nan(plr, var)
+    plt.plot(var, plr, drawstyle='steps-mid')
     plt.ylim(np.min(plr), np.max(plr))
 
 
 def plt_ll_sigma_spec(det='Xe', bins=10, m=50, sig=1e-45):
-    plt_ll_sigma_mass(GenSpectrum, 'sig', det=det, bins=bins, m=m, sig=sig)
+    plt_ll_sigma_mass(halo.GenSpectrum, 'sig', det=det, bins=bins, m=m, sig=sig)
 
 
 def plt_ll_mass_spec(det='Xe', bins=10, m=50, sig=1e-45):
-    plt_ll_sigma_mass(GenSpectrum, 'mass', det=det, bins=bins, m=m, sig=sig)
+    plt_ll_sigma_mass(halo.GenSpectrum, 'mass', det=det, bins=bins, m=m, sig=sig)
 
 
 def plt_ll_sigma_det(det='Xe', bins=10, m=50, sig=1e-45):
-    plt_ll_sigma_mass(DetectorSpectrum, 'sig', det=det, bins=bins, m=m, sig=sig)
+    plt_ll_sigma_mass(detector.DetectorSpectrum, 'sig', det=det, bins=bins, m=m, sig=sig)
 
 
 def plt_ll_mass_det(det='Xe', bins=10, m=50, sig=1e-45):
-    plt_ll_sigma_mass(DetectorSpectrum, 'mass', det=det, bins=bins, m=m,
+    plt_ll_sigma_mass(detector.DetectorSpectrum, 'mass', det=det, bins=bins, m=m,
                       sig=sig)
 
 
 def plt_priors(itot=100):
-    priors = get_priors()
+    priors = statistics.get_priors()
     for key in priors.keys():
         par = priors[key]['param']
         dist = priors[key]['dist']
@@ -138,14 +131,14 @@ def plt_priors(itot=100):
         plt.show()
 
 
-def plot_spectrum(data, color='blue', label='label', linestyle='none',
+def plot_spectrum(data, color='blue', label='label', drawstyle='none',
                   plot_error=True):
     plt.errorbar(data['bin_centers'], data['counts'],
                  xerr=(data['bin_left'] - data['bin_right']) / 2,
                  yerr=np.sqrt(data['counts']) if plot_error else np.zeros(
                      len(data['counts'])),
                  color=color,
-                 linestyle=linestyle,
+                 drawstyle=drawstyle,
                  capsize=2,
                  marker='o',
                  label=label,

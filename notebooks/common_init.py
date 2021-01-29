@@ -21,7 +21,6 @@ import datetime
 import multihist as mh
 import seaborn as sns
 import matplotlib.pyplot as plt
-import pandas as pd
 from itertools import cycle
 import scipy.optimize
 

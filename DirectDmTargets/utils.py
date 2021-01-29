@@ -1,10 +1,11 @@
 """Basic functions for saving et cetera"""
 
-from .context import *
+from DirectDmTargets import context
 import numpy as np
 import os
-from datetime import datetime
+import datetime
 import uuid
+
 
 def check_folder_for_file(file_path, max_iterations=30, verbose=1):
     """
@@ -13,7 +14,7 @@ def check_folder_for_file(file_path, max_iterations=30, verbose=1):
     :param verbose: print level
     """
     last_folder = "/".join(file_path.split("/")[:-1])
-    max_iterations = np.min([max_iterations, len(file_path.split("/"))-1])
+    max_iterations = np.min([max_iterations, len(file_path.split("/")) - 1])
     if os.path.exists(last_folder):
         # Folder does exist. No need do anything.
         return
@@ -28,7 +29,6 @@ def check_folder_for_file(file_path, max_iterations=30, verbose=1):
         assert os.path.exists(base_dir), assert_str
     # Start from 1 (since that is basedir) go until second to last since that is the file name
     for sub_dir in file_path.split("/")[start_i:max_iterations]:
-        # TODO
         if ".csv" in sub_dir:
             print("Error in this code, manually breaking but one should not end up here")
             break
@@ -57,9 +57,9 @@ def now(tstart=None):
 
     :return: datetime.datetime string with day, hour, minutes
     """
-    res = datetime.now().isoformat(timespec='minutes')
+    res = datetime.datetime.now().isoformat(timespec='minutes')
     if tstart:
-        res += f'\tdt=\t{(datetime.now()-tstart).seconds} s'
+        res += f'\tdt=\t{(datetime.datetime.now() - tstart).seconds} s'
     return res
 
 
@@ -70,9 +70,10 @@ def load_folder_from_context(request):
     :return: the path that is requested
     """
     try:
-        folder = context[request]
+        folder = context.context[request]
     except KeyError:
-        print(f'load_folder_from_context::\tRequesting {request} but that is not in {context.keys()}')
+        print(
+            f'load_folder_from_context::\tRequesting {request} but that is not in {context.context.keys()}')
         raise KeyError
     if not os.path.exists(folder):
         raise FileNotFoundError(f'load_folder_from_context::\tCould not find {folder}')
@@ -86,7 +87,7 @@ def get_result_folder(*args):
     """
     if args:
         print(f'get_result_folder::\tfunctionality deprecated ignoring {args}')
-    print(f'get_result_folder::\trequested folder is {context["results_dir"]}')
+    print(f'get_result_folder::\trequested folder is {context.context["results_dir"]}')
     return load_folder_from_context('results_dir')
 
 
@@ -169,11 +170,13 @@ def open_save_dir(save_dir, base=None, force_index=False, _hash=None):
         else:
             files_in_dir = os.listdir(save_dir)
             if len(files_in_dir):
-                print(f'WARNING writing to {save_dir}. There are files in this dir: {files_in_dir} ')
+                print(
+                    f'WARNING writing to {save_dir}. There are files in this dir: {files_in_dir} ')
         print('open_save_dir::\tusing ' + save_dir)
         return save_dir
     if force_index is False:
-        assert not os.path.exists(save_dir), 'Trying to override another directory, this would be very messy'
+        assert not os.path.exists(
+            save_dir), 'Trying to override another directory, this would be very messy'
         os.mkdir(save_dir)
     else:
         if not os.path.exists(save_dir):
@@ -186,7 +189,6 @@ def open_save_dir(save_dir, base=None, force_index=False, _hash=None):
     return save_dir
 
 
-# TODO comment
 def str_in_list(string, _list):
     """checks if sting is in any of the items in _list
     if so return that item"""
@@ -228,12 +230,12 @@ def add_identifier_to_safe(name, verbose=1):
         # Check that the file we are looking for is not an empty file, that would be bad.
         print(f"WARNING:\t removing empty file {csv_path}")
         os.remove(csv_path)
-    
+
     # What can we see    
     if not os.path.exists(csv_path):
         exist_csv = False
-        if host not in name:
-            abs_file_name = name.replace('.csv', f'-H{host}-P{os.getpid()}.csv')
+        if context.host not in name:
+            abs_file_name = name.replace('.csv', f'-H{context.host}-P{os.getpid()}.csv')
         else:
             abs_file_name = name
         return exist_csv, abs_file_name
@@ -246,7 +248,8 @@ def add_identifier_to_safe(name, verbose=1):
             print(f'That folder has "{files_in_folder}". ')
     if is_str_in_list(csv_key, files_in_folder):
         if verbose:
-            print(f'VerneSHM::\tUsing {str_in_list(csv_key, files_in_folder)} since it has {csv_key}')
+            print(
+                f'VerneSHM::\tUsing {str_in_list(csv_key, files_in_folder)} since it has {csv_key}')
         exist_csv = True
         abs_file_name = csv_path + str_in_list(csv_key, files_in_folder)
         print(f'VerneSHM::\tUsing {abs_file_name} as input')
@@ -255,7 +258,7 @@ def add_identifier_to_safe(name, verbose=1):
         exist_csv = False
         if host not in name:
             # abs_file_name = name.replace('.csv', f'-{host}.csv')
-            abs_file_name = name.replace('.csv', f'-H{host}-P{os.getpid()}.csv')
+            abs_file_name = name.replace('.csv', f'-H{context.host}-P{os.getpid()}.csv')
         else:
             abs_file_name = name
 
@@ -271,3 +274,69 @@ def add_identifier_to_safe(name, verbose=1):
 
 def unique_hash():
     return uuid.uuid4().hex[15:]
+
+
+def remove_nan(x, maskable=False):
+    """
+    :param x: float or array
+    :param maskable: array to take into consideration when removing NaN and/or
+    inf from x
+    :return: x where x is well defined (not NaN or inf)
+    """
+    if not isinstance(maskable, bool):
+        assert_string = f"match length maskable ({len(maskable)}) to length array ({len(x)})"
+        assert len(x) == len(maskable), assert_string
+    if maskable is False:
+        mask = ~not_nan_inf(x)
+        return masking(x, mask)
+    return masking(x, ~not_nan_inf(maskable) ^ not_nan_inf(x))
+
+
+def not_nan_inf(x):
+    """
+    :param x: float or array
+    :return: array of True and/or False indicating if x is nan/inf
+    """
+    if np.shape(x) == () and x is None:
+        x = np.nan
+    try:
+        return np.isnan(x) ^ np.isinf(x)
+    except TypeError:
+        return np.array([not_nan_inf(xi) for xi in x])
+
+
+def masking(x, mask):
+    """
+    :param x: float or array
+    :param mask: array of True and/or False
+    :return: x[mask]
+    """
+    assert len(x) == len(
+        mask), f"match length mask {len(mask)} to length array {len(x)}"
+    try:
+        return x[mask]
+    except TypeError:
+        return np.array([x[i] for i in range(len(x)) if mask[i]])
+
+
+def bin_edges(a, b, n):
+    """
+    :param a: lower limit
+    :param b: upper limit
+    :param n: number of bins
+    :return: bin edges for n bins
+
+    """
+    _, edges = np.histogram(np.linspace(a, b), bins=n)
+    return edges
+
+
+def get_bins(a, b, n):
+    """
+    :param a: lower limit
+    :param b: upper limit
+    :param n: number of bins
+    :return: center of bins
+    """
+    result = np.vstack((bin_edges(a, b, n)[0:-1], bin_edges(a, b, n)[1:]))
+    return np.transpose(result)

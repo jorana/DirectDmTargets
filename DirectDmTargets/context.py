@@ -5,6 +5,7 @@ software_dir: path of installation
 from socket import getfqdn
 import os
 from warnings import warn
+
 # import DirectDmTargets
 # import verne
 
@@ -31,7 +32,7 @@ if 'stbc' in host or 'nikhef' in host:
             print(f'No tmp folder found on {host}. Environment vars:')
             for key in os.environ.keys():
                 print(key)
-            assert False                 
+            assert False
     assert os.path.exists(tmp_folder), f"Cannot find tmp folder at {tmp_folder}"
     context['tmp_folder'] = tmp_folder
     for key in context.keys():
@@ -87,7 +88,8 @@ else:
                 os.mkdir(context[name])
             except Exception as e:
                 warn(f'Could not find nor make {context[name]}')
-                warn(f"Tailor context.py to your needs. Couldn't initialize folders correctly because of {e}.")
+                warn(f"Tailor context.py to your needs. Couldn't initialize "
+                     f"folders correctly because of {e}.")
     for key in context.keys():
         if not os.path.exists(context[key]):
             warn(f'No folder at {context[key]}')

@@ -581,6 +581,7 @@ def combined_confidence_plot(items,
         for _h in hists:
             H *= _h
         H = H / np.sum(H)
+        # pylint: disable=undefined-loop-variable
         res = _confidence_plot(item, X, Y, H, bin_range,
                                text_box=text_box,
                                nsigma=nsigma,
@@ -856,6 +857,7 @@ def combine_sets(items,
                 X, Y, H = hist
                 prod *= H
             first_item = sets[0][0]
+            # pylint: disable=undefined-loop-variable
             _note = pop_from_list(notes, [2, i+1], 'combination')
             res = _confidence_plot(first_item,
                                    X, Y, prod,
