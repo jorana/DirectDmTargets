@@ -18,7 +18,6 @@ pd.set_option('display.width', 1000)
 pd.set_option('display.max_columns', 150)
 pd.set_option('display.max_rows', 100)
 
-import scipy
 import os
 import sys
 import datetime
@@ -413,7 +412,7 @@ def match_other_item(i, verbose=False, diff_det_type=False,
         match_keys = [m for m in match_keys if m not in keys_to_unmatch]
 
     # look for keys that are different from in the result from the input
-    if type(anti_match_for) == str:
+    if isinstance(anti_match_for, str):
         anti_match_for = [anti_match_for]
     if anti_match_for:
         keys_to_match = []

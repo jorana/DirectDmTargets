@@ -14,7 +14,7 @@ import multiprocessing
 import corner
 import matplotlib.pyplot as plt
 from .statistics import *
-from .utils import *
+from DirectDmTargets import utils
 import os
 from datetime import datetime
 
@@ -41,7 +41,7 @@ class MCMCStatModel(StatModel):
         self.config['notes'] = "default"
 
     def set_fit_parameters(self, params):
-        if not type(params) == list:
+        if not isinstance(params, (list, tuple)):
             raise TypeError("Set the parameter names in a list of strings")
         for param in params:
             if param not in self.known_parameters:
@@ -141,11 +141,11 @@ class MCMCStatModel(StatModel):
         labels = self.fit_parameters
         fig, axes = plt.subplots(len(labels), figsize=(10, 7), sharex=True)
         samples = self.sampler.get_chain()
-        for i in range(len(labels)):
+        for i, label_i in range(labels)):
             ax = axes[i]
             ax.plot(samples[:, :, i], "k", alpha=0.3)
             ax.set_xlim(0, len(samples))
-            ax.set_ylabel(labels[i])
+            ax.set_ylabel(label_i)
             ax.yaxis.set_label_coords(-0.1, 0.5)
         axes[-1].set_xlabel("step number")
 
@@ -170,12 +170,12 @@ class MCMCStatModel(StatModel):
         if not self.log_dict['did_run']:
             self.run_emcee()
         # open a folder where to save to results
-        save_dir = open_save_dir(default_emcee_save_dir(), force_index=force_index)
+        save_dir = utils.open_save_dir(default_emcee_save_dir(), force_index=force_index)
         # save the config, chain and flattened chain
         with open(save_dir + 'config.json', 'w') as fp:
-            json.dump(convert_dic_to_savable(self.config), fp, indent=4)
+            json.dump(utils.convert_dic_to_savable(self.config), fp, indent=4)
         np.save(save_dir + 'config.npy',
-                convert_dic_to_savable(self.config))
+                utils.convert_dic_to_savable(self.config))
         np.save(save_dir + 'full_chain.npy', self.sampler.get_chain())
         np.save(save_dir + 'flat_chain.npy', self.sampler.get_chain(
             discard=int(self.nsteps * self.remove_frac), thin=self.thin,
@@ -207,7 +207,7 @@ def load_chain_emcee(load_from=default_emcee_save_dir(), item='latest'):
 
 
 def emcee_plots(result, save=False, plot_walkers=True):
-    if not type(save) is bool:
+    if not isinstance(save, bool):
         assert os.path.exists(save), f"invalid path '{save}'"
         if save[-1] != "/":
             save += "/"
@@ -250,12 +250,12 @@ def emcee_plots(result, save=False, plot_walkers=True):
 
     if plot_walkers:
         fig, axes = plt.subplots(len(labels), figsize=(10, 5), sharex=True)
-        for i in range(len(labels)):
+        for i, label_i in enumerate(labels):
             ax = axes[i]
             ax.plot(result['full_chain'][:, :, i], "k", alpha=0.3)
             ax.axhline(truths[i])
             ax.set_xlim(0, len(result['full_chain']))
-            ax.set_ylabel(labels[i])
+            ax.set_ylabel(label_i)
             ax.yaxis.set_label_coords(-0.1, 0.5)
 
         axes[-1].set_xlabel("step number")
