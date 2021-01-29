@@ -25,7 +25,12 @@ def default_emcee_save_dir():
 
 
 class MCMCStatModel(StatModel):
-    known_parameters = ['log_mass', 'log_cross_section', 'v_0', 'v_esc', 'density']
+    known_parameters = [
+        'log_mass',
+        'log_cross_section',
+        'v_0',
+        'v_esc',
+        'density']
 
     def __init__(self, *args):
         StatModel.__init__(self, *args)
@@ -41,7 +46,7 @@ class MCMCStatModel(StatModel):
         self.config['notes'] = "default"
 
     def set_fit_parameters(self, params):
-        if not type(params) == list:
+        if not isinstance(params, list):
             raise TypeError("Set the parameter names in a list of strings")
         for param in params:
             if param not in self.known_parameters:
@@ -88,7 +93,8 @@ class MCMCStatModel(StatModel):
             if key in []:
                 start_at = np.random.uniform(a, b, (self.nwalkers, 1))
             else:
-                start_at = val + 0.005 * val * np.random.randn(self.nwalkers, 1)
+                start_at = val + 0.005 * val * \
+                    np.random.randn(self.nwalkers, 1)
             start_at = np.clip(start_at, a, b)
             pos.append(start_at)
         pos = np.hstack(pos)
@@ -120,11 +126,12 @@ class MCMCStatModel(StatModel):
             self.sampler.run_mcmc(self.pos, self.nsteps, progress=False)
             end = datetime.now()
         except ValueError as e:
-            print(f"MCMC did not finish due to a ValueError. Was running with\n"
-                  f"pos={self.pos.shape} nsteps = {self.nsteps}, walkers = "
-                  f"{self.nwalkers}, ndim = "
-                  f"{len(self.fit_parameters)} for fit parameters "
-                  f"{self.fit_parameters}")
+            print(
+                f"MCMC did not finish due to a ValueError. Was running with\n"
+                f"pos={self.pos.shape} nsteps = {self.nsteps}, walkers = "
+                f"{self.nwalkers}, ndim = "
+                f"{len(self.fit_parameters)} for fit parameters "
+                f"{self.fit_parameters}")
             raise e
         self.log_dict['did_run'] = True
         try:
@@ -152,8 +159,9 @@ class MCMCStatModel(StatModel):
     def show_corner(self):
         if not self.log_dict['did_run']:
             self.run_emcee()
-        print(f"Removing a fraction of {self.remove_frac} of the samples, total"
-              f"number of removed samples = {self.nsteps * self.remove_frac}")
+        print(
+            f"Removing a fraction of {self.remove_frac} of the samples, total"
+            f"number of removed samples = {self.nsteps * self.remove_frac}")
         flat_samples = self.sampler.get_chain(
             discard=int(self.nsteps * self.remove_frac),
             thin=self.thin,
@@ -170,7 +178,9 @@ class MCMCStatModel(StatModel):
         if not self.log_dict['did_run']:
             self.run_emcee()
         # open a folder where to save to results
-        save_dir = open_save_dir(default_emcee_save_dir(), force_index=force_index)
+        save_dir = open_save_dir(
+            default_emcee_save_dir(),
+            force_index=force_index)
         # save the config, chain and flattened chain
         with open(save_dir + 'config.json', 'w') as fp:
             json.dump(convert_dic_to_savable(self.config), fp, indent=4)
@@ -207,11 +217,11 @@ def load_chain_emcee(load_from=default_emcee_save_dir(), item='latest'):
 
 
 def emcee_plots(result, save=False, plot_walkers=True):
-    if not type(save) is bool:
+    if not isinstance(save, bool):
         assert os.path.exists(save), f"invalid path '{save}'"
         if save[-1] != "/":
             save += "/"
-    info = "$M_\chi}$=%.2f" % 10 ** np.float(result['config']['mw'])
+    info = r"$M_\chi}$=%.2f" % 10 ** np.float(result['config']['mw'])
     for prior_key in result['config']['prior'].keys():
         try:
             mean = result['config']['prior'][prior_key]['mean']
@@ -220,8 +230,14 @@ def emcee_plots(result, save=False, plot_walkers=True):
             pass
     nsteps, nwalkers, ndim = np.shape(result['full_chain'])
 
-    for str_inf in ['notes', 'start', 'fit_time', 'poisson', 'nwalkers', 'nsteps',
-                    'n_energy_bins']:
+    for str_inf in [
+        'notes',
+        'start',
+        'fit_time',
+        'poisson',
+        'nwalkers',
+        'nsteps',
+            'n_energy_bins']:
         try:
             info += f"\n{str_inf} = %s" % result['config'][str_inf]
             if str_inf == 'start':
