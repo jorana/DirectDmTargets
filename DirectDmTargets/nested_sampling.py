@@ -593,46 +593,39 @@ def load_multinest_samples(load_from=default_nested_save_dir(), item='latest'):
     return load_multinest_samples_from_file(load_dir)
 
 
-def multinest_corner(result, save=False):
+def _get_info(result):
     info = r"$M_\chi}$=%.2f" % 10. ** np.float(result['config']['mw'])
     for prior_key in result['config']['prior'].keys():
-        try:
+        if (prior_key in result['config']['prior'] and
+                'mean' in result['config']['prior'][prior_key]):
             mean = result['config']['prior'][prior_key]['mean']
             info += f"\n{prior_key} = {mean}"
-        except KeyError:
-            pass
     nposterior, ndim = np.shape(result['weighted_samples'])
     info += "\nnposterior = %s" % nposterior
-    for str_inf in [
-        'detector',
-        'notes',
-        'start',
-        'fit_time',
-        'poisson',
-            'n_energy_bins']:
-        try:
+    for str_inf in ['detector', 'notes', 'start', 'fit_time', 'poisson',
+                    'n_energy_bins']:
+        if str_inf in result['config']:
             info += f"\n{str_inf} = %s" % result['config'][str_inf]
             if str_inf == 'start':
                 info = info[:-7]
             if str_inf == 'fit_time':
                 info += 's (%.1f h)' % (result['config'][str_inf] / 3600.)
-        except KeyError:
-            # We were trying to load something that wasn't saved in the config
-            # file, ignore it for now.
-            pass
+    return info, ndim
+
+
+def multinest_corner(result, save=False, _result_key='weighted_samples', _weights=False):
+    info, ndim = _get_info(result)
     labels = statistics.get_param_list()[:ndim]
-    try:
-        truths = [result['config'][prior_name]
-                  for prior_name in statistics.get_prior_list()[:ndim]]
-    except KeyError:
-        truths = []
-        for prior_name in statistics.get_prior_list()[:ndim]:
-            if prior_name != "rho_0":
-                truths.append(result['config'][prior_name])
-            else:
-                truths.append(result['config']['density'])
+    truths = []
+    for prior_name in statistics.get_prior_list()[:ndim]:
+        if prior_name != "rho_0":
+            truths.append(result['config'][prior_name])
+        else:
+            truths.append(result['config']['density'])
+    weight_kwargs = dict(weights=result['weights']) if _weights else {}
     fig = corner.corner(
-        result['weighted_samples'],
+        result[_result_key],
+        **weight_kwargs,
         labels=labels,
         range=[0.99999, 0.99999, 0.99999, 0.99999, 0.99999][:ndim],
         truths=truths,
@@ -644,54 +637,7 @@ def multinest_corner(result, save=False):
 
 
 def nestle_corner(result, save=False):
-    info = r"$M_\chi}$=%.2f" % 10. ** np.float(result['config']['mw'])
-    for prior_key in result['config']['prior'].keys():
-        try:
-            mean = result['config']['prior'][prior_key]['mean']
-            info += f"\n{prior_key} = {mean}"
-        except KeyError:
-            pass
-    nposterior, ndim = np.shape(result['samples'])
-    info += "\nnposterior = %s" % nposterior
-    for str_inf in [
-        'detector',
-        'notes',
-        'start',
-        'fit_time',
-        'poisson',
-            'n_energy_bins']:
-        try:
-            info += f"\n{str_inf} = %s" % result['config'][str_inf]
-            if str_inf == 'start':
-                info = info[:-7]
-            if str_inf == 'fit_time':
-                info += 's (%.1f h)' % (result['config'][str_inf] / 3600.)
-        except KeyError:
-            # We were trying to load something that wasn't saved in the config
-            # file, ignore it for now.
-            pass
-    labels = statistics.get_param_list()[:ndim]
-    try:
-        truths = [result['config'][prior_name]
-                  for prior_name in statistics.get_prior_list()[:ndim]]
-    except KeyError:
-        truths = []
-        for prior_name in statistics.get_prior_list()[:ndim]:
-            if prior_name != "rho_0":
-                truths.append(result['config'][prior_name])
-            else:
-                truths.append(result['config']['density'])
-    fig = corner.corner(
-        result['samples'],
-        weights=result['weights'],
-        labels=labels,
-        range=[0.99999, 0.99999, 0.99999, 0.99999, 0.99999][:ndim],
-        truths=truths,
-        show_titles=True)
-    fig.axes[1].set_title(f"Fit title", loc='left')
-    fig.axes[1].text(0, 1, info, verticalalignment='top')
-    if save:
-        plt.savefig(f"{save}corner.png", dpi=200)
+    multinest_corner(result, save, _result_key='samples', _weights = True )
 
 
 def solve_multinest(LogLikelihood, Prior, n_dims, **kwargs):
