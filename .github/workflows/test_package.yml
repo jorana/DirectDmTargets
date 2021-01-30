@@ -67,7 +67,5 @@ jobs:
         run: |
           export LD_LIBRARY_PATH=/home/runner/work/DirectDmTargets/DirectDmTargets/MultiNest/lib
           pytest --cache-clear --cov=DirectDmTargets > pytest-coverage.txt
-      - name: Comment coverage
-        uses: coroo/pytest-coverage-commentator@v1.0.2
       - name: goodbye
         run: echo goodbye

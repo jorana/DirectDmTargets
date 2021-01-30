@@ -5,7 +5,7 @@ name: Test Coveralls
 jobs:
 
   build:
-    name: Build
+    name: Coveralls
     runs-on: ubuntu-latest
     steps:
 
