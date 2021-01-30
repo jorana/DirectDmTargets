@@ -392,7 +392,9 @@ class NestedSamplerStatModel(statistics.StatModel):
     def get_save_dir(self, force_index=False, _hash=None):
         if (not self.log_dict['saved_in']) or force_index:
             self.log_dict['saved_in'] = utils.open_save_dir(
-                f'nes_{self.config["sampler"][:2]}', force_index=force_index, _hash=_hash)
+                f'nes_{self.config["sampler"][:2]}',
+                force_index=force_index,
+                _hash=_hash)
         self.log.info(
             f'NestedSamplerStatModel::\tget_save_dir\tsave_dir = {self.log_dict["saved_in"]}')
         return self.log_dict['saved_in']
@@ -421,29 +423,27 @@ class NestedSamplerStatModel(statistics.StatModel):
             f' in {save_dir} and be done with it')
         # save the config, chain and flattened chain
         if 'HASH' in save_dir or os.path.exists(save_dir + 'config.json'):
-            save_dir += 'pid' + str(os.getpid()) + '_'
-        with open(save_dir + 'config.json', 'w') as file:
+            save_dir = os.path.join(save_dir, 'pid' + str(os.getpid()) + '_')
+        with open(os.path.join(save_dir, 'config.json'), 'w') as file:
             json.dump(convert_dic_to_savable(self.config), file, indent=4)
-        with open(save_dir + 'res_dict.json', 'w') as file:
+        with open(os.path.join(save_dir, 'res_dict.json'), 'w') as file:
             json.dump(convert_dic_to_savable(fit_summary), file, indent=4)
-        np.save(save_dir + 'config.npy', convert_dic_to_savable(self.config))
-        np.save(save_dir + 'res_dict.npy', convert_dic_to_savable(fit_summary))
+        np.save(os.path.join(save_dir,  'config.npy'), convert_dic_to_savable(self.config))
+        np.save(os.path.join(save_dir, 'res_dict.npy'), convert_dic_to_savable(fit_summary))
         for col in self.result.keys():
             if col == 'samples' or not isinstance(col, dict):
                 if self.config["sampler"] == 'multinest' and col == 'samples':
                     # in contrast to nestle, multinest returns the weighted
                     # samples.
-                    np.save(
-                        save_dir +
-                        'weighted_samples.npy',
-                        self.result[col])
+                    np.save(os.path.join(save_dir, 'weighted_samples.npy'),
+                            self.result[col])
                 else:
-                    np.save(save_dir + col + '.npy', self.result[col])
+                    np.save(os.path.join(save_dir,  col + '.npy'), self.result[col])
             else:
-                np.save(save_dir + col + '.npy',
+                np.save(os.path.join(save_dir, col + '.npy'),
                         convert_dic_to_savable(self.result[col]))
-        shutil.copy(self.config['logging'], save_dir +
-                    self.config['logging'].split('/')[-1])
+        shutil.copy(self.config['logging'],
+                    os.path.join(save_dir, self.config['logging'].split('/')[-1]))
         self.log.info(f'save_results::\tdone_saving')
 
     def show_corner(self):
@@ -531,7 +531,7 @@ def load_nestle_samples(load_from=default_nested_save_dir(), item='latest'):
     if item == 'latest':
         item = max([int(f.split(save)[-1]) for f in files if save in f])
 
-    load_dir = base + save + str(item) + '/'
+    load_dir = os.path.join(base, save + str(item) + '/')
     if not os.path.exists(load_dir):
         raise FileNotFoundError(f'Cannot find {load_dir} specified by arg: '
                                 f'{item}')
@@ -544,7 +544,7 @@ def load_nestle_samples_from_file(load_dir):
             'ncall', 'niter', 'samples', 'weights']
     result = {}
     for key in keys:
-        result[key] = np.load(load_dir + key + '.npy', allow_pickle=True)
+        result[key] = np.load(os.path.join(load_dir, key + '.npy'), allow_pickle=True)
         if key == 'config' or key == 'res_dict':
             result[key] = result[key].item()
     print(f"load_nestle_samples::\tdone loading\naccess result with:\n{keys}")
@@ -553,13 +553,13 @@ def load_nestle_samples_from_file(load_dir):
 
 def load_multinest_samples_from_file(load_dir):
     keys = os.listdir(load_dir)
-    keys = [key for key in keys if os.path.isfile(load_dir + '/' + key)]
+    keys = [key for key in keys if os.path.isfile(os.path.join(load_dir, key))]
     result = {}
     for key in keys:
         if '.npy' in key:
             naked_key = key.split('.npy')[0]
             naked_key = do_strip_from_pid(naked_key)
-            tmp_res = np.load(load_dir + key, allow_pickle=True)
+            tmp_res = np.load(os.path.join(load_dir, key), allow_pickle=True)
             if naked_key == 'config' or naked_key == 'res_dict':
                 result[naked_key] = tmp_res.item()
             else:
@@ -586,7 +586,7 @@ def load_multinest_samples(load_from=default_nested_save_dir(), item='latest'):
     if item == 'latest':
         item = max([int(f.split(save)[-1]) for f in files if save in f])
 
-    load_dir = base + save + str(item) + '/'
+    load_dir = os.path.join(base, save + str(item))
     if not os.path.exists(load_dir):
         raise FileNotFoundError(f"Cannot find {load_dir} specified by arg: "
                                 f"{item}")

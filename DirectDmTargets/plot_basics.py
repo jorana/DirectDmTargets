@@ -59,7 +59,6 @@ def show_ll_function(npoints=1e4, clip_val=-1e4, min_val=0.1):
     title(r'$-\mathcal{L}$ clipped at %i' % clip_val)
     plt.xlabel("Nb")
     plt.ylabel("Nr")
-    show()
 
 
 def plt_ll_sigma_mass(spec_clas, vary, det='Xe', bins=10, m=50, sig=1e-45):
@@ -152,7 +151,6 @@ def plt_priors(itot=100):
             plt.axvline(priors[key]['mean'] + priors[key]['std'], c='b')
         plt.hist(data, bins=100)
         plt.title(key)
-        plt.show()
 
 
 def plot_spectrum(data, color='blue', label='label', drawstyle='none',

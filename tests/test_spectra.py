@@ -29,6 +29,8 @@ def test_simple_spectrum():
     plt.yscale("log")
 
     plt.ylim(1e-4, 1e8)
+    plt.clf()
+    plt.close()
     # dr
 
 
@@ -43,4 +45,5 @@ def test_detector_spectrum():
     events.n_bins = nbins
     if E_max:
         events.E_max = E_max
-    return events.get_data(poisson=False)
+    events.get_data(poisson=False)
+

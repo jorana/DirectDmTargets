@@ -2,7 +2,7 @@ import DirectDmTargets as dddm
 from sys import platform
 import tempfile
 import os
-
+import matplotlib.pyplot as plt
 
 def _is_windows():
     return 'win' in platform
@@ -36,6 +36,8 @@ def test_nested_astrophysics_multinest():
         dddm.utils.get_result_folder = _ret_temp
         fit_unconstrained.save_results()
         save_as = fit_unconstrained.get_save_dir()
+        import warnings
+        warnings.warn(save_as)
         r = dddm.nested_sampling.load_multinest_samples_from_file(save_as)
         dddm.nested_sampling.multinest_corner(r)
 
@@ -55,8 +57,6 @@ def test_nested_astrophysics_nestle():
 
 
 def test_emcee():
-    if _is_windows():
-        return
     fit_class = dddm.MCMCStatModel('Xe')
     fit_class.nwalkers = 10
     fit_class.nsteps = 20
@@ -65,7 +65,9 @@ def test_emcee():
         fit_class.run_emcee()
         fit_class.show_corner()
         fit_class.show_walkers()
-        # print(tmpdirname)
-        # fit_class.save_results()
-        # r = dddm.emcee_applications.load_chain_emcee(base=tmpdirname, load_from='.')
-        # dddm.emcee_applications.emcee_plots(r)
+        fit_class.save_results(save_to_dir=tmpdirname)
+        save_dir = fit_class.config['save_dir']
+        r = dddm.emcee_applications.load_chain_emcee(override_load_from=save_dir)
+        dddm.emcee_applications.emcee_plots(r)
+        plt.clf()
+        plt.close()

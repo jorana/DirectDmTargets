@@ -171,14 +171,16 @@ class MCMCStatModel(statistics.StatModel):
 
         corner.corner(flat_samples, labels=self.fit_parameters, truths=truths)
 
-    def save_results(self, force_index=False):
+    def save_results(self, save_to_dir=default_emcee_save_dir(), force_index=False):
         # save fit parameters to config
         self.config['fit_parameters'] = self.fit_parameters
         if not self.log_dict['did_run']:
             self.run_emcee()
         # open a folder where to save to results
         save_dir = utils.open_save_dir(
-            default_emcee_save_dir(),
+            # TODO fix
+            'emcee',
+            base=save_to_dir,
             force_index=force_index)
         # save the config, chain and flattened chain
         with open(save_dir + 'config.json', 'w') as fp:
@@ -189,21 +191,30 @@ class MCMCStatModel(statistics.StatModel):
         np.save(save_dir + 'flat_chain.npy', self.sampler.get_chain(
             discard=int(self.nsteps * self.remove_frac), thin=self.thin,
             flat=True))
+        self.config['save_dir'] = save_dir
         print("save_results::\tdone_saving")
 
 
-def load_chain_emcee(load_from=default_emcee_save_dir(), item='latest'):
+def load_chain_emcee(load_from=default_emcee_save_dir(),
+                     override_load_from=None,
+                     item='latest'):
     base = utils.get_result_folder()
     save = load_from
+    if override_load_from is not None:
+        base=override_load_from
     files = os.listdir(base)
     if item == 'latest':
         try:
             item = max([int(f.split(save)[-1]) for f in files if save in f])
+            item = files[-1]
         except ValueError:
             print(files)
             item = 0
     result = {}
-    load_dir = os.path.join(os.path.join(base, save), str(item))
+    if override_load_from is not None:
+        load_dir = override_load_from
+    else:
+        load_dir = os.path.join(os.path.join(base, save), str(item))
     if not os.path.exists(load_dir):
         raise FileNotFoundError(f"Cannot find {load_dir} specified by arg: "
                                 f"{item}")
@@ -219,7 +230,7 @@ def load_chain_emcee(load_from=default_emcee_save_dir(), item='latest'):
     return result
 
 
-def emcee_plots(result, save=False, plot_walkers=True):
+def emcee_plots(result, save=False, plot_walkers=True, show=False):
     if not isinstance(save, bool):
         assert os.path.exists(save), f"invalid path '{save}'"
         if save[-1] != "/":
@@ -265,7 +276,11 @@ def emcee_plots(result, save=False, plot_walkers=True):
     fig.axes[1].text(0, 1, info, verticalalignment='top')
     if save:
         plt.savefig(f"{save}corner.png", dpi=200)
-    plt.show()
+    if show:
+        plt.show()
+    else:
+        plt.clf()
+        plt.close()
 
     if plot_walkers:
         fig, axes = plt.subplots(len(labels), figsize=(10, 5), sharex=True)
@@ -280,4 +295,8 @@ def emcee_plots(result, save=False, plot_walkers=True):
         axes[-1].set_xlabel("step number")
         if save:
             plt.savefig(f"{save}flat_chain.png", dpi=200)
-        plt.show()
+        if show:
+            plt.show()
+        else:
+            plt.clf()
+            plt.close()

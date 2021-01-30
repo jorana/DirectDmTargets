@@ -169,10 +169,10 @@ def open_save_dir(save_dir, base=None, force_index=False, _hash=None):
     else:
         index = force_index
     # this is where we going to save
-    save_dir = base + save + str(index) + '/'
+    save_dir = os.path.join(base,  save + str(index))
     if _hash:
         assert force_index is False, f'do not set _hash to {_hash} and force_index to {force_index} simultaneously'
-        save_dir = base + save + '_HASH' + str(_hash) + '/'
+        save_dir = os.path.join(base, (save + '_HASH' + str(_hash)))
         if not os.path.exists(save_dir):
             try:
                 os.mkdir(save_dir)
