@@ -3,6 +3,7 @@ from sys import platform
 import tempfile
 import os
 
+
 def _is_windows():
     return 'win' in platform
 
@@ -25,7 +26,8 @@ def test_nested_astrophysics_multinest():
     fit_unconstrained.config['tol'] = 0.99
     fit_unconstrained.config['nlive'] = 10
     fit_unconstrained.set_fit_parameters(fit_unconstrained.known_parameters)
-    print(f"Fitting for parameters:\n{fit_unconstrained.config['fit_parameters']}")
+    print(
+        f"Fitting for parameters:\n{fit_unconstrained.config['fit_parameters']}")
     fit_unconstrained.run_multinest()
     fit_unconstrained.get_summary()
     with tempfile.TemporaryDirectory() as tmpdirname:
@@ -46,7 +48,8 @@ def test_nested_astrophysics_nestle():
     fit_unconstrained.config['tol'] = 0.99
     fit_unconstrained.config['nlive'] = 10
     fit_unconstrained.set_fit_parameters(fit_unconstrained.known_parameters)
-    print(f"Fitting for parameters:\n{fit_unconstrained.config['fit_parameters']}")
+    print(
+        f"Fitting for parameters:\n{fit_unconstrained.config['fit_parameters']}")
     fit_unconstrained.run_nestle()
     fit_unconstrained.get_summary()
 

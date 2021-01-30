@@ -91,7 +91,8 @@ def migdal_background_XENON1T(e_min, e_max, nbins):
     # True to first order below 200 keV
 
     if e_min > e_max or e_max > 200:
-        raise ValueError(f'Assume flat background only below 200 keV ({e_min}, {e_max})')
+        raise ValueError(
+            f'Assume flat background only below 200 keV ({e_min}, {e_max})')
     return np.full(nbins, bg_rate)
 
 
@@ -119,9 +120,11 @@ def migdal_background_superCDMS_Ge_HV(e_min, e_max, nbins):
     bg_rate = 27  # counts/kg/keV/year
     conv_units = 1.0e3  # Tonne
     if not e_max <= 100:  # 100 keV
-        raise ValueError(f'Assume flat background only below 100 keV ({e_min}, {e_max})')
+        raise ValueError(
+            f'Assume flat background only below 100 keV ({e_min}, {e_max})')
     if e_max >= 20:  # keV
-        warn(f'migdal_background_superCDMS_Si_HV is not strictly valid up to {e_max} keV!')
+        warn(
+            f'migdal_background_superCDMS_Si_HV is not strictly valid up to {e_max} keV!')
     return np.full(nbins, bg_rate * conv_units)
 
 
@@ -134,9 +137,11 @@ def migdal_background_superCDMS_Si_HV(e_min, e_max, nbins):
     bg_rate = 300  # counts/kg/keV/year
     conv_units = 1.0e3  # Tonne
     if not e_max <= 100:  # 100 keV
-        raise ValueError(f'Assume flat background only below 100 keV ({e_min}, {e_max})')
+        raise ValueError(
+            f'Assume flat background only below 100 keV ({e_min}, {e_max})')
     if e_max >= 20:  # keV
-        warn(f'migdal_background_superCDMS_Si_HV is not strictly valid up to {e_max} keV!')
+        warn(
+            f'migdal_background_superCDMS_Si_HV is not strictly valid up to {e_max} keV!')
     return np.full(nbins, bg_rate * conv_units)
 
 
@@ -147,7 +152,8 @@ def migdal_background_superCDMS_Ge_iZIP(e_min, e_max, nbins):
     bg_rate = 370  # counts/kg/keV/year
     conv_units = 1.0e3  # Tonne
     if not e_max < 20:  # 20 keV
-        raise ValueError(f'Assume flat background only below 10 keV ({e_min}, {e_max})')
+        raise ValueError(
+            f'Assume flat background only below 10 keV ({e_min}, {e_max})')
     return np.full(nbins, bg_rate * conv_units)
 
 
@@ -160,7 +166,8 @@ def migdal_background_superCDMS_Si_iZIP(e_min, e_max, nbins):
     bg_rate = 370  # counts/kg/keV/year
     conv_units = 1.0e3  # Tonne
     if not e_max < 100:
-        raise ValueError(f'Assume flat background only below 100 keV ({e_min}, {e_max})')
+        raise ValueError(
+            f'Assume flat background only below 100 keV ({e_min}, {e_max})')
     return np.full(nbins, bg_rate * conv_units)
 
 
@@ -210,13 +217,15 @@ def CDMS_background_functions(E):
     return 0.01
 
 
-# Set the default benchmark for a 50 GeV WIMP with a cross-section of 1e-45 cm^2
+# Set the default benchmark for a 50 GeV WIMP with a cross-section of
+# 1e-45 cm^2
 benchmark = {'mw': 50., 'sigma_nucleon': 1e-45}
 
 # Set up a dictionary of the different detectors
 # Each experiment below lists:
 # Name :{Interaction type (type0, exposure [ton x yr] (exp.), cut efficiency (cut_eff),
-# nuclear recoil acceptance (nr_eff), energy threshold [keV] (E_thr), resolution function (res)
+# nuclear recoil acceptance (nr_eff), energy threshold [keV] (E_thr),
+# resolution function (res)
 
 experiment = {
     'Xe': {'material': 'Xe', 'type': 'SI', 'exp': 5., 'cut_eff': 0.8, 'nr_eff': 0.5, 'E_thr': 10.,
@@ -372,7 +381,7 @@ for name in experiment.keys():
 # Make a copy with setting background to True!
 exp_names = experiment.keys()
 for name in list(exp_names):
-    if not '_bg' in name:
+    if '_bg' not in name:
         bg_name = name + '_bg'
         if bg_name not in exp_names:
             experiment[bg_name] = experiment[name].copy()
@@ -486,7 +495,7 @@ class DetectorSpectrum(GenSpectrum):
             rates += self.experiment['bg_func'](self.E_min,
                                                 self.E_max,
                                                 self.n_bins) * (
-                             self.experiment['exp'] / self.experiment['exp_eff'])
+                self.experiment['exp'] / self.experiment['exp_eff'])
         energies = self.get_bin_centers()
 
         # Set the rate to zero for energies smaller than the threshold
@@ -494,7 +503,8 @@ class DetectorSpectrum(GenSpectrum):
         result_bins = get_bins(self.E_min, self.E_max, self.n_bins_result)
         sigma = self.experiment['res'](energies)
         bin_width = np.mean(np.diff(energies))
-        # Smear (using numerical integration) the rates with the detector resolution
+        # Smear (using numerical integration) the rates with the detector
+        # resolution
         events = np.array(smear_signal(rates, energies, sigma, bin_width))
         # re-bin final result to the desired number of bins
         events = self.chuck_integration(events, energies, result_bins)

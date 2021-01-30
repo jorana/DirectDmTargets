@@ -1,28 +1,27 @@
-print('Start import')
-import DirectDmTargets as dddm
-import time
-import numpy as np
-import matplotlib.pyplot as plt
-from matplotlib.colors import LogNorm
-from tqdm import tqdm
-import numericalunits as nu
-import wimprates as wr
+import scipy.optimize
+from itertools import cycle
+import seaborn as sns
+import multihist as mh
+import datetime
+import numba
+import sys
+import os
+import scipy
 import pandas as pd
+import wimprates as wr
+import numericalunits as nu
+from tqdm import tqdm
+from matplotlib.colors import LogNorm
+import matplotlib.pyplot as plt
+import numpy as np
+import time
+import DirectDmTargets as dddm
+print('Start import')
 
 pd.set_option('display.width', 1000)
 pd.set_option('display.max_columns', 150)
 pd.set_option('display.max_rows', 100)
 
-import scipy
-import os
-import sys
-import numba
-import datetime
-import multihist as mh
-import seaborn as sns
-import matplotlib.pyplot as plt
-from itertools import cycle
-import scipy.optimize
 
 print('Done import')
 print("SYSTEM")

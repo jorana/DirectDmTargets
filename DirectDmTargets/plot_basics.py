@@ -17,7 +17,8 @@ def hist_data(data, data_range=None, nbins=50):
         data_range = [np.min(data), np.max(data)]
     else:
         assert_str = "make sure data_range is of fmt [x_min, x_max]"
-        assert isinstance(data_range, (list, tuple)) and len(data_range) == 2, assert_str
+        assert isinstance(data_range, (list, tuple)) and len(
+            data_range) == 2, assert_str
 
     counts, _bin_edges = np.histogram(data, range=data_range, bins=nbins)
     bin_centers = (_bin_edges[:-1] + _bin_edges[1:]) / 2
@@ -54,8 +55,8 @@ def show_ll_function(npoints=1e4, clip_val=-1e4, min_val=0.1):
     Z = -ll_element_wise(X, Y, clip_val)
     im = imshow(Z, cmap=cm.RdBu,
                 norm=LogNorm(min_val, -clip_val))  # drawing the function
-    colorbar(im, label='$-\mathcal{L}$')  # adding the colorbar on the right
-    title('$-\mathcal{L}$ clipped at %i' % clip_val)
+    colorbar(im, label=r'$-\mathcal{L}$')  # adding the colorbar on the right
+    title(r'$-\mathcal{L}$ clipped at %i' % clip_val)
     plt.xlabel("Nb")
     plt.ylabel("Nr")
     show()
@@ -68,7 +69,7 @@ def plt_ll_sigma_mass(spec_clas, vary, det='Xe', bins=10, m=50, sig=1e-45):
     events.n_bins = bins
     data = events.get_data(poisson=False)
     if vary == 'sig':
-        plt.xlabel('$\sigma$ $[cm^2]$')
+        plt.xlabel(r'$\sigma$ $[cm^2]$')
         plt.axvline(sig, alpha=0.5, color='red', label='truth')
         var = np.linspace(0.1 * 1e-45, 10 * 1e-45, 30)
 
@@ -100,20 +101,43 @@ def plt_ll_sigma_mass(spec_clas, vary, det='Xe', bins=10, m=50, sig=1e-45):
 
 
 def plt_ll_sigma_spec(det='Xe', bins=10, m=50, sig=1e-45):
-    plt_ll_sigma_mass(halo.GenSpectrum, 'sig', det=det, bins=bins, m=m, sig=sig)
+    plt_ll_sigma_mass(
+        halo.GenSpectrum,
+        'sig',
+        det=det,
+        bins=bins,
+        m=m,
+        sig=sig)
 
 
 def plt_ll_mass_spec(det='Xe', bins=10, m=50, sig=1e-45):
-    plt_ll_sigma_mass(halo.GenSpectrum, 'mass', det=det, bins=bins, m=m, sig=sig)
+    plt_ll_sigma_mass(
+        halo.GenSpectrum,
+        'mass',
+        det=det,
+        bins=bins,
+        m=m,
+        sig=sig)
 
 
 def plt_ll_sigma_det(det='Xe', bins=10, m=50, sig=1e-45):
-    plt_ll_sigma_mass(detector.DetectorSpectrum, 'sig', det=det, bins=bins, m=m, sig=sig)
+    plt_ll_sigma_mass(
+        detector.DetectorSpectrum,
+        'sig',
+        det=det,
+        bins=bins,
+        m=m,
+        sig=sig)
 
 
 def plt_ll_mass_det(det='Xe', bins=10, m=50, sig=1e-45):
-    plt_ll_sigma_mass(detector.DetectorSpectrum, 'mass', det=det, bins=bins, m=m,
-                      sig=sig)
+    plt_ll_sigma_mass(
+        detector.DetectorSpectrum,
+        'mass',
+        det=det,
+        bins=bins,
+        m=m,
+        sig=sig)
 
 
 def plt_priors(itot=100):

@@ -1,32 +1,31 @@
 """Py-file to minimize fundtions in loading notebook."""
 
-print("load_results_multinest.py\tstart")
-
-from common_init import *
-import scipy
-from matplotlib import cm
-import DirectDmTargets as dddm
-import numpy as np
-from matplotlib.colors import LogNorm
-import colorsys
-from tqdm import tqdm
-import pandas as pd
+from IPython.core.pylabtools import figsize
+import shutil
+import scipy.optimize
+from matplotlib.patches import Rectangle
+import matplotlib.pyplot as plt
+import seaborn as sns
+import datetime
+import sys
+import os
 import warnings
+import pandas as pd
+from tqdm import tqdm
+import colorsys
+from matplotlib.colors import LogNorm
+import numpy as np
+import DirectDmTargets as dddm
+from matplotlib import cm
+import scipy
+from common_init import *
+print("load_results_multinest.py\tstart")
 
 
 pd.set_option('display.width', 1000)
 pd.set_option('display.max_columns', 150)
 pd.set_option('display.max_rows', 100)
 
-import os
-import sys
-import datetime
-import seaborn as sns
-import matplotlib.pyplot as plt
-from matplotlib.patches import Rectangle
-import scipy.optimize
-import shutil
-from IPython.core.pylabtools import figsize
 
 figsize(8, 6)
 print("load_results_multinest.py\tdone packages, get results")
@@ -44,7 +43,8 @@ no_result = []
 load_errors = []
 for i, resdir in enumerate(tqdm(res_dirs)):
     try:
-        result = dddm.load_multinest_samples_from_file(all_res + '/' + resdir + '/')
+        result = dddm.load_multinest_samples_from_file(
+            all_res + '/' + resdir + '/')
     except Exception as e:
         print(f'Error {e} in loading {resdir}')
         load_errors.append([i, all_res + '/' + resdir, e])
@@ -59,7 +59,8 @@ print("load_results_multinest.py\tdone, convert to results dataframe")
 
 
 # TODO
-#  This is not such a nice function to convert the results that were loading into a pd-DataFrame
+# This is not such a nice function to convert the results that were
+# loading into a pd-DataFrame
 def results_to_df(res):
     """Takes res and converts it to a pd.DataFrame"""
     df = pd.DataFrame()
@@ -72,19 +73,22 @@ def results_to_df(res):
             for sub_key in res[items[0]][key].keys():
                 if sub_key == 'prior':
                     for sub_sub_key in res[items[0]][key][sub_key].keys():
-                        if isinstance(res[items[0]][key][sub_key][sub_sub_key], dict):
-                            for sub_sub_sub_key in res[items[0]][key][sub_key][sub_sub_key].keys():
+                        if isinstance(res[items[0]][key]
+                                      [sub_key][sub_sub_key], dict):
+                            for sub_sub_sub_key in res[items[0]
+                                                       ][key][sub_key][sub_sub_key].keys():
                                 try:
                                     df[key + '_' + sub_key + '_' + sub_sub_key + '_' + sub_sub_sub_key] = [
                                         res[it][key][sub_key][sub_sub_key][sub_sub_sub_key] for it in items]
                                 except KeyError:
                                     pass
                         else:
-                            df[key + '_' + sub_key + '_' + sub_sub_key] = [res[it][key][sub_key][sub_sub_key] for it in
-                                                                           items]
+                            df[key + '_' + sub_key + '_' + sub_sub_key] = [res[it]
+                                                                           [key][sub_key][sub_sub_key] for it in items]
                 else:
                     try:
-                        df[key + '_' + sub_key] = [res[it][key][sub_key] for it in items]
+                        df[key + '_' + sub_key] = [res[it][key][sub_key]
+                                                   for it in items]
                     except KeyError:
                         pass
 
@@ -93,8 +97,8 @@ def results_to_df(res):
                 df[key] = [res[it][key] for it in items]
             except KeyError:
                 pass
-    
-    for essential in ['tol', 'nlive']: 
+
+    for essential in ['tol', 'nlive']:
         _res = []
         if not 'config_' + essential in df.keys():
             for it in items:
@@ -105,7 +109,8 @@ def results_to_df(res):
                     _res.append(None)
             df['config_' + essential] = _res
     df['mw'] = 10 ** df['config_mw']
-    df['n_fit_parameters'] = [len(pars) for pars in df['config_fit_parameters']]
+    df['n_fit_parameters'] = [len(pars)
+                              for pars in df['config_fit_parameters']]
     return df
 
 
@@ -125,7 +130,8 @@ def delete_empty(paths, delete=False, only_old=True):
             print(f'delete {path}')
         if os.path.exists(path) and len(os.listdir(path)) == 0 and delete:
             if only_old:
-                t_create = datetime.datetime.fromtimestamp(os.path.getmtime(path))
+                t_create = datetime.datetime.fromtimestamp(
+                    os.path.getmtime(path))
                 dt = datetime.datetime.now() - t_create
                 if dt > datetime.timedelta(hours=100):
                     shutil.rmtree(path)
@@ -157,15 +163,24 @@ def delete_with_mask(df, mask, delete=False):
             shutil.rmtree(path)
 
 
-print("load_results_multinest.py\tIntroduced helperfunctions.\n\tSee delete_empty, "
-      "delete_with_note and delete_with_mask")
+print(
+    "load_results_multinest.py\tIntroduced helperfunctions.\n\tSee delete_empty, "
+    "delete_with_note and delete_with_mask")
 
 
 ###
 # Plotting
 ###
 # Preferred color maps
-colormaps = [cm.inferno_r, cm.cubehelix, cm.ocean, cm.plasma_r, cm.gnuplot2_r, cm.viridis, cm.cividis_r, cm.brg]
+colormaps = [
+    cm.inferno_r,
+    cm.cubehelix,
+    cm.ocean,
+    cm.plasma_r,
+    cm.gnuplot2_r,
+    cm.viridis,
+    cm.cividis_r,
+    cm.brg]
 
 
 def bin_center(xedges, yedges):
@@ -188,7 +203,16 @@ def get_info(i):
     :return:
     """
     info = ""
-    for str_inf in ['detector', 'notes', 'start', 'fit_time', 'save_intermediate', 'earth_shielding', 'nlive', 'tol', 'poisson']:
+    for str_inf in [
+        'detector',
+        'notes',
+        'start',
+        'fit_time',
+        'save_intermediate',
+        'earth_shielding',
+        'nlive',
+        'tol',
+            'poisson']:
         try:
             info += f"\n{str_inf} = %s" % results[i]['config'][str_inf]
             if str_inf == 'start':
@@ -196,7 +220,8 @@ def get_info(i):
             if str_inf == 'fit_time':
                 info += 's (%.1f h)' % (results[i]['config'][str_inf] / 3600.)
         except KeyError:
-            # We were trying to load something that wasn't saved in the config file, ignore it for now.
+            # We were trying to load something that wasn't saved in the config
+            # file, ignore it for now.
             pass
     info += '\n\n--prior--'
     for it, val in results[i]['config']['prior'].items():
@@ -223,9 +248,14 @@ def get_savename_title(i, save_label=''):
     :return:
     """
     this_df = df[df['item'] == i]
-    print(this_df[['item', 'mw', 'config_sigma', 'n_fit_parameters', 'config_halo_model', 'config_nlive']])
+    print(this_df[['item',
+                   'mw',
+                   'config_sigma',
+                   'n_fit_parameters',
+                   'config_halo_model',
+                   'config_nlive']])
     title = f'$m_w$={this_df["mw"].values[0]}' + ' $Gev/c^{2}$'
-    title += f', $\log(\sigma)$ = {this_df["config_sigma"].values[0]}\n'
+    title += rf', $\log(\sigma)$ = {this_df["config_sigma"].values[0]}\n'
     title += f'model ={this_df["config_halo_model"].values[0]}'
     title += f', nfit={this_df["n_fit_parameters"].values[0]}'
     name = str(save_label)
@@ -245,7 +275,12 @@ def get_binrange(i):
         'range']
 
 
-def one_confidence_plot(i, save_label='', save_dir='figures/', corner=False, **kwargs):
+def one_confidence_plot(
+        i,
+        save_label='',
+        save_dir='figures/',
+        corner=False,
+        **kwargs):
     """
 
     :param i:
@@ -262,8 +297,8 @@ def one_confidence_plot(i, save_label='', save_dir='figures/', corner=False, **k
     plt.title(f'{title}')
     info = get_info(i)
     ax = plt.gca()
-    plt.text(1.3, 1, info, transform=ax.transAxes, fontsize=12, bbox=dict(facecolor="white", boxstyle="round"),
-             verticalalignment='top')
+    plt.text(1.3, 1, info, transform=ax.transAxes, fontsize=12, bbox=dict(
+        facecolor="white", boxstyle="round"), verticalalignment='top')
     if os.path.exists(save_dir):
         plt.savefig(f"{save_dir}/{name}.png", dpi=300, bbox_inches="tight")
         plt.savefig(f"{save_dir}/{name}.pdf", dpi=300, bbox_inches="tight")
@@ -295,16 +330,19 @@ def _confidence_plot(item, X, Y, H, bin_range, text_box=False, nsigma=3,
         return count.sum() - target
 
     target1 = norm * contour1
-    level1 = scipy.optimize.bisect(objective, H.min(), H.max(), args=(target1,))
+    level1 = scipy.optimize.bisect(
+        objective, H.min(), H.max(), args=(target1,))
     levels = [level1]
     # Find levels by summing histogram to objective
     if nsigma > 1:
         target2 = norm * contour2
-        level2 = scipy.optimize.bisect(objective, H.min(), H.max(), args=(target2,))
+        level2 = scipy.optimize.bisect(
+            objective, H.min(), H.max(), args=(target2,))
         levels.append(level2)
         if nsigma > 2:
             target3 = norm * contour3
-            level3 = scipy.optimize.bisect(objective, H.min(), H.max(), args=(target3,))
+            level3 = scipy.optimize.bisect(
+                objective, H.min(), H.max(), args=(target3,))
             levels.append(level3)
         if nsigma > 3:
             print('Nsigma too big')
@@ -313,7 +351,8 @@ def _confidence_plot(item, X, Y, H, bin_range, text_box=False, nsigma=3,
     levels.append(H.max())
 
     if levels[0] == levels[1]:
-        warnings.warn(f"Two levels are at the same level. This means you don't have sufficient samples. The levels: {levels}")
+        warnings.warn(
+            f"Two levels are at the same level. This means you don't have sufficient samples. The levels: {levels}")
         levels[0] /= 1.01
         levels = np.unique(levels)
 
@@ -332,7 +371,7 @@ def _confidence_plot(item, X, Y, H, bin_range, text_box=False, nsigma=3,
         c.set_linestyle('solid')
 
     cbar = ax.figure.colorbar(contours)
-    col_labels = ['$3\sigma$', '$2\sigma$', '$1\sigma$'][3 - nsigma:]
+    col_labels = [r'$3\sigma$', r'$2\sigma$', r'$1\sigma$'][3 - nsigma:]
     cbar.set_ticklabels(col_labels)
     cbar.set_label("Posterior probability" + cbar_note)
 
@@ -349,9 +388,9 @@ def _confidence_plot(item, X, Y, H, bin_range, text_box=False, nsigma=3,
     secax.xaxis.set_tick_params(rotation=45)
     plt.xlim(*bin_range[0])
     plt.ylim(*bin_range[1])
-    plt.xlabel("$\log_{10}(M_{\chi}$ $[GeV/c^{2}]$)")
-    secax.set_xlabel("$M_{\chi}$ $[GeV/c^{2}]$")
-    plt.ylabel("$\log_{10}(\sigma_{S.I.}$ $[cm^{2}]$)")
+    plt.xlabel(r"$\log_{10}(M_{\chi}$ $[GeV/c^{2}]$)")
+    secax.set_xlabel(r"$M_{\chi}$ $[GeV/c^{2}]$")
+    plt.ylabel(r"$\log_{10}(\sigma_{S.I.}$ $[cm^{2}]$)")
 
     if text_box:
         plt.text(0.05, 0.95, text_box, transform=ax.transAxes, alpha=0.5,
@@ -382,20 +421,33 @@ def match_other_item(i, verbose=False, diff_det_type=False,
     assert len(this_df) < 2, f'found >1 entries in df for {i}'
     sub_df = df.copy()
 
-    ## Remove some keys, they are not interesting for the matching
+    # Remove some keys, they are not interesting for the matching
     match_keys = df.keys()
     if isinstance(ommit_matching, str):
         ommit_matching = [ommit_matching]
-    for _k in ['item', 'config_det_params', 'config_start', 'config_notes',
-               'config_fit_time', 'config_fit_parameters', 'global evidence error',
-               'global evidence', 'marginals', 'modes',
-               'nested importance sampling global log-evidence error',
-               'nested importance sampling global log-evidence',
-               'nested sampling global log-evidence error',
-               'nested sampling global log-evidence',
-               'res_dict_log_mass_fit_res', 'res_dict_mass_fit_res',
-               'res_dict_log_cross_section_fit_res', 'res_dict_cross_section_fit_res',
-               'res_dict_n_samples', 'weighted_samples', 'dir', 'mw']:
+    for _k in [
+        'item',
+        'config_det_params',
+        'config_start',
+        'config_notes',
+        'config_fit_time',
+        'config_fit_parameters',
+        'global evidence error',
+        'global evidence',
+        'marginals',
+        'modes',
+        'nested importance sampling global log-evidence error',
+        'nested importance sampling global log-evidence',
+        'nested sampling global log-evidence error',
+        'nested sampling global log-evidence',
+        'res_dict_log_mass_fit_res',
+        'res_dict_mass_fit_res',
+        'res_dict_log_cross_section_fit_res',
+        'res_dict_cross_section_fit_res',
+        'res_dict_n_samples',
+        'weighted_samples',
+        'dir',
+            'mw']:
         if _k not in ommit_matching:
             ommit_matching.append(_k)
     if ommit_matching:
@@ -435,7 +487,8 @@ def match_other_item(i, verbose=False, diff_det_type=False,
         if verbose:
             print(f'looking for {key}:{val}\t\ttotlen:{len(sub_df)}')
         if np.iterable(val) and len(val) == 2:
-            mask = [((_val[0] == val[0]) and (_val[1] == val[1])) for _val in sub_df[key]]
+            mask = [((_val[0] == val[0]) and (_val[1] == val[1]))
+                    for _val in sub_df[key]]
         else:
             mask = sub_df[key] == val
         sub_df = sub_df[mask]
@@ -449,7 +502,8 @@ def match_other_item(i, verbose=False, diff_det_type=False,
             if key not in match_keys:
                 if verbose:
                     print(f'looked for {key} in {match_keys}. No such key')
-                raise ValueError(f"No such key {key} to match to any of match_keys")
+                raise ValueError(
+                    f"No such key {key} to match to any of match_keys")
             try:
                 val = this_df[key].values[0]
             except TypeError as e:
@@ -487,7 +541,8 @@ def match_other_item(i, verbose=False, diff_det_type=False,
     if len(sub_df) == 0:
         warnings.warn("WARNING: NO MATCH")
         return None, None
-    warnings.warn("WARNING: MULTIPLE MATHCES\nreturning: items, result DataFrame")
+    warnings.warn(
+        "WARNING: MULTIPLE MATHCES\nreturning: items, result DataFrame")
     return sub_df.item.values, sub_df
 
 
@@ -503,9 +558,14 @@ def find_single_other(i, **kwargs):
         return None
 
 
-def find_other_ge(i,
-                  det_order=('Ge_migd_HV_Si_bg', 'Ge_migd_HV_bg', 'Ge_migd_iZIP_Si_bg', 'Ge_migd_iZIP_bg'),
-                  **kwargs):
+def find_other_ge(
+        i,
+        det_order=(
+            'Ge_migd_HV_Si_bg',
+            'Ge_migd_HV_bg',
+            'Ge_migd_iZIP_Si_bg',
+            'Ge_migd_iZIP_bg'),
+        **kwargs):
     assert np.sum(df[df['item'] == i]['config_detector'] == det_order[0])
     # First match
     _, _df = match_other_item(i, **kwargs)
@@ -542,12 +602,12 @@ def combined_confidence_plot(items,
         items = [items]
     if bin_range is None:
         bin_range = [results[items[0]]['config']['prior']['log_mass']['range'],
-                     results[items[0]]['config']['prior']['log_cross_section']['range']
-                     ]
+                     results[items[0]]['config']['prior']['log_cross_section']['range']]
     # Note that we need one note for the combined plot as well
     if cbar_notes is None:
         cbar_notes = np.repeat('', len(items) + int(combine))
-    assert len(cbar_notes) == len(items) + int(combine), f"lengths do no match {len(cbar_notes) , len(items) + int(combine)}"
+    assert len(cbar_notes) == len(
+        items) + int(combine), f"lengths do no match {len(cbar_notes) , len(items) + int(combine)}"
 
     hists = []
     _results = []
@@ -557,7 +617,8 @@ def combined_confidence_plot(items,
             continue
         x, y = get_p_i(item)
         # Make a 2d normed histogram
-        _hist, xedges, yedges = np.histogram2d(x, y, bins=nbins, range=bin_range, normed=True)
+        _hist, xedges, yedges = np.histogram2d(
+            x, y, bins=nbins, range=bin_range, normed=True)
         X, Y = bin_center(xedges, yedges)
         _hist = _hist.T
         if smoothing:
@@ -568,10 +629,18 @@ def combined_confidence_plot(items,
 
         # Single plot
         if not combine or len(items) == 1 or show_both:
-            res = _confidence_plot(item, X, Y, _hist, bin_range, text_box=text_box, nsigma=nsigma,
-                               cbar_note=cbar_notes[k],
-                               cmap=cmap if cmap else colormaps[k],
-                               alpha=alpha/len(items) if combine else alpha)
+            res = _confidence_plot(
+                item,
+                X,
+                Y,
+                _hist,
+                bin_range,
+                text_box=text_box,
+                nsigma=nsigma,
+                cbar_note=cbar_notes[k],
+                cmap=cmap if cmap else colormaps[k],
+                alpha=alpha /
+                len(items) if combine else alpha)
             _results.append(res)
         hists.append(_hist)
         combined_hist = None if len(items) > 1 else (X, Y, _hist)
@@ -586,7 +655,7 @@ def combined_confidence_plot(items,
                                text_box=text_box,
                                nsigma=nsigma,
                                cbar_note=cbar_notes[k + 1],
-                               cmap=cmap if cmap else colormaps[k+1],
+                               cmap=cmap if cmap else colormaps[k + 1],
                                alpha=0.8)
         _results.append(res)
         combined_hist = (X, Y, H)
@@ -602,7 +671,8 @@ def save_canvas(name, save_dir='./figures', tight_layout=False):
         plt.savefig(f"{save_dir}/{name}.png", dpi=300, bbox_inches="tight")
         plt.savefig(f"{save_dir}/pdf/{name}.pdf", dpi=300, bbox_inches="tight")
     else:
-        raise FileExistsError(f'{save_dir} does not exist or does not have /pdf')
+        raise FileExistsError(
+            f'{save_dir} does not exist or does not have /pdf')
 
 
 def plot_prior_range(res, it, sigma_dist=[5, 10]):
@@ -637,7 +707,7 @@ def plot_fit_res(res, c='r', label='best fit'):
                  linestyle='None', zorder=900)
 
 
-def plot_bench(it, c='cyan', label = 'benchmark value'):
+def plot_bench(it, c='cyan', label='benchmark value'):
     plt.scatter(results[it]['config']['mw'],
                 results[it]['config']['sigma'],
                 s=10**2,
@@ -652,9 +722,13 @@ def exec_show(show=True):
         plt.clf()
 
 
-def def_show_single(it, this_name, name_base, show = True, **kwargs):
+def def_show_single(it, this_name, name_base, show=True, **kwargs):
     kwargs['alpha'] = 1
-    res = one_confidence_plot(it, corner=False, save_dir='figures/misc/',  **kwargs)
+    res = one_confidence_plot(
+        it,
+        corner=False,
+        save_dir='figures/misc/',
+        **kwargs)
     plot_prior_range(res, it)
     plot_fit_res(res)
     plot_bench(it)
@@ -672,14 +746,14 @@ def def_show_single(it, this_name, name_base, show = True, **kwargs):
 
 def get_color(val, _range=[0, 1], it=0):
     if not np.iterable(_range):
-        _range = [0,_range]
-    red_to_green = (val - _range[0])/np.diff(_range)
+        _range = [0, _range]
+    red_to_green = (val - _range[0]) / np.diff(_range)
     assert 0 <= red_to_green <= 1, f'{val} vs {_range} does not work'
     assert it <= 2
     # in HSV, red is 0 deg and green is 120 deg (out of 360);
     # divide red_to_green with 3 to map [0, 1] to [0, 1./3.]
     hue = red_to_green / 3.0
-    hue += it/3
+    hue += it / 3
     res = colorsys.hsv_to_rgb(hue, 1, 1)
     # return [int(255 * float(r)) for r in res]
     return [float(r) for r in res]
@@ -756,7 +830,8 @@ def combine_sets(items,
     if os.path.exists(f'figures/{name_base}'):
         f_print(f'remove old figures/{name_base}')
         shutil.rmtree(f'figures/{name_base}')
-    assert len(notes) >= level + 1, f'level {level} requires >= {level} cbar-notes'
+    assert len(notes) >= level + \
+        1, f'level {level} requires >= {level} cbar-notes'
     for set_number, sets in enumerate(tqdm(items)):
         f_print(f'Starting with set {set_number}')
         f_print(f'at 0/{level}')
@@ -773,14 +848,16 @@ def combine_sets(items,
                 _name = f'set{set_number}_level0_sub{sub_number}.{number_i}'
                 f_print(f'Plotting {_name}')
                 kwargs = combined_kwargs.copy()
-                kwargs['cbar_notes'] = [pop_from_list(notes, [0, sub_number, number_i])]
+                kwargs['cbar_notes'] = [pop_from_list(
+                    notes, [0, sub_number, number_i])]
                 def_show_single(it, _name, name_base, **kwargs)
                 exec_show(show)
         if level > 0:
             f_print(f'at 1/{level}')
             for plot_times in range(2):
                 # plot_times == 0 -> plot all sub_sets one canvas each [Xe_1, Xe_2, Xe_com]
-                # plot_time == 1 -> plot all combined sub_set on one canvas [Xe_com, Ge_com]
+                # plot_time == 1 -> plot all combined sub_set on one canvas
+                # [Xe_com, Ge_com]
                 for sub_number, sub_set in enumerate(sets):
                     if np.any(pd.isnull(sub_set)):
                         continue
@@ -791,27 +868,28 @@ def combine_sets(items,
                     kwargs['cbar_notes'] = _labels
 
                     if plot_times == 0:
-                        plt.figure(figsize(9+1.5*len(sub_set), 6))
+                        plt.figure(figsize(9 + 1.5 * len(sub_set), 6))
                         kwargs['nsigma'] = min(kwargs['nsigma'], 2)
                     else:
                         if sub_number == 0:
-                            plt.figure(figsize(9+len(sets), 6))
+                            plt.figure(figsize(9 + len(sets), 6))
                         kwargs['cmap'] = colormaps[sub_number]
                         kwargs['alpha'] = 0.8
 
-                    res, _hist = combined_confidence_plot(sub_set, combine=len(sub_set) > 1,
-                                                          show_both=plot_times == 0,
-                                                          **kwargs)
+                    res, _hist = combined_confidence_plot(
+                        sub_set, combine=len(sub_set) > 1, show_both=plot_times == 0, **kwargs)
 
                     plot_prior_range(res[-1], sub_set[0])
 
                     # For each of the items in the sub_set plot it's best fit
                     for j, _res in enumerate(res):
                         _c = get_color(j, _range=len(sub_set), it=sub_number)
-                        label = 'best fit' if j == len(res) - 1 else 'best sub-fit'
+                        label = 'best fit' if j == len(
+                            res) - 1 else 'best sub-fit'
                         if _labels:
                             if plot_times == 0:
-                                label += pop_from_list(_labels, j, f'\nholder{j}')
+                                label += pop_from_list(_labels,
+                                                       j, f'\nholder{j}')
                             else:
                                 label += _labels[-1]
                         plot_fit_res(_res, c=_c, label=label)
@@ -837,17 +915,18 @@ def combine_sets(items,
             plt.figure(figsize(10, 6))
             combined_hists = []
             f_print(f'at 2/{level}')
-            warnings.warn(f'made it to {level} however this means we are smoothing twice, this might be tricky')
+            warnings.warn(
+                f'made it to {level} however this means we are smoothing twice, this might be tricky')
             prod = 1
             for sub_number, sub_set in enumerate(sets):
                 kwargs = combined_kwargs.copy()
-                kwargs['cbar_notes'] = [pop_from_list(notes, [2, i]) for i in
-                                        range(len(sub_set) + int(len(sub_set) > 1))]
+                kwargs['cbar_notes'] = [pop_from_list(notes, [2, i]) for i in range(
+                    len(sub_set) + int(len(sub_set) > 1))]
                 kwargs['cmap'] = colormaps[sub_number]
                 kwargs['nsigma'] = 2
                 # with sub_set = [Xe_0, Xe_1]
                 res, _hist = combined_confidence_plot(sub_set,
-                                                      combine=len(sub_set)>1,
+                                                      combine=len(sub_set) > 1,
                                                       **kwargs)
                 combined_hists.append([res[-1], _hist])
                 _c = get_color(sub_number, len(sets))
@@ -858,13 +937,13 @@ def combine_sets(items,
                 prod *= H
             first_item = sets[0][0]
             # pylint: disable=undefined-loop-variable
-            _note = pop_from_list(notes, [2, i+1], 'combination')
+            _note = pop_from_list(notes, [2, i + 1], 'combination')
             res = _confidence_plot(first_item,
                                    X, Y, prod,
                                    bin_range=get_binrange(first_item),
                                    nsigma=3,
                                    cbar_note=_note,
-                                   cmap=colormaps[i+1],
+                                   cmap=colormaps[i + 1],
                                    alpha=1)
             plot_bench(first_item, c='cyan')
             plot_prior_range(res, first_item)

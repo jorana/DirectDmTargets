@@ -89,7 +89,8 @@ class GenSpectrum:
         :param model: the dark matter model
         :param det: detector name
         """
-        assert isinstance(det, dict), "Invalid detector type. Please provide dict."
+        assert isinstance(
+            det, dict), "Invalid detector type. Please provide dict."
         self.mw = mw  # note that this is not in log scale!
         self.sigma_nucleon = sig  # note that this is not in log scale!
         self.dm_model = model
@@ -103,7 +104,8 @@ class GenSpectrum:
             self.E_min = 0  # keV
             self.E_max = 10  # keV
         else:
-            raise NotImplementedError(f'Exp. type {self.experiment["type"]} is unknown')
+            raise NotImplementedError(
+                f'Exp. type {self.experiment["type"]} is unknown')
 
         if 'E_min' in self.experiment:
             self.E_min = self.experiment['E_min']
@@ -118,7 +120,12 @@ class GenSpectrum:
                f"{self.experiment['name']} detector"
 
     def get_bin_centers(self):
-        return np.mean(utils.get_bins(self.E_min, self.E_max, self.n_bins), axis=1)
+        return np.mean(
+            utils.get_bins(
+                self.E_min,
+                self.E_max,
+                self.n_bins),
+            axis=1)
 
     def spectrum_simple(self, benchmark):
         """
@@ -169,8 +176,14 @@ class GenSpectrum:
         """
         assert self.experiment != {}, "First enter the parameters of the detector"
         rate = self.spectrum_simple([self.mw, self.sigma_nucleon])
-        bin_width = np.diff(utils.get_bins(self.E_min, self.E_max, self.n_bins),
-                            axis=1)[:, 0]
+        bin_width = np.diff(
+            utils.get_bins(
+                self.E_min,
+                self.E_max,
+                self.n_bins),
+            axis=1)[
+            :,
+            0]
         events = rate * bin_width * self.experiment['exp_eff']
         return events
 
@@ -202,7 +215,8 @@ class GenSpectrum:
     def set_negative_to_zero(result):
         mask = result['counts'] < 0
         if np.any(mask):
-            print('\n\n----\nWARNING::\nfinding negative rates. Doing hard override!!\n----\n\n')
+            print(
+                '\n\n----\nWARNING::\nfinding negative rates. Doing hard override!!\n----\n\n')
             result['counts'][mask] = 0
             return result
         return result
@@ -259,7 +273,8 @@ class VerneSHM:
         # the respective units
         self.v_0_nodim = 230 if v_0 is None else v_0 / (nu.km / nu.s)
         self.v_esc_nodim = 544 if v_esc is None else v_esc / (nu.km / nu.s)
-        self.rho_dm_nodim = 0.3 if rho_dm is None else rho_dm / (nu.GeV / nu.c0 ** 2 / nu.cm ** 3)
+        self.rho_dm_nodim = 0.3 if rho_dm is None else rho_dm / \
+            (nu.GeV / nu.c0 ** 2 / nu.cm ** 3)
 
         # Here we keep the units dimensionful as these parameters are requested
         # by wimprates and therefore must have dimensions
@@ -299,11 +314,14 @@ class VerneSHM:
         file_name = file_folder + self.fname + '_avg' + '.csv'
         utils.check_folder_for_file(file_folder + self.fname, verbose=0)
 
-        # Convert file_name and self.fname to folder and name of csv file where to save.
+        # Convert file_name and self.fname to folder and name of csv file where
+        # to save.
         exist_csv, abs_file_name = utils.add_identifier_to_safe(file_name)
         assertion_string = f'abs file {abs_file_name} should be a string\n'
         assertion_string += f'exists csv {exist_csv} should be a bool'
-        assert isinstance(abs_file_name, str) and isinstance(exist_csv, bool), assertion_string
+        assert isinstance(
+            abs_file_name, str) and isinstance(
+            exist_csv, bool), assertion_string
 
         if not exist_csv:
             pyfile = '/src/CalcVelDist.py'
@@ -319,17 +337,20 @@ class VerneSHM:
             cmd = f'python "{software_folder}"{pyfile} {args}'
             print(f'No spectrum found at:\n{file_name}\nGenerating spectrum, '
                   f'this can take a minute. Execute:\n{cmd}')
-            assert file_ready(file_name, cmd), f"{file_name} could not be written"
+            assert file_ready(
+                file_name, cmd), f"{file_name} could not be written"
             mv_cmd = f'mv {file_name} {abs_file_name}'
             if not os.path.exists(abs_file_name):
                 print(f'load_f:\tcopy from temp-folder to verne_folder')
                 file_ready(abs_file_name, mv_cmd, max_time=1)
             else:
-                warn(f'load_f:\twhile writing {file_name}, {abs_file_name} was created')
+                warn(
+                    f'load_f:\twhile writing {file_name}, {abs_file_name} was created')
         else:
             print(f'Using {abs_file_name} for the velocity distribution')
 
-        # Alright now load the data and interpolate that. This is the output that wimprates need
+        # Alright now load the data and interpolate that. This is the output
+        # that wimprates need
         if not os.path.exists(abs_file_name):
             raise OSError(f'{abs_file_name} should exist')
         try:
@@ -341,11 +362,12 @@ class VerneSHM:
         if not df:
             # Somehow we got an empty dataframe, we cannot continue
             os.remove(abs_file_name)
-            raise ValueError(f'Was trying to read an empty dataframe from {abs_file_name}')
+            raise ValueError(
+                f'Was trying to read an empty dataframe from {abs_file_name}')
 
         x, y = df.keys()
-        interpolation = interp1d(df[x] * (nu.km / nu.s), df[y] * (nu.s / nu.km), bounds_error=False,
-                                 fill_value=0)
+        interpolation = interp1d(
+            df[x] * (nu.km / nu.s), df[y] * (nu.s / nu.km), bounds_error=False, fill_value=0)
 
         def velocity_dist(v_, t_):
             # Wimprates needs to have a two-parameter function. However since we
