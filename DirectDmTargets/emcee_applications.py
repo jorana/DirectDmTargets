@@ -183,13 +183,17 @@ class MCMCStatModel(statistics.StatModel):
 
 
 def load_chain_emcee(load_from=default_emcee_save_dir(), item='latest'):
-    base = statistics.get_result_folder()
+    base = utils.get_result_folder()
     save = load_from
     files = os.listdir(base)
     if item == 'latest':
-        item = max([int(f.split(save)[-1]) for f in files if save in f])
+        try:
+            item = max([int(f.split(save)[-1]) for f in files if save in f])
+        except ValueError:
+            print(files)
+            item=0
     result = {}
-    load_dir = base + save + str(item) + '/'
+    load_dir = os.path.join(os.path.join(base, save), str(item))
     if not os.path.exists(load_dir):
         raise FileNotFoundError(f"Cannot find {load_dir} specified by arg: "
                                 f"{item}")

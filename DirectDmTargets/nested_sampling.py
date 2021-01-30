@@ -245,7 +245,7 @@ class NestedSamplerStatModel(statistics.StatModel):
             verbose=True,
             evidence_tolerance=tol
         )
-        self.result = save_at_temp
+        self.result_file = save_at_temp
 
         # Open a save-folder after successful running multinest. Move the multinest results there.
         utils.check_folder_for_file(save_at)
@@ -293,7 +293,7 @@ class NestedSamplerStatModel(statistics.StatModel):
                     'package pymultinest not found. See README for installation')
             self.log.info('NestedSamplerStatModel::\tget_summary::\tstart analyzer of results')
             analyzer = Analyzer(len(self.config['fit_parameters']),
-                                outputfiles_basename=self.result)
+                                outputfiles_basename=self.result_file)
             # Taken from multinest.solve
             self.result = analyzer.get_stats()
             samples = analyzer.get_equal_weighted_posterior()[:, :-1]
