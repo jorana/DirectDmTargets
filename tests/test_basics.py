@@ -55,6 +55,8 @@ def test_nested_astrophysics_nestle():
 
 
 def test_emcee():
+    if _is_windows():
+        return
     fit_class = dddm.MCMCStatModel('Xe')
     fit_class.nwalkers = 10
     fit_class.nsteps = 20
