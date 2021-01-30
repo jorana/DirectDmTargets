@@ -515,3 +515,22 @@ class DetectorSpectrum(GenSpectrum):
         :return: Events (binned)
         """
         return self.compute_detected_spectrum()
+
+    def get_data(self, poisson=True):
+        """
+
+        :param poisson: type bool, add poisson True or False
+        :return: pd.DataFrame containing events binned in energy
+        """
+        result = pd.DataFrame()
+        if poisson:
+            result['counts'] = self.get_poisson_events()
+        else:
+            result['counts'] = self.get_events()
+        bins = get_bins(self.E_min, self.E_max, self.n_bins_result)
+        result['bin_centers'] = np.mean(bins, axis=1)
+        result['bin_left'] = bins[:, 0]
+        result['bin_right'] = bins[:, 1]
+        result = self.set_negative_to_zero(result)
+
+        return result
