@@ -435,7 +435,7 @@ def smear_signal(rate, energy, sigma, bin_width):
 
 class DetectorSpectrum(GenSpectrum):
     def __init__(self, *args):
-        GenSpectrum.__init__(self, *args)
+        super().__init__(*args)
         # GenSpectrum generates a number of bins (default 10), however, since a
         # numerical integration is performed in compute_detected_spectrum, this
         # number is multiplied here.
@@ -515,28 +515,3 @@ class DetectorSpectrum(GenSpectrum):
         :return: Events (binned)
         """
         return self.compute_detected_spectrum()
-
-    def get_poisson_events(self):
-        """
-        :return: events with poisson noise
-        """
-        return np.random.exponential(self.get_events()).astype(np.float)
-
-    def get_data(self, poisson=True):
-        """
-
-        :param poisson: type bool, add poisson True or False
-        :return: pd.DataFrame containing events binned in energy
-        """
-        result = pd.DataFrame()
-        if poisson:
-            result['counts'] = self.get_poisson_events()
-        else:
-            result['counts'] = self.get_events()
-        bins = get_bins(self.E_min, self.E_max, self.n_bins_result)
-        result['bin_centers'] = np.mean(bins, axis=1)
-        result['bin_left'] = bins[:, 0]
-        result['bin_right'] = bins[:, 1]
-        result = self.set_negative_to_zero(result)
-
-        return result
