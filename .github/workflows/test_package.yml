@@ -52,7 +52,7 @@ jobs:
       - name: Test package (windows)
         if: matrix.os == 'windows-latest'
         run: |
-          pytest
+          pytest --verbose
       - name: Build coverage file (windows)
         if: matrix.os == 'windows-latest'
         run: |
@@ -61,11 +61,6 @@ jobs:
         if: matrix.os == 'ubuntu-latest'
         run: |
           export LD_LIBRARY_PATH=/home/runner/work/DirectDmTargets/DirectDmTargets/MultiNest/lib
-          pytest
-      - name: Build coverage file (linux)
-        if: matrix.os == 'ubuntu-latest'
-        run: |
-          export LD_LIBRARY_PATH=/home/runner/work/DirectDmTargets/DirectDmTargets/MultiNest/lib
-          pytest --cache-clear --cov=DirectDmTargets > pytest-coverage.txt
+          pytest --verbose
       - name: goodbye
         run: echo goodbye

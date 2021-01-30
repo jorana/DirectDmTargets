@@ -55,10 +55,6 @@ parser.add_argument('--mem', type=int,
 
 args = parser.parse_args()
 
-# assertion_string =  "jobs are either 'long' or 'short'"
-# TODO
-# assert args.q == 'long' or args.q == 'short', assertion_string
-
 #
 # where to write
 #

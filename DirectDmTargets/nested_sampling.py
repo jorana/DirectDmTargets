@@ -392,7 +392,9 @@ class NestedSamplerStatModel(statistics.StatModel):
     def get_save_dir(self, force_index=False, _hash=None):
         if (not self.log_dict['saved_in']) or force_index:
             self.log_dict['saved_in'] = utils.open_save_dir(
-                f'nes_{self.config["sampler"][:2]}', force_index=force_index, _hash=_hash)
+                f'nes_{self.config["sampler"][:2]}',
+                force_index=force_index,
+                _hash=_hash)
         self.log.info(
             f'NestedSamplerStatModel::\tget_save_dir\tsave_dir = {self.log_dict["saved_in"]}')
         return self.log_dict['saved_in']
@@ -421,29 +423,35 @@ class NestedSamplerStatModel(statistics.StatModel):
             f' in {save_dir} and be done with it')
         # save the config, chain and flattened chain
         if 'HASH' in save_dir or os.path.exists(save_dir + 'config.json'):
-            save_dir += 'pid' + str(os.getpid()) + '_'
-        with open(save_dir + 'config.json', 'w') as file:
+            save_dir = os.path.join(save_dir, 'pid' + str(os.getpid()) + '_')
+        with open(os.path.join(save_dir, 'config.json'), 'w') as file:
             json.dump(convert_dic_to_savable(self.config), file, indent=4)
-        with open(save_dir + 'res_dict.json', 'w') as file:
+        with open(os.path.join(save_dir, 'res_dict.json'), 'w') as file:
             json.dump(convert_dic_to_savable(fit_summary), file, indent=4)
-        np.save(save_dir + 'config.npy', convert_dic_to_savable(self.config))
-        np.save(save_dir + 'res_dict.npy', convert_dic_to_savable(fit_summary))
+        np.save(
+            os.path.join(
+                save_dir, 'config.npy'), convert_dic_to_savable(
+                self.config))
+        np.save(os.path.join(save_dir, 'res_dict.npy'),
+                convert_dic_to_savable(fit_summary))
         for col in self.result.keys():
             if col == 'samples' or not isinstance(col, dict):
                 if self.config["sampler"] == 'multinest' and col == 'samples':
                     # in contrast to nestle, multinest returns the weighted
                     # samples.
-                    np.save(
-                        save_dir +
-                        'weighted_samples.npy',
-                        self.result[col])
+                    np.save(os.path.join(save_dir, 'weighted_samples.npy'),
+                            self.result[col])
                 else:
-                    np.save(save_dir + col + '.npy', self.result[col])
+                    np.save(
+                        os.path.join(
+                            save_dir,
+                            col + '.npy'),
+                        self.result[col])
             else:
-                np.save(save_dir + col + '.npy',
+                np.save(os.path.join(save_dir, col + '.npy'),
                         convert_dic_to_savable(self.result[col]))
-        shutil.copy(self.config['logging'], save_dir +
-                    self.config['logging'].split('/')[-1])
+        shutil.copy(self.config['logging'], os.path.join(
+            save_dir, self.config['logging'].split('/')[-1]))
         self.log.info(f'save_results::\tdone_saving')
 
     def show_corner(self):
@@ -531,7 +539,7 @@ def load_nestle_samples(load_from=default_nested_save_dir(), item='latest'):
     if item == 'latest':
         item = max([int(f.split(save)[-1]) for f in files if save in f])
 
-    load_dir = base + save + str(item) + '/'
+    load_dir = os.path.join(base, save + str(item) + '/')
     if not os.path.exists(load_dir):
         raise FileNotFoundError(f'Cannot find {load_dir} specified by arg: '
                                 f'{item}')
@@ -544,7 +552,11 @@ def load_nestle_samples_from_file(load_dir):
             'ncall', 'niter', 'samples', 'weights']
     result = {}
     for key in keys:
-        result[key] = np.load(load_dir + key + '.npy', allow_pickle=True)
+        result[key] = np.load(
+            os.path.join(
+                load_dir,
+                key + '.npy'),
+            allow_pickle=True)
         if key == 'config' or key == 'res_dict':
             result[key] = result[key].item()
     print(f"load_nestle_samples::\tdone loading\naccess result with:\n{keys}")
@@ -553,13 +565,13 @@ def load_nestle_samples_from_file(load_dir):
 
 def load_multinest_samples_from_file(load_dir):
     keys = os.listdir(load_dir)
-    keys = [key for key in keys if os.path.isfile(load_dir + '/' + key)]
+    keys = [key for key in keys if os.path.isfile(os.path.join(load_dir, key))]
     result = {}
     for key in keys:
         if '.npy' in key:
             naked_key = key.split('.npy')[0]
             naked_key = do_strip_from_pid(naked_key)
-            tmp_res = np.load(load_dir + key, allow_pickle=True)
+            tmp_res = np.load(os.path.join(load_dir, key), allow_pickle=True)
             if naked_key == 'config' or naked_key == 'res_dict':
                 result[naked_key] = tmp_res.item()
             else:
@@ -586,53 +598,50 @@ def load_multinest_samples(load_from=default_nested_save_dir(), item='latest'):
     if item == 'latest':
         item = max([int(f.split(save)[-1]) for f in files if save in f])
 
-    load_dir = base + save + str(item) + '/'
+    load_dir = os.path.join(base, save + str(item))
     if not os.path.exists(load_dir):
         raise FileNotFoundError(f"Cannot find {load_dir} specified by arg: "
                                 f"{item}")
     return load_multinest_samples_from_file(load_dir)
 
 
-def multinest_corner(result, save=False):
+def _get_info(result):
     info = r"$M_\chi}$=%.2f" % 10. ** np.float(result['config']['mw'])
     for prior_key in result['config']['prior'].keys():
-        try:
+        if (prior_key in result['config']['prior'] and
+                'mean' in result['config']['prior'][prior_key]):
             mean = result['config']['prior'][prior_key]['mean']
             info += f"\n{prior_key} = {mean}"
-        except KeyError:
-            pass
     nposterior, ndim = np.shape(result['weighted_samples'])
     info += "\nnposterior = %s" % nposterior
-    for str_inf in [
-        'detector',
-        'notes',
-        'start',
-        'fit_time',
-        'poisson',
-            'n_energy_bins']:
-        try:
+    for str_inf in ['detector', 'notes', 'start', 'fit_time', 'poisson',
+                    'n_energy_bins']:
+        if str_inf in result['config']:
             info += f"\n{str_inf} = %s" % result['config'][str_inf]
             if str_inf == 'start':
                 info = info[:-7]
             if str_inf == 'fit_time':
                 info += 's (%.1f h)' % (result['config'][str_inf] / 3600.)
-        except KeyError:
-            # We were trying to load something that wasn't saved in the config
-            # file, ignore it for now.
-            pass
+    return info, ndim
+
+
+def multinest_corner(
+        result,
+        save=False,
+        _result_key='weighted_samples',
+        _weights=False):
+    info, ndim = _get_info(result)
     labels = statistics.get_param_list()[:ndim]
-    try:
-        truths = [result['config'][prior_name]
-                  for prior_name in statistics.get_prior_list()[:ndim]]
-    except KeyError:
-        truths = []
-        for prior_name in statistics.get_prior_list()[:ndim]:
-            if prior_name != "rho_0":
-                truths.append(result['config'][prior_name])
-            else:
-                truths.append(result['config']['density'])
+    truths = []
+    for prior_name in statistics.get_prior_list()[:ndim]:
+        if prior_name != "rho_0":
+            truths.append(result['config'][prior_name])
+        else:
+            truths.append(result['config']['density'])
+    weight_kwargs = dict(weights=result['weights']) if _weights else {}
     fig = corner.corner(
-        result['weighted_samples'],
+        result[_result_key],
+        **weight_kwargs,
         labels=labels,
         range=[0.99999, 0.99999, 0.99999, 0.99999, 0.99999][:ndim],
         truths=truths,
@@ -644,54 +653,7 @@ def multinest_corner(result, save=False):
 
 
 def nestle_corner(result, save=False):
-    info = r"$M_\chi}$=%.2f" % 10. ** np.float(result['config']['mw'])
-    for prior_key in result['config']['prior'].keys():
-        try:
-            mean = result['config']['prior'][prior_key]['mean']
-            info += f"\n{prior_key} = {mean}"
-        except KeyError:
-            pass
-    nposterior, ndim = np.shape(result['samples'])
-    info += "\nnposterior = %s" % nposterior
-    for str_inf in [
-        'detector',
-        'notes',
-        'start',
-        'fit_time',
-        'poisson',
-            'n_energy_bins']:
-        try:
-            info += f"\n{str_inf} = %s" % result['config'][str_inf]
-            if str_inf == 'start':
-                info = info[:-7]
-            if str_inf == 'fit_time':
-                info += 's (%.1f h)' % (result['config'][str_inf] / 3600.)
-        except KeyError:
-            # We were trying to load something that wasn't saved in the config
-            # file, ignore it for now.
-            pass
-    labels = statistics.get_param_list()[:ndim]
-    try:
-        truths = [result['config'][prior_name]
-                  for prior_name in statistics.get_prior_list()[:ndim]]
-    except KeyError:
-        truths = []
-        for prior_name in statistics.get_prior_list()[:ndim]:
-            if prior_name != "rho_0":
-                truths.append(result['config'][prior_name])
-            else:
-                truths.append(result['config']['density'])
-    fig = corner.corner(
-        result['samples'],
-        weights=result['weights'],
-        labels=labels,
-        range=[0.99999, 0.99999, 0.99999, 0.99999, 0.99999][:ndim],
-        truths=truths,
-        show_titles=True)
-    fig.axes[1].set_title(f"Fit title", loc='left')
-    fig.axes[1].text(0, 1, info, verticalalignment='top')
-    if save:
-        plt.savefig(f"{save}corner.png", dpi=200)
+    multinest_corner(result, save, _result_key='samples', _weights=True)
 
 
 def solve_multinest(LogLikelihood, Prior, n_dims, **kwargs):

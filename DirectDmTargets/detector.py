@@ -435,7 +435,7 @@ def smear_signal(rate, energy, sigma, bin_width):
 
 class DetectorSpectrum(GenSpectrum):
     def __init__(self, *args):
-        GenSpectrum.__init__(self, *args)
+        super().__init__(*args)
         # GenSpectrum generates a number of bins (default 10), however, since a
         # numerical integration is performed in compute_detected_spectrum, this
         # number is multiplied here.
@@ -515,12 +515,6 @@ class DetectorSpectrum(GenSpectrum):
         :return: Events (binned)
         """
         return self.compute_detected_spectrum()
-
-    def get_poisson_events(self):
-        """
-        :return: events with poisson noise
-        """
-        return np.random.exponential(self.get_events()).astype(np.float)
 
     def get_data(self, poisson=True):
         """

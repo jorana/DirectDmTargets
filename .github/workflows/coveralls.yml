@@ -1,4 +1,10 @@
-on: ["push", "pull_request"]
+on:
+  workflow_dispatch:
+  release:
+    types: [created]
+  pull_request:
+    branches:
+      - master
 
 name: Test Coveralls
 
