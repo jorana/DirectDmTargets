@@ -625,7 +625,11 @@ def _get_info(result):
     return info, ndim
 
 
-def multinest_corner(result, save=False, _result_key='weighted_samples', _weights=False):
+def multinest_corner(
+        result,
+        save=False,
+        _result_key='weighted_samples',
+        _weights=False):
     info, ndim = _get_info(result)
     labels = statistics.get_param_list()[:ndim]
     truths = []
@@ -649,7 +653,7 @@ def multinest_corner(result, save=False, _result_key='weighted_samples', _weight
 
 
 def nestle_corner(result, save=False):
-    multinest_corner(result, save, _result_key='samples', _weights = True )
+    multinest_corner(result, save, _result_key='samples', _weights=True)
 
 
 def solve_multinest(LogLikelihood, Prior, n_dims, **kwargs):
