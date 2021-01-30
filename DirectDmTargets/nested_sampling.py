@@ -428,8 +428,12 @@ class NestedSamplerStatModel(statistics.StatModel):
             json.dump(convert_dic_to_savable(self.config), file, indent=4)
         with open(os.path.join(save_dir, 'res_dict.json'), 'w') as file:
             json.dump(convert_dic_to_savable(fit_summary), file, indent=4)
-        np.save(os.path.join(save_dir,  'config.npy'), convert_dic_to_savable(self.config))
-        np.save(os.path.join(save_dir, 'res_dict.npy'), convert_dic_to_savable(fit_summary))
+        np.save(
+            os.path.join(
+                save_dir, 'config.npy'), convert_dic_to_savable(
+                self.config))
+        np.save(os.path.join(save_dir, 'res_dict.npy'),
+                convert_dic_to_savable(fit_summary))
         for col in self.result.keys():
             if col == 'samples' or not isinstance(col, dict):
                 if self.config["sampler"] == 'multinest' and col == 'samples':
@@ -438,12 +442,16 @@ class NestedSamplerStatModel(statistics.StatModel):
                     np.save(os.path.join(save_dir, 'weighted_samples.npy'),
                             self.result[col])
                 else:
-                    np.save(os.path.join(save_dir,  col + '.npy'), self.result[col])
+                    np.save(
+                        os.path.join(
+                            save_dir,
+                            col + '.npy'),
+                        self.result[col])
             else:
                 np.save(os.path.join(save_dir, col + '.npy'),
                         convert_dic_to_savable(self.result[col]))
-        shutil.copy(self.config['logging'],
-                    os.path.join(save_dir, self.config['logging'].split('/')[-1]))
+        shutil.copy(self.config['logging'], os.path.join(
+            save_dir, self.config['logging'].split('/')[-1]))
         self.log.info(f'save_results::\tdone_saving')
 
     def show_corner(self):
@@ -544,7 +552,11 @@ def load_nestle_samples_from_file(load_dir):
             'ncall', 'niter', 'samples', 'weights']
     result = {}
     for key in keys:
-        result[key] = np.load(os.path.join(load_dir, key + '.npy'), allow_pickle=True)
+        result[key] = np.load(
+            os.path.join(
+                load_dir,
+                key + '.npy'),
+            allow_pickle=True)
         if key == 'config' or key == 'res_dict':
             result[key] = result[key].item()
     print(f"load_nestle_samples::\tdone loading\naccess result with:\n{keys}")

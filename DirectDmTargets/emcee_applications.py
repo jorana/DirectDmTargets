@@ -171,7 +171,10 @@ class MCMCStatModel(statistics.StatModel):
 
         corner.corner(flat_samples, labels=self.fit_parameters, truths=truths)
 
-    def save_results(self, save_to_dir=default_emcee_save_dir(), force_index=False):
+    def save_results(
+            self,
+            save_to_dir=default_emcee_save_dir(),
+            force_index=False):
         # save fit parameters to config
         self.config['fit_parameters'] = self.fit_parameters
         if not self.log_dict['did_run']:
@@ -201,7 +204,7 @@ def load_chain_emcee(load_from=default_emcee_save_dir(),
     base = utils.get_result_folder()
     save = load_from
     if override_load_from is not None:
-        base=override_load_from
+        base = override_load_from
     files = os.listdir(base)
     if item == 'latest':
         try:

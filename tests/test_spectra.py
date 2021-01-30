@@ -46,4 +46,3 @@ def test_detector_spectrum():
     if E_max:
         events.E_max = E_max
     events.get_data(poisson=False)
-

@@ -169,7 +169,7 @@ def open_save_dir(save_dir, base=None, force_index=False, _hash=None):
     else:
         index = force_index
     # this is where we going to save
-    save_dir = os.path.join(base,  save + str(index))
+    save_dir = os.path.join(base, save + str(index))
     if _hash:
         assert force_index is False, f'do not set _hash to {_hash} and force_index to {force_index} simultaneously'
         save_dir = os.path.join(base, (save + '_HASH' + str(_hash)))
