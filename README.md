@@ -1,7 +1,7 @@
 # DD_DM_targets
 [![CodeFactor](https://www.codefactor.io/repository/github/jorana/directdmtargets/badge)](https://www.codefactor.io/repository/github/jorana/directdmtargets)
 [![Pytest](https://github.com/jorana/DirectDmTargets/workflows/Pytest/badge.svg)](https://github.com/jorana/DirectDmTargets/actions?query=workflow%3APytest)
-[![Coverage Status](https://coveralls.io/repos/github/jorana/DirectDmTargets/badge.svg?branch=restructure_dddm)](https://coveralls.io/github/jorana/DirectDmTargets?branch=restructure_dddm)
+[![Coverage Status](https://coveralls.io/repos/github/jorana/DirectDmTargets/badge.svg?branch=master)](https://coveralls.io/github/jorana/DirectDmTargets?branch=restructure_dddm)
 
 Probing the complementarity of several targets used in Direct Detection Experiments for Dark Matter
 
