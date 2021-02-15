@@ -72,16 +72,8 @@ def is_savable_type(item):
     :param item: input of any type.
     :return: bool if the type is saveable by checking if it is in a limitative list
     """
-    if isinstance(
-            item,
-            (list,
-             np.ndarray,
-             int,
-             str,
-             np.int,
-             np.float,
-             bool,
-             np.float64)):
+    savables=(list, np.ndarray, int, str, np.int, np.float, bool, np.float64)
+    if isinstance(item, savables):
         return True
     return False
 
@@ -199,15 +191,15 @@ def add_identifier_to_safe(name, verbose=1):
 
     assert '.csv' in name, f"{name} is not .csv"
     # where to look
-    csv_path = '/'.join(name.split('/')[:-1]) + '/'
+    csv_path = name.replace('.csv', "")
     # what to look for
-    csv_key = name.split('/')[-1].replace('.csv', "")
+    csv_key = os.path.split(name)[-1].replace('.csv', "")
 
-    if os.path.exists(csv_path) and not os.stat(csv_path).st_size:
+    if os.path.exists(name) and not os.stat(name).st_size:
         # Check that the file we are looking for is not an empty file, that
         # would be bad.
-        print(f"WARNING:\t removing empty file {csv_path}")
-        os.remove(csv_path)
+        print(f"WARNING:\t removing empty file {name}")
+        os.remove(name)
 
     # What can we see
     if not os.path.exists(csv_path):
@@ -219,7 +211,7 @@ def add_identifier_to_safe(name, verbose=1):
             abs_file_name = name
         return exist_csv, abs_file_name
 
-    files_in_folder = os.listdir(csv_path + '/')
+    files_in_folder = os.listdir(csv_path)
     if verbose:
         print(
             f'VerneSHM::\tlooking for "{csv_key}" in "{csv_path}".\n\tDoes it have the'
@@ -237,13 +229,12 @@ def add_identifier_to_safe(name, verbose=1):
         print("VerneSHM::\tNo file found")
         exist_csv = False
         if context.host not in name:
-            # abs_file_name = name.replace('.csv', f'-{host}.csv')
             abs_file_name = name.replace(
                 '.csv', f'-H{context.host}-P{os.getpid()}.csv')
         else:
             abs_file_name = name
 
-    return exist_csv, abs_file_name
+    return exist_csv, os.path.abspath(abs_file_name)
 
     # elif str_in_list(csv_key, files_in_folder):
     # print(f'Using {str_in_list(csv_key, files_in_folder)} since it has {csv_key}')

@@ -14,72 +14,7 @@ import datetime
 import time
 import subprocess
 import verne
-
-
-def file_ready(name, cmd, max_time=30, max_age=300):
-    """
-    Check the file is ready when we execute cmd
-    Author: A. Pickford
-    :param name: name of the file that is to be written
-    :param cmd: the command used to create that file
-    :param max_time: max. minutes this process waits for the file to be written
-    :param max_age: max. age (in minutes) of the file, if the file is older than this, remove it
-    :return: is the file written within max time. type(bool)
-    """
-    print('file_ready: start')
-    endTime = datetime.datetime.now() + datetime.timedelta(minutes=max_time)
-    flagName = '{0}.flag'.format(name)
-    if (os.path.exists(flagName) and
-            time.time() - os.path.getmtime(flagName) > max_age * 60):
-        print(f'file_ready: found old flag {flagName}. Remove it')
-        os.remove(flagName)
-    print('file_ready: begin while loop')
-    while datetime.datetime.now() < endTime:
-        if os.path.exists(name):
-            print('file_ready: file exists')
-            # file exists, check for flag file
-            if os.path.exists(flagName):
-                print('file_ready: flag file exists')
-                # file and flag file both exist, another process should be
-                # creating the file, so wait 30 seconds for other process
-                # to finish and delete flag file then retry file checks
-                time.sleep(30)
-                continue
-            else:
-                print('file_ready: flag file does not exist')
-                # file and exists and no flag file, all is good use the file
-                return True
-        else:
-            print('file_ready: file does not exist')
-            # file does not exist, try and make the flag file
-            try:
-                with open(flagName, 'w') as flag:
-                    flag.write('0\n')
-            except IOError as e:
-                # error creating flag file, most likely another process has just
-                # opened the file, this relies on dcache throwing us an
-                # IOError back if we try to write to an existing file so in a race
-                # to write the file someone is first and someone gets the error
-                # we got the error so wait 30 seconds and retry the file checks
-                print('file_ready: error creating flag file')
-                time.sleep(30)
-                continue
-            # we wrote the flag file and should now create the real file
-            # execute 'cmd' to generate the file
-            print(f'file_ready: exec {cmd}')
-            subprocess.call(cmd, shell=True)
-            print('file_ready: flag file created')
-            print('file_ready: file write end')
-
-            # delete flag file
-            print('file_ready: delete flag file')
-            os.remove(flagName)
-            print('file_ready: end true')
-            return True
-
-    # if the file isn't ready after maxtime minutes give up and return false
-    print('file_ready: end false')
-    return False
+import shutil
 
 
 class GenSpectrum:
@@ -291,10 +226,14 @@ class VerneSHM:
 
         # Combine the parameters into a single naming convention. This is were
         # we will save/read the velocity distribution (from).
-        self.fname = 'f_params/loc_%s/v0_%i/vesc_%i/rho_%.3f/sig_%.1f_mx_%.2f' % (
-            self.location,
-            self.v_0_nodim, self.v_esc_nodim, self.rho_dm_nodim,
-            self.log_cross_section, self.log_mass)
+        self.fname = os.path.join(
+            'f_params',
+            f'loc_{str(self.location)}',
+            f'v0_{int(self.v_0_nodim)}',
+            f'vesc_{int(self.v_esc_nodim)}',
+            f'rho_{self.rho_dm_nodim:.3f}',
+            f'sig_{self.log_cross_section:.1f}_mx_{self.log_mass:.2f}'
+        )
 
         self.itp_func = None
 
@@ -331,14 +270,15 @@ class VerneSHM:
                 loc=self.location,
                 v_esc=self.v_esc_nodim,
                 v_0=self.v_0_nodim,
-                save_as=file_name,
+                save_as=abs_file_name,
                 N_gamma=4,
             )
 
             mv_cmd = f'mv {file_name} {abs_file_name}'
             if not os.path.exists(abs_file_name):
                 print(f'load_f:\tcopy from temp-folder to verne_folder')
-                file_ready(abs_file_name, mv_cmd, max_time=1)
+                shutil.move(file_name, abs_file_name)
+                # file_ready(abs_file_name, mv_cmd, max_time=1)
             else:
                 warn(f'load_f:\twhile writing {file_name}, '
                      f'{abs_file_name} was created')
@@ -347,7 +287,7 @@ class VerneSHM:
 
         # Alright now load the data and interpolate that. This is the output
         # that wimprates need
-        if not os.path.exists(abs_file_name):
+        if not os.path.exists(os.path.abspath(abs_file_name)):
             raise OSError(f'{abs_file_name} should exist')
         try:
             df = pd.read_csv(abs_file_name)
