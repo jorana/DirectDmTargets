@@ -7,51 +7,17 @@ import datetime
 import uuid
 
 
-def check_folder_for_file(file_path, max_iterations=30, verbose=1):
+def check_folder_for_file(file_path):
     """
     :param file_path: path with one or more subfolders
-    :param max_iterations: max number of lower lying subfolders
-    :param verbose: print level
     """
     last_folder = os.path.split(file_path)[0]
-    max_iterations = np.min([max_iterations, len(file_path.split("/")) - 1])
-    if os.path.exists(last_folder):
-        # Folder does exist. No need do anything.
-        return
-    if file_path[0] == '/':
-        base_dir = '/' + file_path.split("/")[1]
-        start_i = 2
-    else:
-        base_dir = file_path.split("/")[0]
-        start_i = 1
-        assert_str = f"check_folder_for_file::\tstarting from a folder " \
-                     f"({base_dir}) that cannot be found"
-        assert os.path.exists(base_dir), assert_str
-    # Start from 1 (since that is basedir) go until second to last since that
-    # is the file name
-    for sub_dir in file_path.split("/")[start_i:max_iterations]:
-        if ".csv" in sub_dir:
-            print("Error in this code, manually breaking but one should not end up here")
-            break
-        this_dir = base_dir + "/" + sub_dir
-        if not os.path.exists(this_dir):
-            if verbose:
-                print(f'check_folder_for_file::\tmaking {this_dir}')
-            try:
-                os.mkdir(this_dir)
-            except FileExistsError:
-                print(
-                    "This is strange. We got a FileExistsError for a path to be "
-                    "made, maybe another instance has created this path too")
-        base_dir = this_dir
-        assert_str = f'check_folder_for_file::\tsomething failed. Cannot find {last_folder}'
+    os.makedirs(last_folder, exist_ok=True)
 
-        if not os.path.exists(last_folder):
-            print(file_path)
-            print(base_dir)
-            print(max_iterations)
-            print(last_folder)
-            assert False, assert_str
+    if not os.path.exists(last_folder):
+        print(file_path)
+        print(last_folder)
+        raise OSError(f'Could not make {last_folder} for saving {file_path}')
 
 
 def now(tstart=None):
