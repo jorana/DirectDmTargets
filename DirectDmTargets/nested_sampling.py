@@ -264,7 +264,7 @@ class NestedSamplerStatModel(statistics.StatModel):
         # Multinest saves output to a folder. First write to the tmp folder,
         # move it to the results folder later
         _tmp_folder = self.get_save_dir()
-        save_at_temp = f'{_tmp_folder}multinest'
+        save_at_temp = os.path.join(_tmp_folder, 'multinest')
 
         solve_multinest(
             LogLikelihood=self._log_probability_nested,  # SafeLoglikelihood,
@@ -422,7 +422,7 @@ class NestedSamplerStatModel(statistics.StatModel):
             f'NestedSamplerStatModel::\tAlright all set, let put all that info'
             f' in {save_dir} and be done with it')
         # save the config, chain and flattened chain
-        if 'HASH' in save_dir or os.path.exists(save_dir + 'config.json'):
+        if 'HASH' in save_dir or os.path.exists(os.path.join(save_dir, 'config.json')):
             save_dir = os.path.join(save_dir, 'pid' + str(os.getpid()) + '_')
         with open(os.path.join(save_dir, 'config.json'), 'w') as file:
             json.dump(convert_dic_to_savable(self.config), file, indent=4)
