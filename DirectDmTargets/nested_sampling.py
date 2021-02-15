@@ -422,7 +422,8 @@ class NestedSamplerStatModel(statistics.StatModel):
             f'NestedSamplerStatModel::\tAlright all set, let put all that info'
             f' in {save_dir} and be done with it')
         # save the config, chain and flattened chain
-        if 'HASH' in save_dir or os.path.exists(os.path.join(save_dir, 'config.json')):
+        if 'HASH' in save_dir or os.path.exists(
+                os.path.join(save_dir, 'config.json')):
             save_dir = os.path.join(save_dir, 'pid' + str(os.getpid()) + '_')
         with open(os.path.join(save_dir, 'config.json'), 'w') as file:
             json.dump(convert_dic_to_savable(self.config), file, indent=4)
