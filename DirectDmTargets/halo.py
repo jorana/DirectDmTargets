@@ -183,8 +183,8 @@ class GenSpectrum:
                 self.E_max,
                 self.n_bins),
             axis=1)[
-                    :,
-                    0]
+            :,
+            0]
         events = rate * bin_width * self.experiment['exp_eff']
         return events
 
@@ -275,7 +275,7 @@ class VerneSHM:
         self.v_0_nodim = 230 if v_0 is None else v_0 / (nu.km / nu.s)
         self.v_esc_nodim = 544 if v_esc is None else v_esc / (nu.km / nu.s)
         self.rho_dm_nodim = 0.3 if rho_dm is None else rho_dm / \
-                                                       (nu.GeV / nu.c0 ** 2 / nu.cm ** 3)
+            (nu.GeV / nu.c0 ** 2 / nu.cm ** 3)
 
         # Here we keep the units dimensionful as these parameters are requested
         # by wimprates and therefore must have dimensions
@@ -313,7 +313,11 @@ class VerneSHM:
         file_folder = context['verne_files']
         software_folder = context['verne_folder']
         file_name = os.path.join(file_folder, self.fname + '_avg' + '.csv')
-        utils.check_folder_for_file(os.path.join(file_folder, self.fname), verbose=1)
+        utils.check_folder_for_file(
+            os.path.join(
+                file_folder,
+                self.fname),
+            verbose=1)
 
         # Convert file_name and self.fname to folder and name of csv file where
         # to save.
@@ -324,13 +328,15 @@ class VerneSHM:
             abs_file_name, str) and isinstance(
             exist_csv, bool), assertion_string
         if not exist_csv:
-            verne.CalcVelDist.write_calcveldist(m_x=10. ** self.log_mass,
-                                                sigma_p=10. ** self.log_cross_section,
-                                                loc=self.location,
-                                                v_esc=self.v_esc_nodim,
-                                                v_0=self.v_0_nodim,
-                                                save_as=file_name,
-                                                N_gamma=4, )
+            verne.CalcVelDist.write_calcveldist(
+                m_x=10. ** self.log_mass,
+                sigma_p=10. ** self.log_cross_section,
+                loc=self.location,
+                v_esc=self.v_esc_nodim,
+                v_0=self.v_0_nodim,
+                save_as=file_name,
+                N_gamma=4,
+            )
             # pyfile = os.path.join(verne.__path__[0], 'CalcVelDist.py')
             # file_name = tmp_folder + utils.unique_hash() + '.csv'
             # args = (f'-m_x {10. ** self.log_mass} '

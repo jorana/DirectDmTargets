@@ -271,17 +271,17 @@ class StatModel:
         # Name the file according to the main parameters. Note that for each of
         # the main parameters
         file_name = (
-                context['spectra_files'] +
-                '/nbin-%i/model-%s/mw-%.2f/log_s-%.2f/rho-%.2f/v_0-%.1f/v_esc-%i/poisson_%i/spectrum' % (
-                    self.config['n_energy_bins'] if nbin is None else nbin,
-                    str(self.config['halo_model']) if model is None else str(model),
-                    10. ** self.config['mw'] if mw is None else 10. ** mw,
-                    self.config['sigma'] if sigma is None else sigma,
-                    self.config['density'] if rho is None else rho,
-                    self.config['v_0'] if v_0 is None else v_0,
-                    self.config['v_esc'] if v_esc is None else v_esc,
-                    int(self.config['poisson'] if poisson is None else poisson)
-                ))
+            context['spectra_files'] +
+            '/nbin-%i/model-%s/mw-%.2f/log_s-%.2f/rho-%.2f/v_0-%.1f/v_esc-%i/poisson_%i/spectrum' % (
+                self.config['n_energy_bins'] if nbin is None else nbin,
+                str(self.config['halo_model']) if model is None else str(model),
+                10. ** self.config['mw'] if mw is None else 10. ** mw,
+                self.config['sigma'] if sigma is None else sigma,
+                self.config['density'] if rho is None else rho,
+                self.config['v_0'] if v_0 is None else v_0,
+                self.config['v_esc'] if v_esc is None else v_esc,
+                int(self.config['poisson'] if poisson is None else poisson)
+            ))
 
         # Add all other parameters that are in the detector config
         if det_conf is None:
@@ -290,7 +290,7 @@ class StatModel:
             if callable(self.config['detector_config'][key]):
                 continue
             file_name = file_name + '_' + \
-                        str(self.config['detector_config'][key])
+                str(self.config['detector_config'][key])
         file_name = file_name.replace(' ', '_')
         file_name = file_name + '.csv'
         data_at_path, file_path = utils.add_identifier_to_safe(file_name)
@@ -595,11 +595,11 @@ class StatModel:
                         log_cross_section=checked_values[1],
                         location=self.config['detector_config']['location'],
                         v_0=checked_values[2] * nu.km / \
-                            nu.s,  # self.config['v_0'],
+                        nu.s,  # self.config['v_0'],
                         v_esc=checked_values[3] * nu.km / \
-                              nu.s,  # self.config['v_esc'],
+                        nu.s,  # self.config['v_esc'],
                         rho_dm=checked_values[
-                                   4] * nu.GeV / nu.c0 ** 2 / nu.cm ** 3)  # self.config['density'])
+                            4] * nu.GeV / nu.c0 ** 2 / nu.cm ** 3)  # self.config['density'])
                 else:
                     self.log.debug(
                         f"StatModel::\tSUPERVERBOSE\tUsing SHM in likelihood code")

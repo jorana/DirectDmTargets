@@ -73,6 +73,7 @@ def test_nested_simple_nestle_earth_shielding():
     fit_class.run_nestle()
     fit_class.get_summary()
 
+
 def test_nested_astrophysics_nestle():
     if _is_windows():
         return
