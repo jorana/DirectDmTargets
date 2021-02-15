@@ -49,13 +49,9 @@ jobs:
       - name: Install python dependencies
         uses: py-actions/py-dependency-install@v2
       - name: Install other stuff
-        run: pip install pytest hypothesis flake8 pytest-cov
-      - name: Install DirectDmTargets
-        run: python setup.py develop
-      - name: Test package (windows)
-        if: matrix.os == 'windows-latest'
         run: |
-          pytest --verbose
+          pip install pytest hypothesis flake8 pytest-cov
+          python setup.py develop
       - name: Build coverage file (windows)
         if: matrix.os == 'windows-latest'
         run: |

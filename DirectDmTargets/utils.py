@@ -15,8 +15,6 @@ def check_folder_for_file(file_path):
     os.makedirs(last_folder, exist_ok=True)
 
     if not os.path.exists(last_folder):
-        print(file_path)
-        print(last_folder)
         raise OSError(f'Could not make {last_folder} for saving {file_path}')
 
 

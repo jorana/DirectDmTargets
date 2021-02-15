@@ -313,11 +313,7 @@ class VerneSHM:
         file_folder = context['verne_files']
         software_folder = context['verne_folder']
         file_name = os.path.join(file_folder, self.fname + '_avg' + '.csv')
-        utils.check_folder_for_file(
-            os.path.join(
-                file_folder,
-                self.fname),
-            verbose=1)
+        utils.check_folder_for_file(os.path.join(file_folder, self.fname))
 
         # Convert file_name and self.fname to folder and name of csv file where
         # to save.
