@@ -13,6 +13,7 @@ from scipy.interpolate import interp1d
 import datetime
 import time
 import subprocess
+import verne
 
 
 def file_ready(name, cmd, max_time=30, max_age=300):
@@ -66,7 +67,7 @@ def file_ready(name, cmd, max_time=30, max_age=300):
             # we wrote the flag file and should now create the real file
             # execute 'cmd' to generate the file
             print(f'file_ready: exec {cmd}')
-            subprocess.call(cmd, shell=False)
+            subprocess.call(cmd, shell=True)
             print('file_ready: flag file created')
             print('file_ready: file write end')
 
@@ -182,8 +183,8 @@ class GenSpectrum:
                 self.E_max,
                 self.n_bins),
             axis=1)[
-            :,
-            0]
+                    :,
+                    0]
         events = rate * bin_width * self.experiment['exp_eff']
         return events
 
@@ -274,7 +275,7 @@ class VerneSHM:
         self.v_0_nodim = 230 if v_0 is None else v_0 / (nu.km / nu.s)
         self.v_esc_nodim = 544 if v_esc is None else v_esc / (nu.km / nu.s)
         self.rho_dm_nodim = 0.3 if rho_dm is None else rho_dm / \
-            (nu.GeV / nu.c0 ** 2 / nu.cm ** 3)
+                                                       (nu.GeV / nu.c0 ** 2 / nu.cm ** 3)
 
         # Here we keep the units dimensionful as these parameters are requested
         # by wimprates and therefore must have dimensions
@@ -311,8 +312,8 @@ class VerneSHM:
         # set up folders and names
         file_folder = context['verne_files']
         software_folder = context['verne_folder']
-        file_name = file_folder + self.fname + '_avg' + '.csv'
-        utils.check_folder_for_file(file_folder + self.fname, verbose=0)
+        file_name = os.path.join(file_folder, self.fname + '_avg' + '.csv')
+        utils.check_folder_for_file(os.path.join(file_folder, self.fname), verbose=1)
 
         # Convert file_name and self.fname to folder and name of csv file where
         # to save.
@@ -322,23 +323,28 @@ class VerneSHM:
         assert isinstance(
             abs_file_name, str) and isinstance(
             exist_csv, bool), assertion_string
-
         if not exist_csv:
-            pyfile = '/src/CalcVelDist.py'
-            file_name = tmp_folder + utils.unique_hash() + '.csv'
-            args = (f'-m_x {10. ** self.log_mass} '
-                    f'-sigma_p {10. ** self.log_cross_section} '
-                    f'-loc ''{self.location} '
-                    f'-path "{software_folder}/src/" '
-                    f'-v_0 {self.v_0_nodim} '
-                    f'-v_esc {self.v_esc_nodim} '
-                    f'-save_as "{file_name}" )')
-
-            cmd = f'python "{software_folder}"{pyfile} {args}'
-            print(f'No spectrum found at:\n{file_name}\nGenerating spectrum, '
-                  f'this can take a minute. Execute:\n{cmd}')
-            assert file_ready(
-                file_name, cmd), f"{file_name} could not be written"
+            verne.CalcVelDist.write_calcveldist(m_x=10. ** self.log_mass,
+                                                sigma_p=10. ** self.log_cross_section,
+                                                loc=self.location,
+                                                v_esc=self.v_esc_nodim,
+                                                v_0=self.v_0_nodim,
+                                                save_as=file_name,
+                                                N_gamma=4, )
+            # pyfile = os.path.join(verne.__path__[0], 'CalcVelDist.py')
+            # file_name = tmp_folder + utils.unique_hash() + '.csv'
+            # args = (f'-m_x {10. ** self.log_mass} '
+            #         f'-sigma_p {10. ** self.log_cross_section} '
+            #         f'-loc {self.location} '
+            #         # f'-path "{software_folder}/src/" '
+            #         f'-v_0 {self.v_0_nodim} '
+            #         f'-v_esc {self.v_esc_nodim} '
+            #         f'-save_as "{file_name}"')
+            #
+            # cmd = f'python {pyfile} {args}'
+            # print(f'No spectrum found at:\n{file_name}\nGenerating spectrum, '
+            #       f'this can take a minute. Execute:\n{cmd}')
+            # assert file_ready(file_name, cmd), f"{file_name} could not be written"
             mv_cmd = f'mv {file_name} {abs_file_name}'
             if not os.path.exists(abs_file_name):
                 print(f'load_f:\tcopy from temp-folder to verne_folder')
@@ -359,7 +365,7 @@ class VerneSHM:
             os.remove(abs_file_name)
             raise pandas_error
 
-        if not df:
+        if not len(df):
             # Somehow we got an empty dataframe, we cannot continue
             os.remove(abs_file_name)
             raise ValueError(

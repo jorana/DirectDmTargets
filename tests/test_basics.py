@@ -3,6 +3,7 @@ from sys import platform
 import tempfile
 import os
 import matplotlib.pyplot as plt
+import time
 
 
 def _is_windows():
@@ -42,6 +43,35 @@ def test_nested_astrophysics_multinest():
         r = dddm.nested_sampling.load_multinest_samples_from_file(save_as)
         dddm.nested_sampling.multinest_corner(r)
 
+
+def test_nested_simple_multinest_earth_shielding():
+    if _is_windows():
+        return
+    else:
+        from mpi4py import MPI
+        rank = MPI.COMM_WORLD.Get_rank()
+    fit_class = dddm.NestedSamplerStatModel('Xe')
+    fit_class.config['tol'] = 0.1
+    fit_class.config['nlive'] = 3
+    fit_class.config['earth_shielding'] = True
+    fit_class.config['max_iter'] = 3
+    print(f"Fitting for parameters:\n{fit_class.config['fit_parameters']}")
+    fit_class.run_multinest()
+    time.sleep(10)
+    if rank == 0:
+        # prevent strange race issues.
+        fit_class.get_summary()
+
+
+def test_nested_simple_nestle_earth_shielding():
+    fit_class = dddm.NestedSamplerStatModel('Xe')
+    fit_class.config['sampler'] = 'nestle'
+    fit_class.config['tol'] = 0.9999
+    fit_class.config['nlive'] = 3
+    fit_class.config['earth_shielding'] = True
+    print(f"Fitting for parameters:\n{fit_class.config['fit_parameters']}")
+    fit_class.run_nestle()
+    fit_class.get_summary()
 
 def test_nested_astrophysics_nestle():
     if _is_windows():

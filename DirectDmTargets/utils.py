@@ -13,7 +13,7 @@ def check_folder_for_file(file_path, max_iterations=30, verbose=1):
     :param max_iterations: max number of lower lying subfolders
     :param verbose: print level
     """
-    last_folder = "/".join(file_path.split("/")[:-1])
+    last_folder = os.path.split(file_path)[0]
     max_iterations = np.min([max_iterations, len(file_path.split("/")) - 1])
     if os.path.exists(last_folder):
         # Folder does exist. No need do anything.
@@ -109,15 +109,15 @@ def is_savable_type(item):
     :return: bool if the type is saveable by checking if it is in a limitative list
     """
     if isinstance(
-        item,
-        (list,
-         np.ndarray,
-         int,
-         str,
-         np.int,
-         np.float,
-         bool,
-         np.float64)):
+            item,
+            (list,
+             np.ndarray,
+             int,
+             str,
+             np.int,
+             np.float,
+             bool,
+             np.float64)):
         return True
     return False
 
@@ -272,7 +272,7 @@ def add_identifier_to_safe(name, verbose=1):
     else:
         print("VerneSHM::\tNo file found")
         exist_csv = False
-        if host not in name:
+        if context.host not in name:
             # abs_file_name = name.replace('.csv', f'-{host}.csv')
             abs_file_name = name.replace(
                 '.csv', f'-H{context.host}-P{os.getpid()}.csv')

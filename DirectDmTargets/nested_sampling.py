@@ -138,8 +138,8 @@ class NestedSamplerStatModel(statistics.StatModel):
                 f'NestedSamplerStatModel::\tSUPERVERBOSE\tdoing '
                 f'_log_probability_nested for {ndim} parameters'
                 f'\n\t\tooph, what a nasty function to do some transformations behind the scenes')
-
-        return self.log_probability_nested(theta, self.known_parameters[:ndim])
+        result = self.log_probability_nested(theta, self.known_parameters[:ndim])
+        return result
 
     def _log_prior_transform_nested(self, theta):
         self.log.debug(
@@ -150,12 +150,12 @@ class NestedSamplerStatModel(statistics.StatModel):
             self.log_prior_transform_nested(
                 val,
                 self.known_parameters[i]) for i,
-            val in enumerate(theta)]
+                                              val in enumerate(theta)]
         return np.array(result)
 
     def run_nestle(self):
         assert self.config[
-            'sampler'] == 'nestle', f'Trying to run nestle but initialization requires {self.config["sampler"]}'
+                   'sampler'] == 'nestle', f'Trying to run nestle but initialization requires {self.config["sampler"]}'
 
         # Do the import of nestle inside the class such that the package can be
         # loaded without nestle
@@ -232,7 +232,7 @@ class NestedSamplerStatModel(statistics.StatModel):
 
     def run_multinest(self):
         assert self.config[
-            "sampler"] == 'multinest', f'Trying to run multinest but initialization requires {self.config["sampler"]}'
+                   "sampler"] == 'multinest', f'Trying to run multinest but initialization requires {self.config["sampler"]}'
         # Do the import of multinest inside the class such that the package can be
         # loaded without multinest
         try:
@@ -273,7 +273,10 @@ class NestedSamplerStatModel(statistics.StatModel):
             n_dims=n_dims,
             outputfiles_basename=save_at_temp,
             verbose=True,
-            evidence_tolerance=tol
+            evidence_tolerance=tol,
+            # null_log_evidence=statistics.LL_LOW_BOUND,
+            max_iter=self.config.get('max_iter', 0),
+
         )
         self.result_file = save_at_temp
 

@@ -43,16 +43,14 @@ else:
     print(f'context.py::\tunknown host {host} be careful here')
     installation_folder = DirectDmTargets.__path__[0]
     # installation_folder = os.path.abspath('./..')
-    vene_folder = verne.__path__[0]
+    vene_folder = os.path.join(os.path.split(verne.__path__[0])[0], 'results')
     context = {'software_dir': installation_folder,
                'results_dir':
                    os.path.join(installation_folder, 'DD_DM_targets_data/'),
                'spectra_files':
                    os.path.join(installation_folder, 'DD_DM_targets_spectra/'),
-               'verne_folder':
-                   os.path.join(installation_folder, '../verne/'),
-               'verne_files': os.path.join(
-                   installation_folder, '../verne/'),
+               'verne_folder': vene_folder,
+               'verne_files': vene_folder,
                }
 
     if os.path.exists('/tmp/'):
