@@ -32,6 +32,5 @@ yes | conda install -c anaconda mpi4py
 yes | conda install -c conda-forge emcee
 pip install git+https://github.com/jorana/wimprates
 pip install git+https://github.com/jorana/verne
-pip install git+https://github.com/jorana/wimprates
 ```
 
