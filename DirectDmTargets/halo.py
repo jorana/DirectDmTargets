@@ -305,7 +305,8 @@ class VerneSHM:
 
     def load_f(self):
         """
-        load the velocity distribution. If there is no velocity distribution shaved, load one.
+        load the velocity distribution. If there is no velocity
+            distribution shaved, load one.
         :return:
         """
 
@@ -333,27 +334,14 @@ class VerneSHM:
                 save_as=file_name,
                 N_gamma=4,
             )
-            # pyfile = os.path.join(verne.__path__[0], 'CalcVelDist.py')
-            # file_name = tmp_folder + utils.unique_hash() + '.csv'
-            # args = (f'-m_x {10. ** self.log_mass} '
-            #         f'-sigma_p {10. ** self.log_cross_section} '
-            #         f'-loc {self.location} '
-            #         # f'-path "{software_folder}/src/" '
-            #         f'-v_0 {self.v_0_nodim} '
-            #         f'-v_esc {self.v_esc_nodim} '
-            #         f'-save_as "{file_name}"')
-            #
-            # cmd = f'python {pyfile} {args}'
-            # print(f'No spectrum found at:\n{file_name}\nGenerating spectrum, '
-            #       f'this can take a minute. Execute:\n{cmd}')
-            # assert file_ready(file_name, cmd), f"{file_name} could not be written"
+
             mv_cmd = f'mv {file_name} {abs_file_name}'
             if not os.path.exists(abs_file_name):
                 print(f'load_f:\tcopy from temp-folder to verne_folder')
                 file_ready(abs_file_name, mv_cmd, max_time=1)
             else:
-                warn(
-                    f'load_f:\twhile writing {file_name}, {abs_file_name} was created')
+                warn(f'load_f:\twhile writing {file_name}, '
+                     f'{abs_file_name} was created')
         else:
             print(f'Using {abs_file_name} for the velocity distribution')
 
