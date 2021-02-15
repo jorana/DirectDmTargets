@@ -44,16 +44,16 @@ def test_nested_astrophysics_multinest():
         dddm.nested_sampling.multinest_corner(r)
 
 
-def test_nested_simple_multinest_earth_shielding():
-    if _is_windows():
-        return
-    fit_class = dddm.NestedSamplerStatModel('Xe')
-    fit_class.config['tol'] = 0.1
-    fit_class.config['nlive'] = 3
-    fit_class.config['earth_shielding'] = True
-    fit_class.config['max_iter'] = 3
-    print(f"Fitting for parameters:\n{fit_class.config['fit_parameters']}")
-    fit_class.run_multinest()
+# def test_nested_simple_multinest_earth_shielding():
+#     if _is_windows():
+#         return
+#     fit_class = dddm.NestedSamplerStatModel('Xe')
+#     fit_class.config['tol'] = 0.1
+#     fit_class.config['nlive'] = 3
+#     fit_class.config['earth_shielding'] = True
+#     fit_class.config['max_iter'] = 3
+#     print(f"Fitting for parameters:\n{fit_class.config['fit_parameters']}")
+#     fit_class.run_multinest()
 
 
 def test_nested_simple_nestle_earth_shielding():
