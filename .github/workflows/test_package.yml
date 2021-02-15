@@ -40,7 +40,8 @@ jobs:
         run: |
           pip install emcee
           pip install git+https://github.com/jorana/wimprates
-          pip install git+https://github.com/jorana/verne
+          git clone https://github.com/jorana/verne
+          pip install -e verne
           pip install git+https://github.com/JohannesBuchner/PyMultiNest
       - name: Install conda stuff on linux
         if: matrix.os == 'ubuntu-latest'

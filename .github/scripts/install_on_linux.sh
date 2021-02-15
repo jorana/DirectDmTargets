@@ -35,5 +35,6 @@ echo "Doing other conda and pip:"
 # Installing others
 yes | conda install -c conda-forge emcee
 pip install git+https://github.com/jorana/wimprates
-pip install git+https://github.com/jorana/verne
+git clone https://github.com/jorana/verne
+pip install -e verne
 echo "done"
