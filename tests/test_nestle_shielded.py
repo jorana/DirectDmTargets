@@ -11,4 +11,3 @@ def test_nested_simple_nestle_earth_shielding():
     print(f"Fitting for parameters:\n{fit_class.config['fit_parameters']}")
     fit_class.run_nestle()
     fit_class.get_summary()
-

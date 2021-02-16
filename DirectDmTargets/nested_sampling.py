@@ -15,6 +15,7 @@ import numericalunits as nu
 from warnings import warn
 import time
 
+
 def default_nested_save_dir():
     """The name of folders where to save results from the NestedSamplerStatModel"""
     return 'nested'
@@ -185,13 +186,16 @@ class NestedSamplerStatModel(statistics.StatModel):
                 f"I can say, you'll have to wait for my lower level "
                 f'algorithms to give you info, see you soon!')
             start = datetime.datetime.now()
-            self.result = nestle.sample(self._log_probability_nested,
-                                        self._log_prior_transform_nested,
-                                        ndim,
-                                        method=method,
-                                        npoints=self.config['nlive'],
-                                        maxiter=self.config.get('max_iter', None),
-                                        dlogz=tol)
+            self.result = nestle.sample(
+                self._log_probability_nested,
+                self._log_prior_transform_nested,
+                ndim,
+                method=method,
+                npoints=self.config['nlive'],
+                maxiter=self.config.get(
+                    'max_iter',
+                    None),
+                dlogz=tol)
             end = datetime.datetime.now()
             dt = end - start
             self.log.info(
@@ -699,7 +703,8 @@ def solve_multinest(LogLikelihood, Prior, n_dims, **kwargs):
 
     for i in range(60):
         try:
-            analyzer = Analyzer(n_dims, outputfiles_basename=outputfiles_basename)
+            analyzer = Analyzer(
+                n_dims, outputfiles_basename=outputfiles_basename)
             stats = analyzer.get_stats()
             samples = analyzer.get_equal_weighted_posterior()[:, :-1]
             break

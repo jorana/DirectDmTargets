@@ -283,8 +283,9 @@ class VerneSHM:
                 warn(f'load_f:\twhile writing {file_name}, '
                      f'{abs_file_name} was created')
             else:
-                warn(f'Tried making {file_name} or {abs_file_name} but neither exist?'
-                     f'{os.path.exists(file_name)} {os.path.exists(abs_file_name)}')
+                warn(
+                    f'Tried making {file_name} or {abs_file_name} but neither exist?'
+                    f'{os.path.exists(file_name)} {os.path.exists(abs_file_name)}')
         else:
             print(f'Using {abs_file_name} for the velocity distribution')
 
