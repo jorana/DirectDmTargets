@@ -5,6 +5,8 @@ import numpy as np
 import os
 import datetime
 import uuid
+import logging
+log = logging.getLogger()
 
 
 def check_folder_for_file(file_path):
@@ -38,8 +40,7 @@ def load_folder_from_context(request):
     try:
         folder = context.context[request]
     except KeyError:
-        print(
-            f'load_folder_from_context::\tRequesting {request} but that is not in {context.context.keys()}')
+        log.info(f'load_folder_from_context::\tRequesting {request} but that is not in {context.context.keys()}')
         raise KeyError
     if not os.path.exists(folder):
         raise FileNotFoundError(
@@ -53,8 +54,8 @@ def get_result_folder(*args):
     bridge to work with old code when context was not yet implemented
     """
     if args:
-        print(f'get_result_folder::\tfunctionality deprecated ignoring {args}')
-    print(
+        log.warning(f'get_result_folder::\tfunctionality deprecated ignoring {args}')
+    log.info(
         f'get_result_folder::\trequested folder is {context.context["results_dir"]}')
     return load_folder_from_context('results_dir')
 
@@ -139,9 +140,9 @@ def open_save_dir(save_dir, base=None, force_index=False, _hash=None):
         else:
             files_in_dir = os.listdir(save_dir)
             if len(files_in_dir):
-                print(
+                log.warning(
                     f'WARNING writing to {save_dir}. There are files in this dir: {files_in_dir} ')
-        print('open_save_dir::\tusing ' + save_dir)
+        log.info('open_save_dir::\tusing ' + save_dir)
         return save_dir
     if force_index is False:
         assert not os.path.exists(
@@ -152,9 +153,9 @@ def open_save_dir(save_dir, base=None, force_index=False, _hash=None):
             os.mkdir(save_dir)
         else:
             for file in os.listdir(save_dir):
-                print('open_save_dir::\tremoving ' + save_dir + file)
+                log.info('open_save_dir::\tremoving ' + save_dir + file)
                 os.remove(save_dir + file)
-    print('open_save_dir::\tusing ' + save_dir)
+    log.info('open_save_dir::\tusing ' + save_dir)
     return save_dir
 
 
@@ -167,81 +168,69 @@ def str_in_list(string, _list):
     raise FileNotFoundError(f'No name named {string} in {_list}')
 
 
-def is_str_in_list(string, _list, verbose=0):
+def is_str_in_list(string, _list):
     """checks if sting is in any of the items in _list.
     :return bool:"""
-    if len(_list) < 10:
-        print(f'is_str_in_list::\tlooking for {string} in {_list}')
+    log.debug(f'is_str_in_list::\tlooking for {string} in {_list}')
     for name in _list:
         if string in name:
-            if verbose:
-                print(f'is_str_in_list::\t{string} is in  {name}!')
+            log.debug(f'is_str_in_list::\t{string} is in  {name}!')
             return True
-        if verbose:
-            print(f'is_str_in_list::\t{string} is not in  {name}')
+        log.debug(f'is_str_in_list::\t{string} is not in  {name}')
     return False
 
 
-def add_identifier_to_safe(name, verbose=1):
+def add_pid_to_csv_filename(name):
     """
     :param name: takes name
-    :param verbose: print level
     :return: abs_file_name, exist_csv
     """
 
     assert '.csv' in name, f"{name} is not .csv"
     # where to look
-    csv_path = name.replace('.csv', "")
+    requested_folder = os.path.split(name)[0]
     # what to look for
-    csv_key = os.path.split(name)[-1].replace('.csv', "")
+    file_name = os.path.split(name)[-1].replace('.csv', "")
 
     if os.path.exists(name) and not os.stat(name).st_size:
         # Check that the file we are looking for is not an empty file, that
         # would be bad.
-        print(f"WARNING:\t removing empty file {name}")
+        log.warning(f"WARNING:\t removing empty file {name}")
         os.remove(name)
 
     # What can we see
-    if not os.path.exists(csv_path):
+    if not os.path.exists(requested_folder):
         exist_csv = False
         if context.host not in name:
-            abs_file_name = name.replace(
-                '.csv', f'-H{context.host}-P{os.getpid()}.csv')
+            abs_file_name = add_host_and_pid_to_csv_filename(name)
         else:
             abs_file_name = name
         return exist_csv, abs_file_name
 
-    files_in_folder = os.listdir(csv_path)
-    if verbose:
-        print(
-            f'VerneSHM::\tlooking for "{csv_key}" in "{csv_path}".\n\tDoes it have the'
-            f' right file?\n\t{is_str_in_list(csv_key, files_in_folder)}')
-        if len(files_in_folder) < 5:
-            print(f'That folder has "{files_in_folder}". ')
-    if is_str_in_list(csv_key, files_in_folder):
-        if verbose:
-            print(
-                f'VerneSHM::\tUsing {str_in_list(csv_key, files_in_folder)} since it has {csv_key}')
+    files_in_folder = os.listdir(requested_folder)
+    log.debug(f'VerneSHM::\tlooking for "{file_name}" in "{requested_folder}".'
+              f'\n\tDoes it have the right file?\n\t'
+              f'{is_str_in_list(file_name, files_in_folder)}'
+              f'That folder has "{files_in_folder}". ')
+
+    if is_str_in_list(file_name, files_in_folder):
+        log.debug(f'VerneSHM::\tUsing {str_in_list(file_name, files_in_folder)} since it has {file_name}')
         exist_csv = True
-        abs_file_name = csv_path + str_in_list(csv_key, files_in_folder)
-        print(f'VerneSHM::\tUsing {abs_file_name} as input')
+        abs_file_name = requested_folder + str_in_list(file_name, files_in_folder)
+        log.info(f'VerneSHM::\tUsing {abs_file_name} as input')
     else:
-        print("VerneSHM::\tNo file found")
+        log.info("VerneSHM::\tNo file found")
         exist_csv = False
         if context.host not in name:
-            abs_file_name = name.replace(
-                '.csv', f'-H{context.host}-P{os.getpid()}.csv')
+            abs_file_name = add_host_and_pid_to_csv_filename(name)
         else:
             abs_file_name = name
 
     return exist_csv, os.path.abspath(abs_file_name)
 
-    # elif str_in_list(csv_key, files_in_folder):
-    # print(f'Using {str_in_list(csv_key, files_in_folder)} since it has {csv_key}')
-    # file_name = csv_path + str_in_list(csv_key, files_in_folder)
-    # print(f'Using {file_name} for the velocity distribution')
 
-    # return abs_file_name, exist_csv
+def add_host_and_pid_to_csv_filename(csv_name):
+    return csv_name.replace('.csv', f'-H{context.host}-P{os.getpid()}.csv')
 
 
 def unique_hash():

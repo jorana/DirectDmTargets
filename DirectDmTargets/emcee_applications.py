@@ -16,6 +16,8 @@ from DirectDmTargets import statistics, utils, context
 import os
 import datetime
 import numpy as np
+import logging
+log = logging.getLogger()
 
 
 def default_emcee_save_dir():
@@ -76,7 +78,7 @@ class MCMCStatModel(statistics.StatModel):
     def set_pos(self, use_pos=None):
         self.log_dict['pos'] = True
         if use_pos is not None:
-            print("using specified start position")
+            log.info("using specified start position")
             self.pos = use_pos
             return
         nparameters = len(self.fit_parameters)
@@ -125,17 +127,16 @@ class MCMCStatModel(statistics.StatModel):
             self.sampler.run_mcmc(self.pos, self.nsteps, progress=False)
             end = datetime.datetime.now()
         except ValueError as e:
-            print(
+            raise ValueError(
                 f"MCMC did not finish due to a ValueError. Was running with\n"
                 f"pos={self.pos.shape} nsteps = {self.nsteps}, walkers = "
                 f"{self.nwalkers}, ndim = "
                 f"{len(self.fit_parameters)} for fit parameters "
-                f"{self.fit_parameters}")
-            raise e
+                f"{self.fit_parameters}") from e
         self.log_dict['did_run'] = True
         try:
             dt = end - start
-            print("run_emcee::\tfit_done in %i s (%.1f h)" % (
+            log.info("run_emcee::\tfit_done in %i s (%.1f h)" % (
                 dt.seconds, dt.seconds / 3600.))
             self.config['fit_time'] = dt.seconds
         except NameError:
@@ -158,7 +159,7 @@ class MCMCStatModel(statistics.StatModel):
     def show_corner(self):
         if not self.log_dict['did_run']:
             self.run_emcee()
-        print(
+        log.info(
             f"Removing a fraction of {self.remove_frac} of the samples, total"
             f"number of removed samples = {self.nsteps * self.remove_frac}")
         flat_samples = self.sampler.get_chain(
@@ -195,7 +196,7 @@ class MCMCStatModel(statistics.StatModel):
             discard=int(self.nsteps * self.remove_frac), thin=self.thin,
             flat=True))
         self.config['save_dir'] = save_dir
-        print("save_results::\tdone_saving")
+        log.info("save_results::\tdone_saving")
 
 
 def load_chain_emcee(load_from=default_emcee_save_dir(),
@@ -211,7 +212,7 @@ def load_chain_emcee(load_from=default_emcee_save_dir(),
             item = max([int(f.split(save)[-1]) for f in files if save in f])
             item = files[-1]
         except ValueError:
-            print(files)
+            log.warning(files)
             item = 0
     result = {}
     if override_load_from is not None:
@@ -221,7 +222,7 @@ def load_chain_emcee(load_from=default_emcee_save_dir(),
     if not os.path.exists(load_dir):
         raise FileNotFoundError(f"Cannot find {load_dir} specified by arg: "
                                 f"{item}")
-    print("loading", load_dir)
+    log.info("loading", load_dir)
 
     keys = ['config', 'full_chain', 'flat_chain']
 
@@ -229,7 +230,7 @@ def load_chain_emcee(load_from=default_emcee_save_dir(),
         result[key] = np.load(load_dir + key + '.npy', allow_pickle=True)
         if key == 'config':
             result[key] = result[key].item()
-    print(f"done loading\naccess result with:\n{keys}")
+    log.info(f"done loading\naccess result with:\n{keys}")
     return result
 
 

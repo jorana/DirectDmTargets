@@ -13,7 +13,7 @@ def error_bar_hist(ax, data, data_range=None, nbins=50, **kwargs):
 
 
 def hist_data(data, data_range=None, nbins=50):
-    if data_range is not None:
+    if data_range is None:
         data_range = [np.min(data), np.max(data)]
     else:
         assert_str = "make sure data_range is of fmt [x_min, x_max]"
@@ -26,7 +26,7 @@ def hist_data(data, data_range=None, nbins=50):
     return x, y, yerr
 
 
-def simple_hist(y):
+def simple_hist(y: np.ndarray):
     plt.figure(figsize=(19, 6))
     ax = plt.gca()
     data_all = hist_data(y)

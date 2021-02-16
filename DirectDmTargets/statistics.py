@@ -293,7 +293,7 @@ class StatModel:
                 str(self.config['detector_config'][key])
         file_name = file_name.replace(' ', '_')
         file_name = file_name + '.csv'
-        data_at_path, file_path = utils.add_identifier_to_safe(file_name)
+        data_at_path, file_path = utils.add_pid_to_csv_filename(file_name)
 
         # There have been some issues with mixed results for these two
         # densities. Remove those files.
@@ -305,7 +305,7 @@ class StatModel:
                     self.log.error(
                         f'StatModel::\tWARNING REMOVING {file_path}')
                     os.remove(file_path)
-                    data_at_path, file_path = utils.add_identifier_to_safe(
+                    data_at_path, file_path = utils.add_pid_to_csv_filename(
                         file_name)
                     self.log.warning(
                         f'StatModel::\tRe-evatulate, now we have {file_path}. Is there data: {data_at_path}')

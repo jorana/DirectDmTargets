@@ -15,7 +15,8 @@ import time
 import subprocess
 import verne
 import shutil
-
+import logging
+log = logging.getLogger()
 
 class GenSpectrum:
     def __init__(self, mw, sig, model, det):
@@ -75,8 +76,7 @@ class GenSpectrum:
         try:
             kwargs = {'material': self.experiment['material']}
         except KeyError as e:
-            print(self.experiment)
-            raise e
+            raise KeyError(f'Invalid experiment {self.experiment}') from e
         if self.experiment['type'] in ['SI', 'SI_bg']:
             rate = wr.rate_wimp_std(self.get_bin_centers(),
                                     benchmark["mw"],
@@ -151,7 +151,7 @@ class GenSpectrum:
     def set_negative_to_zero(result):
         mask = result['counts'] < 0
         if np.any(mask):
-            print(
+            log.warning(
                 '\n\n----\nWARNING::\nfinding negative rates. Doing hard override!!\n----\n\n')
             result['counts'][mask] = 0
             return result
@@ -256,7 +256,7 @@ class VerneSHM:
 
         # Convert file_name and self.fname to folder and name of csv file where
         # to save.
-        exist_csv, abs_file_name = utils.add_identifier_to_safe(file_name)
+        exist_csv, abs_file_name = utils.add_pid_to_csv_filename(file_name)
         assertion_string = f'abs file {abs_file_name} should be a string\n'
         assertion_string += f'exists csv {exist_csv} should be a bool'
         assert isinstance(
@@ -274,13 +274,13 @@ class VerneSHM:
             )
 
             if not os.path.exists(file_name):
-                print(f'load_f:\tcopy from temp-folder to verne_folder')
+                log.debug(f'load_f:\tcopy from temp-folder to verne_folder')
                 shutil.move(abs_file_name, file_name)
             else:
-                warn(
+                log.warning(
                     f'load_f:\twhile writing {abs_file_name}, {file_name} was created')
         else:
-            print(f'Using {file_name} for the velocity distribution')
+            log.info(f'Using {file_name} for the velocity distribution')
 
         # Alright now load the data and interpolate that. This is the output
         # that wimprates need
