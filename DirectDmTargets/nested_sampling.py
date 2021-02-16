@@ -13,7 +13,7 @@ import tempfile
 import numpy as np
 import numericalunits as nu
 from warnings import warn
-
+import time
 
 def default_nested_save_dir():
     """The name of folders where to save results from the NestedSamplerStatModel"""
@@ -190,6 +190,7 @@ class NestedSamplerStatModel(statistics.StatModel):
                                         ndim,
                                         method=method,
                                         npoints=self.config['nlive'],
+                                        maxiter=self.config.get('max_iter', None),
                                         dlogz=tol)
             end = datetime.datetime.now()
             dt = end - start
@@ -694,9 +695,20 @@ def solve_multinest(LogLikelihood, Prior, n_dims, **kwargs):
     kwargs['Prior'] = SafePrior
     run(**kwargs)
 
-    analyzer = Analyzer(n_dims, outputfiles_basename=outputfiles_basename)
-    stats = analyzer.get_stats()
-    samples = analyzer.get_equal_weighted_posterior()[:, :-1]
+    e = Exception
+
+    for i in range(60):
+        try:
+            analyzer = Analyzer(n_dims, outputfiles_basename=outputfiles_basename)
+            stats = analyzer.get_stats()
+            samples = analyzer.get_equal_weighted_posterior()[:, :-1]
+            break
+        except ValueError as e:
+            time.sleep(5)
+    else:
+        raise RuntimeError('Tried but kept running into valueError') from e
+    if i:
+        warn(f'Failed for {i} times due to {e}')
 
     return dict(logZ=stats['nested sampling global log-evidence'],
                 logZerr=stats['nested sampling global log-evidence error'],

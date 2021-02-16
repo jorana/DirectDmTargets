@@ -279,9 +279,12 @@ class VerneSHM:
                 print(f'load_f:\tcopy from temp-folder to verne_folder')
                 shutil.move(file_name, abs_file_name)
                 # file_ready(abs_file_name, mv_cmd, max_time=1)
-            else:
+            elif os.path.exists(file_name):
                 warn(f'load_f:\twhile writing {file_name}, '
                      f'{abs_file_name} was created')
+            else:
+                warn(f'Tried making {file_name} or {abs_file_name} but neither exist?'
+                     f'{os.path.exists(file_name)} {os.path.exists(abs_file_name)}')
         else:
             print(f'Using {abs_file_name} for the velocity distribution')
 
