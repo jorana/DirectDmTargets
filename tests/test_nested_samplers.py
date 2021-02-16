@@ -1,19 +1,14 @@
 import DirectDmTargets as dddm
-from sys import platform
 import tempfile
-import os
 import matplotlib.pyplot as plt
-
-
-def _is_windows():
-    return 'win' in platform
+from .test_multinest_shielded import _is_windows
 
 
 def test_nested_simple_multinest():
     if _is_windows():
         return
     fit_class = dddm.NestedSamplerStatModel('Xe')
-    fit_class.config['tol'] = 0.99
+    fit_class.config['tol'] = 0.1
     fit_class.config['nlive'] = 10
     print(f"Fitting for parameters:\n{fit_class.config['fit_parameters']}")
     fit_class.run_multinest()
@@ -24,7 +19,7 @@ def test_nested_astrophysics_multinest():
     if _is_windows():
         return
     fit_unconstrained = dddm.NestedSamplerStatModel('Xe')
-    fit_unconstrained.config['tol'] = 0.99
+    fit_unconstrained.config['tol'] = 0.1
     fit_unconstrained.config['nlive'] = 10
     fit_unconstrained.set_fit_parameters(fit_unconstrained.known_parameters)
     print(
@@ -41,35 +36,17 @@ def test_nested_astrophysics_multinest():
         warnings.warn(save_as)
         r = dddm.nested_sampling.load_multinest_samples_from_file(save_as)
         dddm.nested_sampling.multinest_corner(r)
+        plt.clf()
 
 
 def test_nested_astrophysics_nestle():
-    if _is_windows():
-        return
     fit_unconstrained = dddm.NestedSamplerStatModel('Xe')
     fit_unconstrained.config['sampler'] = 'nestle'
-    fit_unconstrained.config['tol'] = 0.99
+    fit_unconstrained.config['tol'] = 0.1
     fit_unconstrained.config['nlive'] = 10
+    fit_unconstrained.config['max_iter'] = 1
     fit_unconstrained.set_fit_parameters(fit_unconstrained.known_parameters)
     print(
         f"Fitting for parameters:\n{fit_unconstrained.config['fit_parameters']}")
     fit_unconstrained.run_nestle()
     fit_unconstrained.get_summary()
-
-
-def test_emcee():
-    fit_class = dddm.MCMCStatModel('Xe')
-    fit_class.nwalkers = 10
-    fit_class.nsteps = 20
-
-    with tempfile.TemporaryDirectory() as tmpdirname:
-        fit_class.run_emcee()
-        fit_class.show_corner()
-        fit_class.show_walkers()
-        fit_class.save_results(save_to_dir=tmpdirname)
-        save_dir = fit_class.config['save_dir']
-        r = dddm.emcee_applications.load_chain_emcee(
-            override_load_from=save_dir)
-        dddm.emcee_applications.emcee_plots(r)
-        plt.clf()
-        plt.close()

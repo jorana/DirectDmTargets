@@ -40,7 +40,8 @@ jobs:
         run: |
           pip install emcee
           pip install git+https://github.com/jorana/wimprates
-          pip install git+https://github.com/jorana/verne
+          git clone https://github.com/jorana/verne
+          pip install -e verne
           pip install git+https://github.com/JohannesBuchner/PyMultiNest
       - name: Install conda stuff on linux
         if: matrix.os == 'ubuntu-latest'
@@ -49,21 +50,17 @@ jobs:
       - name: Install python dependencies
         uses: py-actions/py-dependency-install@v2
       - name: Install other stuff
-        run: pip install pytest hypothesis flake8 pytest-cov
-      - name: Install DirectDmTargets
-        run: python setup.py develop
-      - name: Test package (windows)
-        if: matrix.os == 'windows-latest'
         run: |
-          pytest --verbose
+          pip install pytest hypothesis flake8 pytest-cov
+          python setup.py develop
       - name: Build coverage file (windows)
         if: matrix.os == 'windows-latest'
         run: |
-            pytest --cache-clear --cov=DirectDmTargets > pytest-coverage.txt
+            pytest -s --cache-clear --cov=DirectDmTargets > pytest-coverage.txt
       - name: Test package (linux)
         if: matrix.os == 'ubuntu-latest'
         run: |
           export LD_LIBRARY_PATH=/home/runner/work/DirectDmTargets/DirectDmTargets/MultiNest/lib
-          pytest --verbose
+          pytest --verbose -s
       - name: goodbye
         run: echo goodbye

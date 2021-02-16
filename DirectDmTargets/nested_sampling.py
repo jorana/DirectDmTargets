@@ -1,6 +1,6 @@
 """Do a likelihood fit. The class NestedSamplerStatModel is used for fitting applying the bayesian algorithm nestle"""
 
-from __future__ import absolute_import, unicode_literals, print_function
+from __future__ import absolute_import, unicode_literals
 from DirectDmTargets import context, detector, statistics, utils
 import datetime
 import json
@@ -13,6 +13,9 @@ import tempfile
 import numpy as np
 import numericalunits as nu
 from warnings import warn
+import time
+import logging
+log = logging.getLogger()
 
 
 def default_nested_save_dir():
@@ -91,9 +94,8 @@ class NestedSamplerStatModel(statistics.StatModel):
         :param parameter_names: the names of the parameter_values
         :return:
         """
-        if self.verbose > 1:
-            print(
-                f'NestedSamplerStatModel::\tSUPERVERBOSE\tthere we go! Find that log probability')
+        self.log.debug(
+            f'NestedSamplerStatModel::\tSUPERVERBOSE\tthere we go! Find that log probability')
         evaluated_rate = self.eval_spectrum(parameter_vals, parameter_names)[
             'counts']
 
@@ -133,13 +135,13 @@ class NestedSamplerStatModel(statistics.StatModel):
 
     def _log_probability_nested(self, theta):
         ndim = len(theta)
-        if self.verbose > 1:
-            print(
-                f'NestedSamplerStatModel::\tSUPERVERBOSE\tdoing '
-                f'_log_probability_nested for {ndim} parameters'
-                f'\n\t\tooph, what a nasty function to do some transformations behind the scenes')
-
-        return self.log_probability_nested(theta, self.known_parameters[:ndim])
+        self.log.debug(
+            f'NestedSamplerStatModel::\tSUPERVERBOSE\tdoing '
+            f'_log_probability_nested for {ndim} parameters'
+            f'\n\t\tooph, what a nasty function to do some transformations behind the scenes')
+        result = self.log_probability_nested(
+            theta, self.known_parameters[:ndim])
+        return result
 
     def _log_prior_transform_nested(self, theta):
         self.log.debug(
@@ -165,9 +167,8 @@ class NestedSamplerStatModel(statistics.StatModel):
             raise ModuleNotFoundError(
                 'package nestle not found. See README for installation')
 
-        if self.verbose:
-            print(
-                f'NestedSamplerStatModel::\tWe made it to my core function, lets do that optimization')
+        self.log.info(
+            f'NestedSamplerStatModel::\tWe made it to my core function, lets do that optimization')
         method = 'multi'  # use MutliNest algorithm
         ndim = len(self.config['fit_parameters'])
         tol = self.config['tol']  # the stopping criterion
@@ -184,12 +185,16 @@ class NestedSamplerStatModel(statistics.StatModel):
                 f"I can say, you'll have to wait for my lower level "
                 f'algorithms to give you info, see you soon!')
             start = datetime.datetime.now()
-            self.result = nestle.sample(self._log_probability_nested,
-                                        self._log_prior_transform_nested,
-                                        ndim,
-                                        method=method,
-                                        npoints=self.config['nlive'],
-                                        dlogz=tol)
+            self.result = nestle.sample(
+                self._log_probability_nested,
+                self._log_prior_transform_nested,
+                ndim,
+                method=method,
+                npoints=self.config['nlive'],
+                maxiter=self.config.get(
+                    'max_iter',
+                    None),
+                dlogz=tol)
             end = datetime.datetime.now()
             dt = end - start
             self.log.info(
@@ -264,7 +269,7 @@ class NestedSamplerStatModel(statistics.StatModel):
         # Multinest saves output to a folder. First write to the tmp folder,
         # move it to the results folder later
         _tmp_folder = self.get_save_dir()
-        save_at_temp = f'{_tmp_folder}multinest'
+        save_at_temp = os.path.join(_tmp_folder, 'multinest')
 
         solve_multinest(
             LogLikelihood=self._log_probability_nested,  # SafeLoglikelihood,
@@ -273,7 +278,10 @@ class NestedSamplerStatModel(statistics.StatModel):
             n_dims=n_dims,
             outputfiles_basename=save_at_temp,
             verbose=True,
-            evidence_tolerance=tol
+            evidence_tolerance=tol,
+            # null_log_evidence=statistics.LL_LOW_BOUND,
+            max_iter=self.config.get('max_iter', 0),
+
         )
         self.result_file = save_at_temp
 
@@ -305,7 +313,8 @@ class NestedSamplerStatModel(statistics.StatModel):
                 except FileNotFoundError:
                     pass
             else:
-                print(f'Could not find {file} that is in the garbage bin?')
+                self.log.debug(
+                    f'Could not find {file} that is in the garbage bin?')
 
     def get_summary(self):
         self.log.info(f'NestedSamplerStatModel::\tgetting the summary (or at'
@@ -403,7 +412,7 @@ class NestedSamplerStatModel(statistics.StatModel):
         if (not self.log_dict['tmp_dir']) or force_index:
             self.log_dict['tmp_dir'] = utils.open_save_dir(
                 f'{self.config["sampler"]}',
-                base=context['tmp_folder'],
+                base_dir=context['tmp_folder'],
                 force_index=force_index,
                 _hash=hash)
         self.log.info(
@@ -422,7 +431,8 @@ class NestedSamplerStatModel(statistics.StatModel):
             f'NestedSamplerStatModel::\tAlright all set, let put all that info'
             f' in {save_dir} and be done with it')
         # save the config, chain and flattened chain
-        if 'HASH' in save_dir or os.path.exists(save_dir + 'config.json'):
+        if 'HASH' in save_dir or os.path.exists(
+                os.path.join(save_dir, 'config.json')):
             save_dir = os.path.join(save_dir, 'pid' + str(os.getpid()) + '_')
         with open(os.path.join(save_dir, 'config.json'), 'w') as file:
             json.dump(convert_dic_to_savable(self.config), file, indent=4)
@@ -495,7 +505,7 @@ class CombinedInference(NestedSamplerStatModel):
                 raise ValueError(
                     f'One or more of {keys} not in {list(self.config.keys())}')
         copy_of_config = {k: self.config[k] for k in keys}
-        print(f'update config with {copy_of_config}')
+        self.log.info(f'update config with {copy_of_config}')
         for c in self.sub_classes:
             c.config.update(copy_of_config)
             c.read_priors_mean()
@@ -547,7 +557,7 @@ def load_nestle_samples(load_from=default_nested_save_dir(), item='latest'):
 
 
 def load_nestle_samples_from_file(load_dir):
-    print(f'load_nestle_samples::\tloading', load_dir)
+    log.info(f'load_nestle_samples::\tloading', load_dir)
     keys = ['config', 'res_dict', 'h', 'logl', 'logvol', 'logz', 'logzerr',
             'ncall', 'niter', 'samples', 'weights']
     result = {}
@@ -559,7 +569,8 @@ def load_nestle_samples_from_file(load_dir):
             allow_pickle=True)
         if key == 'config' or key == 'res_dict':
             result[key] = result[key].item()
-    print(f"load_nestle_samples::\tdone loading\naccess result with:\n{keys}")
+    log.info(
+        f"load_nestle_samples::\tdone loading\naccess result with:\n{keys}")
     return result
 
 
@@ -682,15 +693,23 @@ def solve_multinest(LogLikelihood, Prior, n_dims, **kwargs):
             warn('WARNING: loglikelihood not finite: %f\n' % (l))
             warn('         for parameters: %s\n' % a)
             warn('         returned very low value instead\n')
-            return -1e100
+            return -statistics.LL_LOW_BOUND
         return l
 
     kwargs['LogLikelihood'] = SafeLoglikelihood
     kwargs['Prior'] = SafePrior
     run(**kwargs)
 
-    analyzer = Analyzer(n_dims, outputfiles_basename=outputfiles_basename)
-    stats = analyzer.get_stats()
+    analyzer = Analyzer(
+        n_dims, outputfiles_basename=outputfiles_basename)
+    try:
+        stats = analyzer.get_stats()
+    except ValueError as e:
+        # This can happen during testing if we limit the number of iterations
+        warn(f'Cannot load output file: {e}')
+        stats = {'nested sampling global log-evidence': -1,
+                 'nested sampling global log-evidence error': -1
+                 }
     samples = analyzer.get_equal_weighted_posterior()[:, :-1]
 
     return dict(logZ=stats['nested sampling global log-evidence'],

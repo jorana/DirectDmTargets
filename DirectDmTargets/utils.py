@@ -5,53 +5,21 @@ import numpy as np
 import os
 import datetime
 import uuid
+import logging
+log = logging.getLogger()
 
 
-def check_folder_for_file(file_path, max_iterations=30, verbose=1):
+def check_folder_for_file(file_path):
     """
     :param file_path: path with one or more subfolders
-    :param max_iterations: max number of lower lying subfolders
-    :param verbose: print level
     """
-    last_folder = "/".join(file_path.split("/")[:-1])
-    max_iterations = np.min([max_iterations, len(file_path.split("/")) - 1])
-    if os.path.exists(last_folder):
-        # Folder does exist. No need do anything.
-        return
-    if file_path[0] == '/':
-        base_dir = '/' + file_path.split("/")[1]
-        start_i = 2
-    else:
-        base_dir = file_path.split("/")[0]
-        start_i = 1
-        assert_str = f"check_folder_for_file::\tstarting from a folder " \
-                     f"({base_dir}) that cannot be found"
-        assert os.path.exists(base_dir), assert_str
-    # Start from 1 (since that is basedir) go until second to last since that
-    # is the file name
-    for sub_dir in file_path.split("/")[start_i:max_iterations]:
-        if ".csv" in sub_dir:
-            print("Error in this code, manually breaking but one should not end up here")
-            break
-        this_dir = base_dir + "/" + sub_dir
-        if not os.path.exists(this_dir):
-            if verbose:
-                print(f'check_folder_for_file::\tmaking {this_dir}')
-            try:
-                os.mkdir(this_dir)
-            except FileExistsError:
-                print(
-                    "This is strange. We got a FileExistsError for a path to be "
-                    "made, maybe another instance has created this path too")
-        base_dir = this_dir
-        assert_str = f'check_folder_for_file::\tsomething failed. Cannot find {last_folder}'
+    last_folder = os.path.split(file_path)[0]
+    log.debug(
+        f'making path for {file_path}. Requested folder is {last_folder}')
+    os.makedirs(last_folder, exist_ok=True)
 
-        if not os.path.exists(last_folder):
-            print(file_path)
-            print(base_dir)
-            print(max_iterations)
-            print(last_folder)
-            assert False, assert_str
+    if not os.path.exists(last_folder):
+        raise OSError(f'Could not make {last_folder} for saving {file_path}')
 
 
 def now(tstart=None):
@@ -74,7 +42,7 @@ def load_folder_from_context(request):
     try:
         folder = context.context[request]
     except KeyError:
-        print(
+        log.info(
             f'load_folder_from_context::\tRequesting {request} but that is not in {context.context.keys()}')
         raise KeyError
     if not os.path.exists(folder):
@@ -89,8 +57,9 @@ def get_result_folder(*args):
     bridge to work with old code when context was not yet implemented
     """
     if args:
-        print(f'get_result_folder::\tfunctionality deprecated ignoring {args}')
-    print(
+        log.warning(
+            f'get_result_folder::\tfunctionality deprecated ignoring {args}')
+    log.info(
         f'get_result_folder::\trequested folder is {context.context["results_dir"]}')
     return load_folder_from_context('results_dir')
 
@@ -108,16 +77,8 @@ def is_savable_type(item):
     :param item: input of any type.
     :return: bool if the type is saveable by checking if it is in a limitative list
     """
-    if isinstance(
-        item,
-        (list,
-         np.ndarray,
-         int,
-         str,
-         np.int,
-         np.float,
-         bool,
-         np.float64)):
+    savables = (list, np.ndarray, int, str, np.int, np.float, bool, np.float64)
+    if isinstance(item, savables):
         return True
     return False
 
@@ -139,67 +100,45 @@ def convert_dic_to_savable(config):
     return result
 
 
-def open_save_dir(save_dir, base=None, force_index=False, _hash=None):
+def _strip_save_to_int(f, save_as):
+    try:
+        return int(f.split(save_as)[-1])
+    except (ValueError, IndexError):
+        return -1
+
+
+def _folders_plus_one(root_dir, save_as):
+    files = os.listdir(root_dir)
+    if not files:
+        n_last = -1
+    else:
+        n_last = max(_strip_save_to_int(f, save_as) for f in files)
+    return os.path.join(root_dir, save_as + str(n_last + 1))
+
+
+def open_save_dir(save_as, base_dir=None, force_index=False, _hash=None):
     """
 
-    :param save_dir: requested name of folder to open in the result folder
-    :param base: folder where the save dir is to be saved in. This is the results folder by default
+    :param save_as: requested name of folder to open in the result folder
+    :param base_dir: folder where the save_as dir is to be saved in. This is the results folder by default
     :param force_index: option to force to write to a number (must be an override!)
-    :param _hash: add a has to save dir to avoid duplicate naming conventions while running multiple jobs
+    :param _hash: add a has to save_as dir to avoid duplicate naming conventions while running multiple jobs
     :return: the name of the folder as was saveable (usually input + some number)
     """
-    if base is None:
-        base = get_result_folder()
-    save = save_dir
-    files = os.listdir(base)
-    files = [f for f in files if save in f]
-    if not save + '0' in files and not force_index:
-        # First file in the results folder with this name
-        index = 0
-    elif force_index is False:
-        index = 0
-        for f in files:
-            try:
-                index = max(int(f.split(save)[-1]) + 1, index)
-            except ValueError:
-                # this means that f.split(save)[-1] is not an integer, thus,
-                # that folder uses a different naming convention and we can
-                # ignore it.
-                pass
-    else:
-        index = force_index
-    # this is where we going to save
-    save_dir = os.path.join(base, save + str(index))
-    if _hash:
+    if base_dir is None:
+        base_dir = get_result_folder()
+    if force_index:
+        results_path = os.path.join(base_dir, save_as + str(force_index))
+    elif _hash is None:
         assert force_index is False, f'do not set _hash to {_hash} and force_index to {force_index} simultaneously'
-        save_dir = os.path.join(base, (save + '_HASH' + str(_hash)))
-        if not os.path.exists(save_dir):
-            try:
-                os.mkdir(save_dir)
-            except FileExistsError:
-                # starting up on multiple cores causes the command above to be
-                # executed simultaneously
-                pass
-        else:
-            files_in_dir = os.listdir(save_dir)
-            if len(files_in_dir):
-                print(
-                    f'WARNING writing to {save_dir}. There are files in this dir: {files_in_dir} ')
-        print('open_save_dir::\tusing ' + save_dir)
-        return save_dir
-    if force_index is False:
-        assert not os.path.exists(
-            save_dir), 'Trying to override another directory, this would be very messy'
-        os.mkdir(save_dir)
+        results_path = _folders_plus_one(base_dir, save_as)
     else:
-        if not os.path.exists(save_dir):
-            os.mkdir(save_dir)
-        else:
-            for file in os.listdir(save_dir):
-                print('open_save_dir::\tremoving ' + save_dir + file)
-                os.remove(save_dir + file)
-    print('open_save_dir::\tusing ' + save_dir)
-    return save_dir
+        results_path = os.path.join(base_dir, save_as, '_HASH' + str(_hash))
+
+    check_folder_for_file(os.path.join(results_path, "some_file_goes_here"))
+    log.info('open_save_dir::\tusing ' + results_path)
+    log.warning(os.listdir(os.path.split(results_path)[0]))
+    return results_path
 
 
 def str_in_list(string, _list):
@@ -211,82 +150,71 @@ def str_in_list(string, _list):
     raise FileNotFoundError(f'No name named {string} in {_list}')
 
 
-def is_str_in_list(string, _list, verbose=0):
+def is_str_in_list(string, _list):
     """checks if sting is in any of the items in _list.
     :return bool:"""
-    if len(_list) < 10:
-        print(f'is_str_in_list::\tlooking for {string} in {_list}')
+    log.debug(f'is_str_in_list::\tlooking for {string} in {_list}')
     for name in _list:
         if string in name:
-            if verbose:
-                print(f'is_str_in_list::\t{string} is in  {name}!')
+            log.debug(f'is_str_in_list::\t{string} is in  {name}!')
             return True
-        if verbose:
-            print(f'is_str_in_list::\t{string} is not in  {name}')
+        log.debug(f'is_str_in_list::\t{string} is not in  {name}')
     return False
 
 
-def add_identifier_to_safe(name, verbose=1):
+def add_pid_to_csv_filename(name):
     """
     :param name: takes name
-    :param verbose: print level
     :return: abs_file_name, exist_csv
     """
 
     assert '.csv' in name, f"{name} is not .csv"
     # where to look
-    csv_path = '/'.join(name.split('/')[:-1]) + '/'
+    requested_folder = os.path.split(name)[0]
     # what to look for
-    csv_key = name.split('/')[-1].replace('.csv', "")
+    file_name = os.path.split(name)[-1].replace('.csv', "")
 
-    if os.path.exists(csv_path) and not os.stat(csv_path).st_size:
+    if os.path.exists(name) and not os.stat(name).st_size:
         # Check that the file we are looking for is not an empty file, that
         # would be bad.
-        print(f"WARNING:\t removing empty file {csv_path}")
-        os.remove(csv_path)
+        log.warning(f"WARNING:\t removing empty file {name}")
+        os.remove(name)
 
     # What can we see
-    if not os.path.exists(csv_path):
+    if not os.path.exists(requested_folder):
         exist_csv = False
         if context.host not in name:
-            abs_file_name = name.replace(
-                '.csv', f'-H{context.host}-P{os.getpid()}.csv')
+            abs_file_name = add_host_and_pid_to_csv_filename(name)
         else:
             abs_file_name = name
         return exist_csv, abs_file_name
 
-    files_in_folder = os.listdir(csv_path + '/')
-    if verbose:
-        print(
-            f'VerneSHM::\tlooking for "{csv_key}" in "{csv_path}".\n\tDoes it have the'
-            f' right file?\n\t{is_str_in_list(csv_key, files_in_folder)}')
-        if len(files_in_folder) < 5:
-            print(f'That folder has "{files_in_folder}". ')
-    if is_str_in_list(csv_key, files_in_folder):
-        if verbose:
-            print(
-                f'VerneSHM::\tUsing {str_in_list(csv_key, files_in_folder)} since it has {csv_key}')
+    files_in_folder = os.listdir(requested_folder)
+    log.debug(f'VerneSHM::\tlooking for "{file_name}" in "{requested_folder}".'
+              f'\n\tDoes it have the right file?\n\t'
+              f'{is_str_in_list(file_name, files_in_folder)}'
+              f'That folder has "{files_in_folder}". ')
+
+    if is_str_in_list(file_name, files_in_folder):
+        log.debug(
+            f'VerneSHM::\tUsing {str_in_list(file_name, files_in_folder)} since it has {file_name}')
         exist_csv = True
-        abs_file_name = csv_path + str_in_list(csv_key, files_in_folder)
-        print(f'VerneSHM::\tUsing {abs_file_name} as input')
+        abs_file_name = requested_folder + \
+            str_in_list(file_name, files_in_folder)
+        log.info(f'VerneSHM::\tUsing {abs_file_name} as input')
     else:
-        print("VerneSHM::\tNo file found")
+        log.info("VerneSHM::\tNo file found")
         exist_csv = False
-        if host not in name:
-            # abs_file_name = name.replace('.csv', f'-{host}.csv')
-            abs_file_name = name.replace(
-                '.csv', f'-H{context.host}-P{os.getpid()}.csv')
+        if context.host not in name:
+            abs_file_name = add_host_and_pid_to_csv_filename(name)
         else:
             abs_file_name = name
 
-    return exist_csv, abs_file_name
+    return exist_csv, os.path.abspath(abs_file_name)
 
-    # elif str_in_list(csv_key, files_in_folder):
-    # print(f'Using {str_in_list(csv_key, files_in_folder)} since it has {csv_key}')
-    # file_name = csv_path + str_in_list(csv_key, files_in_folder)
-    # print(f'Using {file_name} for the velocity distribution')
 
-    # return abs_file_name, exist_csv
+def add_host_and_pid_to_csv_filename(csv_name):
+    return csv_name.replace('.csv', f'-H{context.host}-P{os.getpid()}.csv')
 
 
 def unique_hash():

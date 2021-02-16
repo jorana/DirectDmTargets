@@ -12,8 +12,8 @@ import os
 import pandas as pd
 
 # Set a lower bound to the log-likelihood (this becomes a problem due to
-# machine precision).
-LL_LOW_BOUND = 1e-99
+# machine precision). Set to same number as multinest.
+LL_LOW_BOUND = 1e-90
 
 
 def get_priors(priors_from="Evans_2019"):
@@ -293,7 +293,7 @@ class StatModel:
                 str(self.config['detector_config'][key])
         file_name = file_name.replace(' ', '_')
         file_name = file_name + '.csv'
-        data_at_path, file_path = utils.add_identifier_to_safe(file_name)
+        data_at_path, file_path = utils.add_pid_to_csv_filename(file_name)
 
         # There have been some issues with mixed results for these two
         # densities. Remove those files.
@@ -305,7 +305,7 @@ class StatModel:
                     self.log.error(
                         f'StatModel::\tWARNING REMOVING {file_path}')
                     os.remove(file_path)
-                    data_at_path, file_path = utils.add_identifier_to_safe(
+                    data_at_path, file_path = utils.add_pid_to_csv_filename(
                         file_name)
                     self.log.warning(
                         f'StatModel::\tRe-evatulate, now we have {file_path}. Is there data: {data_at_path}')
@@ -511,9 +511,12 @@ class StatModel:
         if self.config['save_intermediate']:
             self.log.info(
                 f"StatModel::\teval_spectrum\tload results from intermediate file")
-            # TODO why is this line needed?
-            spec_class = halo.VerneSHM(
-            ) if self.config['earth_shielding'] else self.config['halo_model']
+
+            spec_class = self.config['halo_model']
+
+            if self.config['earth_shielding']:
+                assert str(spec_class) == str(halo.VerneSHM())
+
             interm_exists, interm_file, interm_spec = self.find_intermediate_result(
                 nbin=self.config['n_energy_bins'],
                 model=str(spec_class),
@@ -590,16 +593,13 @@ class StatModel:
                     self.log.debug(
                         f"StatModel::\tSUPERVERBOSE\tSetting spectrum to Verne in likelihood code")
                     fit_shm = halo.VerneSHM(
-                        log_mass=checked_values[0],  # self.config['mw'],
-                        # self.config['sigma'],
-                        log_cross_section=checked_values[1],
+                        log_mass=checked_values[0],  # 'mw
+                        log_cross_section=checked_values[1],  # 'sigma'
                         location=self.config['detector_config']['location'],
-                        v_0=checked_values[2] * nu.km / \
-                        nu.s,  # self.config['v_0'],
-                        v_esc=checked_values[3] * nu.km / \
-                        nu.s,  # self.config['v_esc'],
+                        v_0=checked_values[2] * nu.km / nu.s,  # 'v_0'
+                        v_esc=checked_values[3] * nu.km / nu.s,  # 'v_esc'
                         rho_dm=checked_values[
-                            4] * nu.GeV / nu.c0 ** 2 / nu.cm ** 3)  # self.config['density'])
+                            4] * nu.GeV / nu.c0 ** 2 / nu.cm ** 3)  # 'density'
                 else:
                     self.log.debug(
                         f"StatModel::\tSUPERVERBOSE\tUsing SHM in likelihood code")
@@ -635,21 +635,11 @@ class StatModel:
                     f" is too small ({values[3]})\nFull dump of parameters:\n"
                     f"{parameter_names} = {values}.\nIf this occurs, one or "
                     f"more priors might not be constrained correctly.")
-                # TODO should this be temporary? It's bad that we get negative rates e.g. for:
-                #  energies = np.linspace(0.1, 3.5, 10) *  nu.keV
-                #  Shield_SHM = dddm.VerneSHM(location="XENON",
-                #               log_mass=-5.06863087e-01,
-                #               log_cross_section=-3.23810744e+01,
-                #               v_0=2.33211211e+02,
-                #               v_esc=5.42044480e+02,
-                #               rho_dm=5.72576689e-01)
-                #  dr = wr.rate_migdal(energies,
-                #                      1 * nu.GeV / nu.c0 ** 2,
-                #                      1e-35 * nu.cm ** 2,
-                #                     halo_model = Shield_SHM)
                 if 'migd' in self.config['detector']:
                     self.log.error(error_message)
                     mask = binned_spectrum['counts'] < 0
+                    # Capping the rates
+                    # See https://github.com/jorana/DirectDmTargets/issues/31
                     binned_spectrum['counts'][mask] = 0
                 else:
                     raise ValueError(error_message)

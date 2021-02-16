@@ -2,23 +2,24 @@ numpy
 scipy
 matplotlib
 pandas
-ipython
-jupyter
 numba
 nestle
 emcee
-corner 
+corner
 numericalunits
 multihist
 seaborn
 coveralls
 hypothesis
-jupyter-resource-usage   # Memory viewer for notebooks
+pytest
+pytest-runner
+tqdm
+# # Optional for notebooks
+# jupyter
+# ipython
+# parso==0.7.1
+# jupyter-resource-usage   # Memory viewer for notebooks
 # cmake
 # scikit-build
 # scikit-learn
 # line_profiler
-parso==0.7.1
-pytest
-pytest-runner
-tqdm
