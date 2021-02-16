@@ -1,9 +1,13 @@
 import DirectDmTargets as dddm
 import tempfile
 import matplotlib.pyplot as plt
-from .test_multinest_shielded import _is_windows
 import logging
+from sys import platform
 log = logging.getLogger()
+
+
+def _is_windows():
+    return 'win' in platform
 
 
 def test_nested_simple_multinest():
@@ -41,8 +45,8 @@ def test_nested_astrophysics_multinest():
         r = dddm.nested_sampling.load_multinest_samples_from_file(save_as)
         dddm.nested_sampling.multinest_corner(r)
         fit_unconstrained.empty_garbage()
-        fit_unconstrained.show_corner()
         plt.clf()
+        plt.close()
 
 
 def test_nested_astrophysics_nestle():

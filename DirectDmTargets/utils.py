@@ -140,7 +140,7 @@ def open_save_dir(save_as, base_dir=None, force_index=False, _hash=None):
 
     check_folder_for_file(os.path.join(results_path, "some_file_goes_here"))
     log.info('open_save_dir::\tusing ' + results_path)
-    log.warning(os.listdir(os.path.split(results_path)[0]))
+    log.debug(f'Other files in {results_path} base are {os.listdir(os.path.split(results_path)[0])}')
     return results_path
 
 
