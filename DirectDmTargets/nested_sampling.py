@@ -470,16 +470,17 @@ class CombinedInference(NestedSamplerStatModel):
         if not np.all([t in detector.experiment for t in targets]):
             raise NotImplementedError(
                 f'Insert tuple of sub-experiments. {targets} are incorrect format')
-        if len(targets) <= 2:
+        if len(targets) < 2:
             self.log.warning(
                 "Don't use this class for single experiments! Use NestedSamplerStatModel instead")
-
+        self.log.debug(f'Register {targets}')
         self.sub_detectors = targets
         self.config['sub_sets'] = targets
         self.sub_classes = [
             NestedSamplerStatModel(det)
             for det in self.sub_detectors
         ]
+        self.log.debug(f'Sub detectors are set: {self.sub_classes}')
 
     def _log_probability_nested(self, theta):
         return np.sum([c._log_probability_nested(theta)
@@ -489,12 +490,13 @@ class CombinedInference(NestedSamplerStatModel):
         for k in keys:
             if k not in self.config:
                 raise ValueError(
-                    f'One or more of {keys} not in {list(self.config.keys())}')
+                    f'One or more of keys not in config: {np.setdiff1d(keys, list(self.config.keys()))}')
         copy_of_config = {k: self.config[k] for k in keys}
         self.log.info(f'update config with {copy_of_config}')
         for c in self.sub_classes:
             c.config.update(copy_of_config)
             c.read_priors_mean()
+            self.log.debug(f'{c} with config {c.config}')
             c.eval_benchmark()
             c.set_models()
             c.print_before_run()
