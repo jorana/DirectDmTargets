@@ -85,4 +85,3 @@ def test_nestle():
     dddm.nestle_corner(r)
     plt.close()
     plt.clf()
-

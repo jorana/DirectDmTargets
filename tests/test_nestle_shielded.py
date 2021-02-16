@@ -2,6 +2,7 @@ import DirectDmTargets as dddm
 import logging
 log = logging.getLogger()
 
+
 def test_nested_simple_nestle_earth_shielding():
     fit_class = dddm.NestedSamplerStatModel('Xe')
     fit_class.config['sampler'] = 'nestle'
