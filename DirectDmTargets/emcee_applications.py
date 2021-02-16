@@ -190,10 +190,21 @@ class MCMCStatModel(statistics.StatModel):
             json.dump(utils.convert_dic_to_savable(self.config), fp, indent=4)
         np.save(os.path.join(save_dir, 'config.npy'),
                 utils.convert_dic_to_savable(self.config))
-        np.save(os.path.join(save_dir, 'full_chain.npy'), self.sampler.get_chain())
-        np.save(os.path.join(save_dir, 'flat_chain.npy'), self.sampler.get_chain(
-            discard=int(self.nsteps * self.remove_frac), thin=self.thin,
-            flat=True))
+        np.save(
+            os.path.join(
+                save_dir,
+                'full_chain.npy'),
+            self.sampler.get_chain())
+        np.save(
+            os.path.join(
+                save_dir,
+                'flat_chain.npy'),
+            self.sampler.get_chain(
+                discard=int(
+                    self.nsteps *
+                    self.remove_frac),
+                thin=self.thin,
+                flat=True))
         self.config['save_dir'] = save_dir
         log.info("save_results::\tdone_saving")
 
@@ -226,7 +237,11 @@ def load_chain_emcee(load_from=default_emcee_save_dir(),
     keys = ['config', 'full_chain', 'flat_chain']
 
     for key in keys:
-        result[key] = np.load(os.path.join(load_dir, key + '.npy'), allow_pickle=True)
+        result[key] = np.load(
+            os.path.join(
+                load_dir,
+                key + '.npy'),
+            allow_pickle=True)
         if key == 'config':
             result[key] = result[key].item()
     log.info(f"done loading\naccess result with:\n{keys}")

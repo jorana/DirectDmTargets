@@ -9,12 +9,14 @@ import loggingpytest
 log = logging.getLogger()
 log.setLevel(logging.INFO)
 
+
 def check_folder_for_file(file_path):
     """
     :param file_path: path with one or more subfolders
     """
     last_folder = os.path.split(file_path)[0]
-    log.debug(f'making path for {file_path}. Requested folder is {last_folder}')
+    log.debug(
+        f'making path for {file_path}. Requested folder is {last_folder}')
     os.makedirs(last_folder, exist_ok=True)
 
     if not os.path.exists(last_folder):
