@@ -277,7 +277,8 @@ class VerneSHM:
                 print(f'load_f:\tcopy from temp-folder to verne_folder')
                 shutil.move(abs_file_name, file_name)
             else:
-                warn(f'load_f:\twhile writing {abs_file_name}, {file_name} was created')
+                warn(
+                    f'load_f:\twhile writing {abs_file_name}, {file_name} was created')
         else:
             print(f'Using {file_name} for the velocity distribution')
 
