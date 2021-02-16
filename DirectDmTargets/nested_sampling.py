@@ -531,14 +531,18 @@ def convert_dic_to_savable(config):
     return result
 
 
-def load_nestle_samples(load_from=default_nested_save_dir(), base = utils.get_result_folder(), item='latest'):
+def load_nestle_samples(
+        load_from=default_nested_save_dir(),
+        base=utils.get_result_folder(),
+        item='latest'):
 
     save = load_from
     files = os.listdir(base)
     if item == 'latest':
         _selected_files = [int(f.split(save)[-1]) for f in files if save in f]
         if not _selected_files:
-            raise FileNotFoundError(f'No results in {base}. That only has {files}')
+            raise FileNotFoundError(
+                f'No results in {base}. That only has {files}')
         item = max(_selected_files)
 
     load_dir = os.path.join(base, save + str(item) + '/')

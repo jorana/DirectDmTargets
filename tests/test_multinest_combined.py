@@ -4,6 +4,7 @@ import logging
 
 log = logging.getLogger()
 
+
 def test_nested_simple_multinest_earth_shielding():
     if _is_windows():
         return
