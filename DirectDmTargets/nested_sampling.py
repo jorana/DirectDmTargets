@@ -699,23 +699,18 @@ def solve_multinest(LogLikelihood, Prior, n_dims, **kwargs):
     kwargs['Prior'] = SafePrior
     run(**kwargs)
 
-    e = Exception
-
-    for i in range(60):
-        try:
-            analyzer = Analyzer(
-                n_dims, outputfiles_basename=outputfiles_basename)
-            stats = analyzer.get_stats()
-            samples = analyzer.get_equal_weighted_posterior()[:, :-1]
-            break
-        except ValueError as e:
-            time.sleep(5)
-    else:
-        raise RuntimeError('Tried but kept running into valueError') from e
-    if i:
-        warn(f'Failed for {i} times due to {e}')
+    analyzer = Analyzer(
+        n_dims, outputfiles_basename=outputfiles_basename)
+    try:
+        stats = analyzer.get_stats()
+    except ValueError as e:
+        warn(f'Cannot load output file: {e}')
+        stats = {'nested sampling global log-evidence':-1,
+                 'nested sampling global log-evidence error':-1
+                 }
+    samples = analyzer.get_equal_weighted_posterior()[:, :-1]
 
     return dict(logZ=stats['nested sampling global log-evidence'],
-                logZerr=stats['nested sampling global log-evidence error'],
+                logZerr=stats[],
                 samples=samples,
                 )
