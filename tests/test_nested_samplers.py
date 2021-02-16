@@ -67,7 +67,6 @@ def test_nestle():
     stats.config['sampler'] = 'nestle'
     stats.config['tol'] = 0.1
     stats.config['nlive'] = 30
-    # stats.config['max_iter'] = 1
     print('print info')
     stats.print_before_run()
     print('Start run')
