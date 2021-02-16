@@ -15,7 +15,7 @@ import numericalunits as nu
 from warnings import warn
 import logging
 log = logging.getLogger()
-log.setLevel(logging.DEBUG)
+# log.setLevel(logging.DEBUG)
 
 
 def default_nested_save_dir():
@@ -399,7 +399,7 @@ class NestedSamplerStatModel(statistics.StatModel):
                 f'{self.config["sampler"]}',
                 base_dir=context['tmp_folder'],
                 force_index=force_index,
-                _hash=hash)
+                _hash=_hash)
         self.log.info(
             f'NestedSamplerStatModel::\tget_tmp_dir\ttmp_dir = {self.log_dict["tmp_dir"]}')
         return self.log_dict['tmp_dir']

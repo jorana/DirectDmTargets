@@ -108,11 +108,13 @@ def _strip_save_to_int(f, save_as):
 
 
 def _folders_plus_one(root_dir, save_as):
-    files = os.listdir(root_dir)
-    if not files:
-        n_last = -1
-    else:
-        n_last = max(_strip_save_to_int(f, save_as) for f in files)
+    # Set to -1 (+1 = 0 ) for the first directory. e.g. rootdir does not exist
+    n_last = -1
+
+    if os.path.exists(root_dir):
+        files = os.listdir(root_dir)
+        if files:
+            n_last = max(_strip_save_to_int(f, save_as) for f in files)
     return os.path.join(root_dir, save_as + str(n_last + 1))
 
 

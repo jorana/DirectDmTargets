@@ -2,6 +2,8 @@ import DirectDmTargets as dddm
 import tempfile
 import matplotlib.pyplot as plt
 from .test_multinest_shielded import _is_windows
+import logging
+log = logging.getLogger()
 
 
 def test_nested_simple_multinest():
@@ -60,17 +62,27 @@ def test_nestle():
     stats = dddm.NestedSamplerStatModel('Xe')
     stats.config['sampler'] = 'nestle'
     stats.config['tol'] = 0.1
-    stats.config['nlive'] = 10
-    stats.config['max_iter'] = 1
+    stats.config['nlive'] = 30
+    # stats.config['max_iter'] = 1
+    print('print info')
     stats.print_before_run()
+    print('Start run')
     stats.run_nestle()
+    print('Save results')
     stats.save_results()
+    print('Empty garbade')
     stats.empty_garbage()
+    print('Show corner')
     stats.show_corner()
+    plt.close()
+    plt.clf()
+    print('Save & show again')
     # Deprecate this function?
     stats.get_tmp_dir()
 
     save_as = stats.get_save_dir()
     r = dddm.load_nestle_samples(save_as)
     dddm.nestle_corner(r)
+    plt.close()
     plt.clf()
+
