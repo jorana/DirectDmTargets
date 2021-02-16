@@ -18,6 +18,7 @@ import shutil
 import logging
 log = logging.getLogger()
 
+
 class GenSpectrum:
     def __init__(self, mw, sig, model, det):
         """

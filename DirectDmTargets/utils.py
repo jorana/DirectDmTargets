@@ -40,7 +40,8 @@ def load_folder_from_context(request):
     try:
         folder = context.context[request]
     except KeyError:
-        log.info(f'load_folder_from_context::\tRequesting {request} but that is not in {context.context.keys()}')
+        log.info(
+            f'load_folder_from_context::\tRequesting {request} but that is not in {context.context.keys()}')
         raise KeyError
     if not os.path.exists(folder):
         raise FileNotFoundError(
@@ -54,7 +55,8 @@ def get_result_folder(*args):
     bridge to work with old code when context was not yet implemented
     """
     if args:
-        log.warning(f'get_result_folder::\tfunctionality deprecated ignoring {args}')
+        log.warning(
+            f'get_result_folder::\tfunctionality deprecated ignoring {args}')
     log.info(
         f'get_result_folder::\trequested folder is {context.context["results_dir"]}')
     return load_folder_from_context('results_dir')
@@ -214,9 +216,11 @@ def add_pid_to_csv_filename(name):
               f'That folder has "{files_in_folder}". ')
 
     if is_str_in_list(file_name, files_in_folder):
-        log.debug(f'VerneSHM::\tUsing {str_in_list(file_name, files_in_folder)} since it has {file_name}')
+        log.debug(
+            f'VerneSHM::\tUsing {str_in_list(file_name, files_in_folder)} since it has {file_name}')
         exist_csv = True
-        abs_file_name = requested_folder + str_in_list(file_name, files_in_folder)
+        abs_file_name = requested_folder + \
+            str_in_list(file_name, files_in_folder)
         log.info(f'VerneSHM::\tUsing {abs_file_name} as input')
     else:
         log.info("VerneSHM::\tNo file found")

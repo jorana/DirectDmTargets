@@ -95,7 +95,7 @@ class NestedSamplerStatModel(statistics.StatModel):
         :return:
         """
         self.log.debug(
-                f'NestedSamplerStatModel::\tSUPERVERBOSE\tthere we go! Find that log probability')
+            f'NestedSamplerStatModel::\tSUPERVERBOSE\tthere we go! Find that log probability')
         evaluated_rate = self.eval_spectrum(parameter_vals, parameter_names)[
             'counts']
 
@@ -136,9 +136,9 @@ class NestedSamplerStatModel(statistics.StatModel):
     def _log_probability_nested(self, theta):
         ndim = len(theta)
         self.log.debug(
-                f'NestedSamplerStatModel::\tSUPERVERBOSE\tdoing '
-                f'_log_probability_nested for {ndim} parameters'
-                f'\n\t\tooph, what a nasty function to do some transformations behind the scenes')
+            f'NestedSamplerStatModel::\tSUPERVERBOSE\tdoing '
+            f'_log_probability_nested for {ndim} parameters'
+            f'\n\t\tooph, what a nasty function to do some transformations behind the scenes')
         result = self.log_probability_nested(
             theta, self.known_parameters[:ndim])
         return result
@@ -168,7 +168,7 @@ class NestedSamplerStatModel(statistics.StatModel):
                 'package nestle not found. See README for installation')
 
         self.log.info(
-                f'NestedSamplerStatModel::\tWe made it to my core function, lets do that optimization')
+            f'NestedSamplerStatModel::\tWe made it to my core function, lets do that optimization')
         method = 'multi'  # use MutliNest algorithm
         ndim = len(self.config['fit_parameters'])
         tol = self.config['tol']  # the stopping criterion
@@ -313,7 +313,8 @@ class NestedSamplerStatModel(statistics.StatModel):
                 except FileNotFoundError:
                     pass
             else:
-                self.log.debug(f'Could not find {file} that is in the garbage bin?')
+                self.log.debug(
+                    f'Could not find {file} that is in the garbage bin?')
 
     def get_summary(self):
         self.log.info(f'NestedSamplerStatModel::\tgetting the summary (or at'
@@ -568,7 +569,8 @@ def load_nestle_samples_from_file(load_dir):
             allow_pickle=True)
         if key == 'config' or key == 'res_dict':
             result[key] = result[key].item()
-    log.info(f"load_nestle_samples::\tdone loading\naccess result with:\n{keys}")
+    log.info(
+        f"load_nestle_samples::\tdone loading\naccess result with:\n{keys}")
     return result
 
 

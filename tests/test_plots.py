@@ -2,6 +2,7 @@ import DirectDmTargets
 import matplotlib.pyplot as plt
 import numpy as np
 
+
 def test_ll_s():
     DirectDmTargets.plot_basics.plt_ll_sigma_spec(bins=2)
     plt.clf()
