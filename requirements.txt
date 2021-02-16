@@ -11,6 +11,10 @@ multihist
 seaborn
 coveralls
 hypothesis
+pytest
+pytest-runner
+tqdm
+# # Optional for notebooks
 # jupyter
 # ipython
 # parso==0.7.1
@@ -19,6 +23,3 @@ hypothesis
 # scikit-build
 # scikit-learn
 # line_profiler
-pytest
-pytest-runner
-tqdm

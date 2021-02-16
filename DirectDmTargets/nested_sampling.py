@@ -692,7 +692,7 @@ def solve_multinest(LogLikelihood, Prior, n_dims, **kwargs):
             warn('WARNING: loglikelihood not finite: %f\n' % (l))
             warn('         for parameters: %s\n' % a)
             warn('         returned very low value instead\n')
-            return -1e100
+            return -statistics.LL_LOW_BOUND
         return l
 
     kwargs['LogLikelihood'] = SafeLoglikelihood
@@ -704,6 +704,7 @@ def solve_multinest(LogLikelihood, Prior, n_dims, **kwargs):
     try:
         stats = analyzer.get_stats()
     except ValueError as e:
+        # This can happen during testing if we limit the number of iterations
         warn(f'Cannot load output file: {e}')
         stats = {'nested sampling global log-evidence': -1,
                  'nested sampling global log-evidence error': -1

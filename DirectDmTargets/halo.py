@@ -251,7 +251,6 @@ class VerneSHM:
 
         # set up folders and names
         file_folder = context['verne_files']
-        software_folder = context['verne_folder']
         file_name = os.path.join(file_folder, self.fname + '_avg' + '.csv')
         utils.check_folder_for_file(os.path.join(file_folder, self.fname))
 
@@ -274,36 +273,29 @@ class VerneSHM:
                 N_gamma=4,
             )
 
-            mv_cmd = f'mv {file_name} {abs_file_name}'
-            if not os.path.exists(abs_file_name):
+            if not os.path.exists(file_name):
                 print(f'load_f:\tcopy from temp-folder to verne_folder')
-                shutil.move(file_name, abs_file_name)
-                # file_ready(abs_file_name, mv_cmd, max_time=1)
-            elif os.path.exists(file_name):
-                warn(f'load_f:\twhile writing {file_name}, '
-                     f'{abs_file_name} was created')
+                shutil.move(abs_file_name, file_name)
             else:
-                warn(
-                    f'Tried making {file_name} or {abs_file_name} but neither exist?'
-                    f'{os.path.exists(file_name)} {os.path.exists(abs_file_name)}')
+                warn(f'load_f:\twhile writing {abs_file_name}, {file_name} was created')
         else:
-            print(f'Using {abs_file_name} for the velocity distribution')
+            print(f'Using {file_name} for the velocity distribution')
 
         # Alright now load the data and interpolate that. This is the output
         # that wimprates need
-        if not os.path.exists(os.path.abspath(abs_file_name)):
-            raise OSError(f'{abs_file_name} should exist')
+        if not os.path.exists(os.path.abspath(file_name)):
+            raise OSError(f'{file_name} should exist')
         try:
-            df = pd.read_csv(abs_file_name)
+            df = pd.read_csv(file_name)
         except pd.io.common.EmptyDataError as pandas_error:
-            os.remove(abs_file_name)
+            os.remove(file_name)
             raise pandas_error
 
         if not len(df):
             # Somehow we got an empty dataframe, we cannot continue
-            os.remove(abs_file_name)
+            os.remove(file_name)
             raise ValueError(
-                f'Was trying to read an empty dataframe from {abs_file_name}')
+                f'Was trying to read an empty dataframe from {file_name}:\n{df}')
 
         x, y = df.keys()
         interpolation = interp1d(

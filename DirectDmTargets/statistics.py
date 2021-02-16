@@ -12,7 +12,7 @@ import os
 import pandas as pd
 
 # Set a lower bound to the log-likelihood (this becomes a problem due to
-# machine precision).
+# machine precision). Set to same number as multinest.
 LL_LOW_BOUND = 1e-90
 
 

@@ -31,7 +31,7 @@ jobs:
       uses: actions/checkout@v2
     - name: Install python dependencies
       uses: py-actions/py-dependency-install@v2
-    - name: Install conda stuff on linux
+    - name: Install requirements
       run: |
         bash .github/scripts/install_on_linux.sh
         pip install pytest hypothesis flake8 pytest-cov coveralls
