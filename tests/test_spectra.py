@@ -33,7 +33,11 @@ def test_simple_spectrum():
     plt.close()
 
 
-def _galactic_spectrum_inner(use_SHM, det='Xe', event_class=dddm.GenSpectrum, nbins=10):
+def _galactic_spectrum_inner(
+        use_SHM,
+        det='Xe',
+        event_class=dddm.GenSpectrum,
+        nbins=10):
     mw = 1
     sigma = 1e-35
     E_max = None
@@ -67,6 +71,7 @@ def test_detector_spectra():
             # This is not implemented as such
             continue
         if 'bg_func' in det_properties:
-            _galactic_spectrum_inner(use_SHM, det, event_class=dddm.DetectorSpectrum, nbins=1)
+            _galactic_spectrum_inner(
+                use_SHM, det, event_class=dddm.DetectorSpectrum, nbins=1)
         else:
             _galactic_spectrum_inner(use_SHM, det, nbins=3)
