@@ -3,8 +3,6 @@ from .test_multinest_shielded import _is_windows
 import logging
 
 log = logging.getLogger()
-log.setLevel(logging.DEBUG)
-
 
 def test_nested_simple_multinest_earth_shielding():
     if _is_windows():

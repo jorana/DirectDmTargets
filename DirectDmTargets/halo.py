@@ -260,6 +260,8 @@ class VerneSHM:
         exist_csv, abs_file_name = utils.add_pid_to_csv_filename(file_name)
         assertion_string = f'abs file {abs_file_name} should be a string\n'
         assertion_string += f'exists csv {exist_csv} should be a bool'
+        log.info(f'load_f::\twrite to {abs_file_name} ({not exist_csv}. '
+                 f'Then copy to {file_name}')
         assert isinstance(
             abs_file_name, str) and isinstance(
             exist_csv, bool), assertion_string

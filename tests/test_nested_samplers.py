@@ -79,9 +79,6 @@ def test_nestle():
     print('Save & show again')
     # Deprecate this function?
     stats.get_tmp_dir()
-
-    save_as = stats.get_save_dir()
-    r = dddm.load_nestle_samples(save_as)
-    dddm.nestle_corner(r)
+    stats.get_save_dir()
     plt.close()
     plt.clf()

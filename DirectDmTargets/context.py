@@ -46,9 +46,9 @@ else:
     vene_folder = os.path.join(os.path.split(verne.__path__[0])[0], 'results')
     context = {'software_dir': installation_folder,
                'results_dir':
-                   os.path.join(installation_folder, 'DD_DM_targets_data/'),
+                   os.path.join(installation_folder, 'DD_DM_targets_data'),
                'spectra_files':
-                   os.path.join(installation_folder, 'DD_DM_targets_spectra/'),
+                   os.path.join(installation_folder, 'DD_DM_targets_spectra'),
                'verne_folder': vene_folder,
                'verne_files': vene_folder,
                }
