@@ -42,7 +42,6 @@ else:
     # Generally people will end up here
     print(f'context.py::\tunknown host {host} be careful here')
     installation_folder = DirectDmTargets.__path__[0]
-    # installation_folder = os.path.abspath('./..')
     vene_folder = os.path.join(os.path.split(verne.__path__[0])[0], 'results')
     context = {'software_dir': installation_folder,
                'results_dir':
@@ -62,8 +61,7 @@ else:
     elif 'TMP' in os.environ.keys():
         tmp_folder = os.environ['TMP']
         print(f'found TMP! on {host}')
-    assert os.path.exists(
-        tmp_folder), f"Cannot find tmp folder at {tmp_folder}"
+    assert os.path.exists(tmp_folder), f"No tmp folder at {tmp_folder}"
     context['tmp_folder'] = tmp_folder
     for name in ['results_dir', 'spectra_files']:
         print(f'context.py::\tlooking for {name} in {context}')
@@ -71,8 +69,8 @@ else:
             try:
                 os.mkdir(context[name])
             except Exception as e:
-                warn(f'Could not find nor make {context[name]}')
-                warn(f"Tailor context.py to your needs. Could not initialize "
+                warn(f'Could not find nor make {context[name]}'
+                     f"Tailor context.py to your needs. Could not initialize "
                      f"folders correctly because of {e}.")
     for key in context.keys():
         if not os.path.exists(context[key]):
