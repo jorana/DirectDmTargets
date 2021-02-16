@@ -711,6 +711,6 @@ def solve_multinest(LogLikelihood, Prior, n_dims, **kwargs):
     samples = analyzer.get_equal_weighted_posterior()[:, :-1]
 
     return dict(logZ=stats['nested sampling global log-evidence'],
-                logZerr=stats[],
+                logZerr=stats['nested sampling global log-evidence error'],
                 samples=samples,
                 )

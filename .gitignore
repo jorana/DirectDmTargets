@@ -20,7 +20,7 @@ submit_to_stoomboot/scripts/
 submit_to_stoomboot/some_script.py
 submit_to_stoomboot/submit_test.sh
 submit_to_stoomboot/test_submit.sh
-
+.ipynb
 
 results/test*
 results/nestle*
