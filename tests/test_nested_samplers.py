@@ -55,6 +55,7 @@ def test_nested_astrophysics_nestle():
     fit_unconstrained.run_nestle()
     fit_unconstrained.get_summary()
 
+
 def test_nestle():
     stats = dddm.NestedSamplerStatModel('Xe')
     stats.config['sampler'] = 'nestle'

@@ -1,6 +1,7 @@
 import DirectDmTargets as dddm
 from .test_multinest_shielded import _is_windows
 
+
 def test_nested_simple_multinest_earth_shielding():
     if _is_windows():
         return

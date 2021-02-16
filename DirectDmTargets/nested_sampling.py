@@ -500,7 +500,8 @@ class CombinedInference(NestedSamplerStatModel):
 
     def save_sub_configs(self, force_index=False):
         save_dir = self.get_save_dir(force_index=force_index)
-        self.log.info(f'CombinedInference::\tSave configs of sub_experiments to {save_dir}')
+        self.log.info(
+            f'CombinedInference::\tSave configs of sub_experiments to {save_dir}')
         # save the config
         save_dir = os.path.join(save_dir, 'sub_exp_configs')
         if not os.path.exists(save_dir):
