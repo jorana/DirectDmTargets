@@ -14,6 +14,7 @@ def test_emcee():
         fit_class.show_corner()
         fit_class.show_walkers()
         fit_class.save_results(save_to_dir=tmpdirname)
+        fit_class.set_fit_parameters()
         save_dir = fit_class.config['save_dir']
         print(os.listdir(os.path.split(save_dir)[0]))
         print(os.listdir(save_dir))

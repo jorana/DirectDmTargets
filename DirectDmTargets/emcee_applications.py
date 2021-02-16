@@ -46,19 +46,6 @@ class MCMCStatModel(statistics.StatModel):
         self.config['start'] = datetime.datetime.now()
         self.config['notes'] = "default"
 
-    def set_fit_parameters(self, params):
-        if not isinstance(params, (list, tuple)):
-            raise TypeError("Set the parameter names in a list of strings")
-        for param in params:
-            if param not in self.known_parameters:
-                raise NotImplementedError(f"{param} does not match any of the "
-                                          f"known parameters try any of "
-                                          f"{self.known_parameters}")
-        if not params == self.known_parameters[:len(params)]:
-            err_message = f"The parameters are not input in the correct order. " \
-                          f"Please insert {self.known_parameters[:len(params)]} rather than {params}."
-            raise NameError(err_message)
-        self.fit_parameters = params
 
     def set_pos_full_prior(self, use_pos=None):
         self.log_dict['pos'] = True

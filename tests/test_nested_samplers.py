@@ -34,8 +34,12 @@ def test_nested_astrophysics_multinest():
         save_as = fit_unconstrained.get_save_dir()
         import warnings
         warnings.warn(save_as)
+        fit_unconstrained.check_did_run()
+        fit_unconstrained.check_did_save()
         r = dddm.nested_sampling.load_multinest_samples_from_file(save_as)
         dddm.nested_sampling.multinest_corner(r)
+        fit_unconstrained.empty_garbage()
+        fit_unconstrained.show_corner()
         plt.clf()
 
 
@@ -50,3 +54,16 @@ def test_nested_astrophysics_nestle():
         f"Fitting for parameters:\n{fit_unconstrained.config['fit_parameters']}")
     fit_unconstrained.run_nestle()
     fit_unconstrained.get_summary()
+
+def test_nestle():
+    stats = dddm.NestedSamplerStatModel('Xe')
+    stats.config['sampler'] = 'nestle'
+    stats.config['tol'] = 0.1
+    stats.config['nlive'] = 10
+    stats.config['max_iter'] = 1
+    print(
+        f"Fitting for parameters:\n{stats.config['fit_parameters']}")
+    stats.run_nestle()
+    stats.save_results()
+    stats.empty_garbage()
+    stats.show_corner()

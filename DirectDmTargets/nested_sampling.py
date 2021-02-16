@@ -16,6 +16,7 @@ from warnings import warn
 import time
 import logging
 log = logging.getLogger()
+log.setLevel(logging.INFO)
 
 
 def default_nested_save_dir():
@@ -47,22 +48,6 @@ class NestedSamplerStatModel(statistics.StatModel):
             f"NestedSamplerStatModel::\t{utils.now()}\n\t"
             f"SUPERVERBOSE ENABLED\n\tyou want to know it all? Here we go sit "
             f"back and be blown by my output!")
-
-    def set_fit_parameters(self, params):
-        self.log.info(f'NestedSamplerStatModel::\tsetting fit'
-                      f' parameters to {params}')
-        if not isinstance(params, (list, tuple)):
-            raise TypeError("Set the parameter names in a list of strings")
-        for param in params:
-            if param not in self.known_parameters:
-                err_message = f"{param} does not match any of the known parameters try " \
-                              f"any of {self.known_parameters}"
-                raise NotImplementedError(err_message)
-        if not params == self.known_parameters[:len(params)]:
-            err_message = f"The parameters are not input in the correct order. Please" \
-                          f" insert {self.known_parameters[:len(params)]} rather than {params}."
-            raise NameError(err_message)
-        self.config['fit_parameters'] = params
 
     def check_did_run(self):
         if not self.log_dict['did_run']:
@@ -515,9 +500,9 @@ class CombinedInference(NestedSamplerStatModel):
 
     def save_sub_configs(self, force_index=False):
         save_dir = self.get_save_dir(force_index=force_index)
-        self.log.info(f'CombinedInference::\tSave configs of sub_experiments')
+        self.log.info(f'CombinedInference::\tSave configs of sub_experiments to {save_dir}')
         # save the config
-        save_dir = os.path.join(save_dir, '/sub_exp_configs')
+        save_dir = os.path.join(save_dir, 'sub_exp_configs')
         if not os.path.exists(save_dir):
             os.mkdir(save_dir)
         for c in self.sub_classes:

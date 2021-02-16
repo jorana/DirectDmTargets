@@ -238,6 +238,22 @@ class StatModel:
         # This is a legacy statement
         self.config['det_params'] = self.config['detector_config']
 
+    def set_fit_parameters(self, params):
+        self.log.info(f'NestedSamplerStatModel::\tsetting fit'
+                      f' parameters to {params}')
+        if not isinstance(params, (list, tuple)):
+            raise TypeError("Set the parameter names in a list of strings")
+        for param in params:
+            if param not in self.known_parameters:
+                err_message = f"{param} does not match any of the known parameters try " \
+                              f"any of {self.known_parameters}"
+                raise NotImplementedError(err_message)
+        if not params == self.known_parameters[:len(params)]:
+            err_message = f"The parameters are not input in the correct order. Please" \
+                          f" insert {self.known_parameters[:len(params)]} rather than {params}."
+            raise NameError(err_message)
+        self.config['fit_parameters'] = params
+
     def set_default(self):
         self.log.info(f'StatModel::\tinitializing')
         self.set_benchmark()
