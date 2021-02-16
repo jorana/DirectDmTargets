@@ -33,10 +33,9 @@ def test_simple_spectrum():
     plt.close()
 
 
-def _galactic_spectrum_inner(use_SHM, det='Xe', event_class=dddm.GenSpectrum):
+def _galactic_spectrum_inner(use_SHM, det='Xe', event_class=dddm.GenSpectrum, nbins=10):
     mw = 1
     sigma = 1e-35
-    nbins = 10
     E_max = None
     args = (mw, sigma, use_SHM, dddm.experiment[det])
     events = event_class(*args)
@@ -67,4 +66,7 @@ def test_detector_spectra():
         if det_properties['type'] == 'combined':
             # This is not implemented as such
             continue
-        _galactic_spectrum_inner(use_SHM, det)
+        if 'bg_func' in det_properties:
+            _galactic_spectrum_inner(use_SHM, det, event_class=dddm.DetectorSpectrum, nbins=1)
+        else:
+            _galactic_spectrum_inner(use_SHM, det, nbins=3)
