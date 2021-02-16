@@ -5,9 +5,8 @@ import numpy as np
 import os
 import datetime
 import uuid
-import loggingpytest
+import logging
 log = logging.getLogger()
-log.setLevel(logging.INFO)
 
 
 def check_folder_for_file(file_path):
