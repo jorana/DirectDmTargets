@@ -62,9 +62,15 @@ def test_nestle():
     stats.config['tol'] = 0.1
     stats.config['nlive'] = 10
     stats.config['max_iter'] = 1
-    print(
-        f"Fitting for parameters:\n{stats.config['fit_parameters']}")
+    stats.print_before_run()
     stats.run_nestle()
     stats.save_results()
     stats.empty_garbage()
     stats.show_corner()
+    # Deprecate this function?
+    stats.get_tmp_dir()
+
+    save_as = stats.get_save_dir()
+    r = dddm.load_nestle_samples(save_as)
+    dddm.nestle_corner(r)
+    plt.clf()

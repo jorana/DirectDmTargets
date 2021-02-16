@@ -13,14 +13,14 @@ import tempfile
 import numpy as np
 import numericalunits as nu
 from warnings import warn
-import time
 import logging
 log = logging.getLogger()
-log.setLevel(logging.INFO)
+log.setLevel(logging.DEBUG)
 
 
 def default_nested_save_dir():
     """The name of folders where to save results from the NestedSamplerStatModel"""
+    log.warning('Deprecated, please use something else')
     return 'nested'
 
 
@@ -445,13 +445,14 @@ class NestedSamplerStatModel(statistics.StatModel):
             else:
                 np.save(os.path.join(save_dir, col + '.npy'),
                         convert_dic_to_savable(self.result[col]))
-        shutil.copy(self.config['logging'], os.path.join(
-            save_dir, self.config['logging'].split('/')[-1]))
+        if 'logging' in self.config:
+            shutil.copy(self.config['logging'], os.path.join(
+                save_dir, self.config['logging'].split('/')[-1]))
         self.log.info(f'save_results::\tdone_saving')
 
     def show_corner(self):
         self.log.info(
-            f"NestedSamplerStatModel::\t{statistics.now(self.config['start'])}\n\tLet's do some graphics, I'll make you a "
+            f"NestedSamplerStatModel::\t{utils.now(self.config['start'])}\n\tLet's do some graphics, I'll make you a "
             f"nice corner plot just now")
         self.check_did_save()
         save_dir = self.log_dict['saved_in']
@@ -543,7 +544,7 @@ def load_nestle_samples(load_from=default_nested_save_dir(), item='latest'):
 
 
 def load_nestle_samples_from_file(load_dir):
-    log.info(f'load_nestle_samples::\tloading', load_dir)
+    log.info(f'load_nestle_samples::\tloading {load_dir}')
     keys = ['config', 'res_dict', 'h', 'logl', 'logvol', 'logz', 'logzerr',
             'ncall', 'niter', 'samples', 'weights']
     result = {}
@@ -602,14 +603,14 @@ def load_multinest_samples(load_from=default_nested_save_dir(), item='latest'):
     return load_multinest_samples_from_file(load_dir)
 
 
-def _get_info(result):
+def _get_info(result, _result_key):
     info = r"$M_\chi}$=%.2f" % 10. ** np.float(result['config']['mw'])
     for prior_key in result['config']['prior'].keys():
         if (prior_key in result['config']['prior'] and
                 'mean' in result['config']['prior'][prior_key]):
             mean = result['config']['prior'][prior_key]['mean']
             info += f"\n{prior_key} = {mean}"
-    nposterior, ndim = np.shape(result['weighted_samples'])
+    nposterior, ndim = np.shape(result[_result_key])
     info += "\nnposterior = %s" % nposterior
     for str_inf in ['detector', 'notes', 'start', 'fit_time', 'poisson',
                     'n_energy_bins']:
@@ -627,7 +628,7 @@ def multinest_corner(
         save=False,
         _result_key='weighted_samples',
         _weights=False):
-    info, ndim = _get_info(result)
+    info, ndim = _get_info(result, _result_key)
     labels = statistics.get_param_list()[:ndim]
     truths = []
     for prior_name in statistics.get_prior_list()[:ndim]:

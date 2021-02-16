@@ -10,7 +10,7 @@ def test_nested_simple_multinest_earth_shielding():
         ('Xe', "Ge"),
         'test',
         do_init=False)
-
+    stats.copy_config(stats.config.keys())
     stats.config['tol'] = 0.1
     stats.config['nlive'] = 5
     print(f"Fitting for parameters:\n{stats.config['fit_parameters']}")
