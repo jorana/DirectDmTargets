@@ -412,7 +412,7 @@ class NestedSamplerStatModel(statistics.StatModel):
         if (not self.log_dict['tmp_dir']) or force_index:
             self.log_dict['tmp_dir'] = utils.open_save_dir(
                 f'{self.config["sampler"]}',
-                base=context['tmp_folder'],
+                base_dir=context['tmp_folder'],
                 force_index=force_index,
                 _hash=hash)
         self.log.info(

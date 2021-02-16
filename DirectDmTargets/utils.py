@@ -5,15 +5,16 @@ import numpy as np
 import os
 import datetime
 import uuid
-import logging
+import loggingpytest
 log = logging.getLogger()
-
+log.setLevel(logging.INFO)
 
 def check_folder_for_file(file_path):
     """
     :param file_path: path with one or more subfolders
     """
     last_folder = os.path.split(file_path)[0]
+    log.debug(f'making path for {file_path}. Requested folder is {last_folder}')
     os.makedirs(last_folder, exist_ok=True)
 
     if not os.path.exists(last_folder):
@@ -98,67 +99,45 @@ def convert_dic_to_savable(config):
     return result
 
 
-def open_save_dir(save_dir, base=None, force_index=False, _hash=None):
+def _strip_save_to_int(f, save_as):
+    try:
+        return int(f.split(save_as)[-1])
+    except (ValueError, IndexError):
+        return -1
+
+
+def _folders_plus_one(root_dir, save_as):
+    files = os.listdir(root_dir)
+    if not files:
+        n_last = -1
+    else:
+        n_last = max(_strip_save_to_int(f, save_as) for f in files)
+    return os.path.join(root_dir, save_as + str(n_last + 1))
+
+
+def open_save_dir(save_as, base_dir=None, force_index=False, _hash=None):
     """
 
-    :param save_dir: requested name of folder to open in the result folder
-    :param base: folder where the save dir is to be saved in. This is the results folder by default
+    :param save_as: requested name of folder to open in the result folder
+    :param base_dir: folder where the save_as dir is to be saved in. This is the results folder by default
     :param force_index: option to force to write to a number (must be an override!)
-    :param _hash: add a has to save dir to avoid duplicate naming conventions while running multiple jobs
+    :param _hash: add a has to save_as dir to avoid duplicate naming conventions while running multiple jobs
     :return: the name of the folder as was saveable (usually input + some number)
     """
-    if base is None:
-        base = get_result_folder()
-    save = save_dir
-    files = os.listdir(base)
-    files = [f for f in files if save in f]
-    if not save + '0' in files and not force_index:
-        # First file in the results folder with this name
-        index = 0
-    elif force_index is False:
-        index = 0
-        for f in files:
-            try:
-                index = max(int(f.split(save)[-1]) + 1, index)
-            except ValueError:
-                # this means that f.split(save)[-1] is not an integer, thus,
-                # that folder uses a different naming convention and we can
-                # ignore it.
-                pass
-    else:
-        index = force_index
-    # this is where we going to save
-    save_dir = os.path.join(base, save + str(index))
-    if _hash:
+    if base_dir is None:
+        base_dir = get_result_folder()
+    if force_index:
+        results_path = os.path.join(base_dir, save_as + str(force_index))
+    elif _hash is None:
         assert force_index is False, f'do not set _hash to {_hash} and force_index to {force_index} simultaneously'
-        save_dir = os.path.join(base, (save + '_HASH' + str(_hash)))
-        if not os.path.exists(save_dir):
-            try:
-                os.mkdir(save_dir)
-            except FileExistsError:
-                # starting up on multiple cores causes the command above to be
-                # executed simultaneously
-                pass
-        else:
-            files_in_dir = os.listdir(save_dir)
-            if len(files_in_dir):
-                log.warning(
-                    f'WARNING writing to {save_dir}. There are files in this dir: {files_in_dir} ')
-        log.info('open_save_dir::\tusing ' + save_dir)
-        return save_dir
-    if force_index is False:
-        assert not os.path.exists(
-            save_dir), 'Trying to override another directory, this would be very messy'
-        os.mkdir(save_dir)
+        results_path = _folders_plus_one(base_dir, save_as)
     else:
-        if not os.path.exists(save_dir):
-            os.mkdir(save_dir)
-        else:
-            for file in os.listdir(save_dir):
-                log.info('open_save_dir::\tremoving ' + save_dir + file)
-                os.remove(save_dir + file)
-    log.info('open_save_dir::\tusing ' + save_dir)
-    return save_dir
+        results_path = os.path.join(base_dir, save_as, '_HASH' + str(_hash))
+
+    check_folder_for_file(os.path.join(results_path, "some_file_goes_here"))
+    log.info('open_save_dir::\tusing ' + results_path)
+    log.warning(os.listdir(os.path.split(results_path)[0]))
+    return results_path
 
 
 def str_in_list(string, _list):

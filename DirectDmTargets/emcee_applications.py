@@ -182,17 +182,16 @@ class MCMCStatModel(statistics.StatModel):
             self.run_emcee()
         # open a folder where to save to results
         save_dir = utils.open_save_dir(
-            # TODO fix
             'emcee',
-            base=save_to_dir,
+            base_dir=save_to_dir,
             force_index=force_index)
         # save the config, chain and flattened chain
-        with open(save_dir + 'config.json', 'w') as fp:
+        with open(os.path.join(save_dir, 'config.json'), 'w') as fp:
             json.dump(utils.convert_dic_to_savable(self.config), fp, indent=4)
-        np.save(save_dir + 'config.npy',
+        np.save(os.path.join(save_dir, 'config.npy'),
                 utils.convert_dic_to_savable(self.config))
-        np.save(save_dir + 'full_chain.npy', self.sampler.get_chain())
-        np.save(save_dir + 'flat_chain.npy', self.sampler.get_chain(
+        np.save(os.path.join(save_dir, 'full_chain.npy'), self.sampler.get_chain())
+        np.save(os.path.join(save_dir, 'flat_chain.npy'), self.sampler.get_chain(
             discard=int(self.nsteps * self.remove_frac), thin=self.thin,
             flat=True))
         self.config['save_dir'] = save_dir
@@ -222,12 +221,12 @@ def load_chain_emcee(load_from=default_emcee_save_dir(),
     if not os.path.exists(load_dir):
         raise FileNotFoundError(f"Cannot find {load_dir} specified by arg: "
                                 f"{item}")
-    log.info("loading", load_dir)
+    log.info(f"loading {load_dir}")
 
     keys = ['config', 'full_chain', 'flat_chain']
 
     for key in keys:
-        result[key] = np.load(load_dir + key + '.npy', allow_pickle=True)
+        result[key] = np.load(os.path.join(load_dir, key + '.npy'), allow_pickle=True)
         if key == 'config':
             result[key] = result[key].item()
     log.info(f"done loading\naccess result with:\n{keys}")
@@ -237,8 +236,6 @@ def load_chain_emcee(load_from=default_emcee_save_dir(),
 def emcee_plots(result, save=False, plot_walkers=True, show=False):
     if not isinstance(save, bool):
         assert os.path.exists(save), f"invalid path '{save}'"
-        if save[-1] != "/":
-            save += "/"
     info = r"$M_\chi}$=%.2f" % 10 ** np.float(result['config']['mw'])
     for prior_key in result['config']['prior'].keys():
         try:
