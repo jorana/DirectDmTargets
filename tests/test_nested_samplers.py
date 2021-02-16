@@ -10,7 +10,6 @@ def test_nested_simple_multinest():
     fit_class = dddm.NestedSamplerStatModel('Xe')
     fit_class.config['tol'] = 0.1
     fit_class.config['nlive'] = 10
-    fit_class.config['max_iter'] = 1
     print(f"Fitting for parameters:\n{fit_class.config['fit_parameters']}")
     fit_class.run_multinest()
     fit_class.get_summary()
@@ -22,7 +21,6 @@ def test_nested_astrophysics_multinest():
     fit_unconstrained = dddm.NestedSamplerStatModel('Xe')
     fit_unconstrained.config['tol'] = 0.1
     fit_unconstrained.config['nlive'] = 10
-    fit_unconstrained.config['max_iter'] = 1
     fit_unconstrained.set_fit_parameters(fit_unconstrained.known_parameters)
     print(
         f"Fitting for parameters:\n{fit_unconstrained.config['fit_parameters']}")
