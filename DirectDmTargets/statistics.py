@@ -288,17 +288,25 @@ class StatModel:
         # the main parameters
         file_name = os.path.join(
             context.context['spectra_files'],
-            'nbin-%i'% (self.config['n_energy_bins'] if nbin is None else nbin),
-            'model-%s'%(str(self.config['halo_model']) if model is None else str(model)),
-            'mw-%.2f' %(10. ** self.config['mw'] if mw is None else 10. ** mw),
-            'log_s-%.2f' %(self.config['sigma'] if sigma is None else sigma),
-            'rho-%.2f' %(self.config['density'] if rho is None else rho),
-            'v_0-%.1f' %(self.config['v_0'] if v_0 is None else v_0),
-            'v_esc-%i' %(self.config['v_esc'] if v_esc is None else v_esc),
-            'poisson_%i' %(int(self.config['poisson'] if poisson is None else poisson)),
-            'spectrum'
-        )
-
+            'nbin-%i' %
+            (self.config['n_energy_bins'] if nbin is None else nbin),
+            'model-%s' %
+            (str(
+                self.config['halo_model']) if model is None else str(model)),
+            'mw-%.2f' %
+            (10. ** self.config['mw'] if mw is None else 10. ** mw),
+            'log_s-%.2f' %
+            (self.config['sigma'] if sigma is None else sigma),
+            'rho-%.2f' %
+            (self.config['density'] if rho is None else rho),
+            'v_0-%.1f' %
+            (self.config['v_0'] if v_0 is None else v_0),
+            'v_esc-%i' %
+            (self.config['v_esc'] if v_esc is None else v_esc),
+            'poisson_%i' %
+            (int(
+                self.config['poisson'] if poisson is None else poisson)),
+            'spectrum')
 
         # Add all other parameters that are in the detector config
         if det_conf is None:
