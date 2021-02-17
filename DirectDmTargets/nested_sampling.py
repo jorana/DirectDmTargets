@@ -141,6 +141,7 @@ class NestedSamplerStatModel(statistics.StatModel):
         return np.array(result)
 
     def run_nestle(self):
+        self.print_before_run()
         assert self.config[
             'sampler'] == 'nestle', f'Trying to run nestle but initialization requires {self.config["sampler"]}'
 
@@ -203,6 +204,7 @@ class NestedSamplerStatModel(statistics.StatModel):
             f'NestedSamplerStatModel::\tFinished with running optimizer!')
 
     def print_before_run(self):
+        self.set_models()
         self.log.warning(f"""--------------------------------------------------
         NestedSamplerStatModel::\t{utils.now()}\n\tFinal print of all of the set options:
         self.config['tol'] = {self.config['tol']}
@@ -221,6 +223,7 @@ class NestedSamplerStatModel(statistics.StatModel):
         """)
 
     def run_multinest(self):
+        self.print_before_run()
         assert self.config[
             "sampler"] == 'multinest', f'Trying to run multinest but initialization requires {self.config["sampler"]}'
         # Do the import of multinest inside the class such that the package can be

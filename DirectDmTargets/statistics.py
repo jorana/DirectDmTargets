@@ -286,18 +286,19 @@ class StatModel:
             self.config['spectrum_class']), "Input detector spectrum"
         # Name the file according to the main parameters. Note that for each of
         # the main parameters
-        file_name = (
-            context['spectra_files'] +
-            '/nbin-%i/model-%s/mw-%.2f/log_s-%.2f/rho-%.2f/v_0-%.1f/v_esc-%i/poisson_%i/spectrum' % (
-                self.config['n_energy_bins'] if nbin is None else nbin,
-                str(self.config['halo_model']) if model is None else str(model),
-                10. ** self.config['mw'] if mw is None else 10. ** mw,
-                self.config['sigma'] if sigma is None else sigma,
-                self.config['density'] if rho is None else rho,
-                self.config['v_0'] if v_0 is None else v_0,
-                self.config['v_esc'] if v_esc is None else v_esc,
-                int(self.config['poisson'] if poisson is None else poisson)
-            ))
+        file_name = os.path.join(
+            context.context['spectra_files'],
+            'nbin-%i'% (self.config['n_energy_bins'] if nbin is None else nbin),
+            'model-%s'%(str(self.config['halo_model']) if model is None else str(model)),
+            'mw-%.2f' %(10. ** self.config['mw'] if mw is None else 10. ** mw),
+            'log_s-%.2f' %(self.config['sigma'] if sigma is None else sigma),
+            'rho-%.2f' %(self.config['density'] if rho is None else rho),
+            'v_0-%.1f' %(self.config['v_0'] if v_0 is None else v_0),
+            'v_esc-%i' %(self.config['v_esc'] if v_esc is None else v_esc),
+            'poisson_%i' %(int(self.config['poisson'] if poisson is None else poisson)),
+            'spectrum'
+        )
+
 
         # Add all other parameters that are in the detector config
         if det_conf is None:
@@ -339,8 +340,7 @@ class StatModel:
             self.log.warning(
                 "StatModel::\tNo data at path. Will have to make it.")
             binned_spectrum = None
-            utils.check_folder_for_file(
-                file_path, max_iterations=20, verbose=0)
+            utils.check_folder_for_file(file_path)
 
         self.log.info(f"StatModel::\tdata at {file_path} = {data_at_path}")
         return data_at_path, file_path, binned_spectrum
