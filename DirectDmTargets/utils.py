@@ -108,11 +108,14 @@ def _strip_save_to_int(f, save_as):
 
 
 def _folders_plus_one(root_dir, save_as):
-    files = os.listdir(root_dir)
-    if not files:
-        n_last = -1
-    else:
-        n_last = max(_strip_save_to_int(f, save_as) for f in files)
+    # Set to -1 (+1 = 0 ) for the first directory. e.g. rootdir does not exist
+    n_last = -1
+
+    if os.path.exists(root_dir):
+        files = os.listdir(root_dir)
+        numbers = [_strip_save_to_int(f, save_as) for f in files]
+        if numbers:
+            n_last = max(numbers)
     return os.path.join(root_dir, save_as + str(n_last + 1))
 
 
@@ -137,7 +140,8 @@ def open_save_dir(save_as, base_dir=None, force_index=False, _hash=None):
 
     check_folder_for_file(os.path.join(results_path, "some_file_goes_here"))
     log.info('open_save_dir::\tusing ' + results_path)
-    log.warning(os.listdir(os.path.split(results_path)[0]))
+    log.debug(
+        f'Other files in {results_path} base are {os.listdir(os.path.split(results_path)[0])}')
     return results_path
 
 
