@@ -196,4 +196,3 @@ def save_canvas(name, save_dir='./figures', tight_layout=False):
     else:
         raise FileExistsError(
             f'{save_dir} does not exist or does not have /pdf')
-
