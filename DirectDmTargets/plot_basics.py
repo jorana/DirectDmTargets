@@ -5,6 +5,8 @@ import numpy as np
 from tqdm import tqdm
 import matplotlib.pyplot as plt
 from DirectDmTargets import statistics, halo, detector, utils
+import colorsys
+import os
 
 
 def error_bar_hist(ax, data, data_range=None, nbins=50, **kwargs):
@@ -166,3 +168,32 @@ def plot_spectrum(data, color='blue', label='label', drawstyle='none',
                  label=label,
                  markersize=2
                  )
+
+
+def get_color_from_range(val, _range=(0, 1), it=0):
+    if not np.iterable(_range):
+        _range = [0, _range]
+    red_to_green = (val - _range[0]) / np.diff(_range)
+    assert 0 <= red_to_green <= 1, f'{val} vs {_range} does not work'
+    assert it <= 2
+    # in HSV, red is 0 deg and green is 120 deg (out of 360);
+    # divide red_to_green with 3 to map [0, 1] to [0, 1./3.]
+    hue = red_to_green / 3.0
+    hue += it / 3
+    res = colorsys.hsv_to_rgb(hue, 1, 1)
+    # return [int(255 * float(r)) for r in res]
+    return [float(r) for r in res]
+
+
+def save_canvas(name, save_dir='./figures', tight_layout=False):
+    utils.check_folder_for_file(save_dir + '/.')
+    utils.check_folder_for_file(save_dir + '/pdf/.')
+    if tight_layout:
+        plt.tight_layout()
+    if os.path.exists(save_dir) and os.path.exists(save_dir + '/pdf'):
+        plt.savefig(f"{save_dir}/{name}.png", dpi=300, bbox_inches="tight")
+        plt.savefig(f"{save_dir}/pdf/{name}.pdf", dpi=300, bbox_inches="tight")
+    else:
+        raise FileExistsError(
+            f'{save_dir} does not exist or does not have /pdf')
+
