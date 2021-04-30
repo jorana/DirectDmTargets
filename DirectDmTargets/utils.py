@@ -204,7 +204,7 @@ def add_pid_to_csv_filename(name):
             f'VerneSHM::\tUsing {str_in_list(file_name, files_in_folder)} since it has {file_name}')
         exist_csv = True
         abs_file_name = os.path.join(requested_folder,
-            str_in_list(file_name, files_in_folder))
+                                     str_in_list(file_name, files_in_folder))
         log.info(f'VerneSHM::\tUsing {abs_file_name} as input')
     else:
         log.info("VerneSHM::\tNo file found")

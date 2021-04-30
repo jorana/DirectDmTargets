@@ -462,7 +462,7 @@ class NestedSamplerStatModel(statistics.StatModel):
         self.check_did_save()
         save_dir = self.log_dict['saved_in']
 
-        if self.config['sampler'] =='multinest':
+        if self.config['sampler'] == 'multinest':
             combined_results = load_multinest_samples_from_file(save_dir)
             multinest_corner(combined_results, save_dir)
         elif self.config['sampler'] == 'nestle':
