@@ -97,8 +97,8 @@ class StatModel:
         :param detector_name: name of the detector (e.g. Xe)
         """
         if detector_name not in detector.experiment and detector_config is None:
-            raise ValueError(
-                'Please provide detector that is preconfigured or provide new one with detector_dict')
+            raise ValueError('Please provide detector that is '
+                             'preconfigured or provide new one with detector_dict')
         if detector_config is None:
             detector_config = detector.experiment[detector_name]
 
@@ -307,7 +307,7 @@ class StatModel:
             (int(
                 self.config['poisson'] if poisson is None else poisson)),
             'spectrum')
-
+        print(file_name)
         # Add all other parameters that are in the detector config
         if det_conf is None:
             det_conf = self.config['detector_config']

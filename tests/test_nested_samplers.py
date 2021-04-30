@@ -42,6 +42,7 @@ def test_nested_astrophysics_multinest():
         warnings.warn(save_as)
         fit_unconstrained.check_did_run()
         fit_unconstrained.check_did_save()
+        fit_unconstrained.show_corner()
         r = dddm.nested_sampling.load_multinest_samples_from_file(save_as)
         dddm.nested_sampling.multinest_corner(r)
         fit_unconstrained.empty_garbage()

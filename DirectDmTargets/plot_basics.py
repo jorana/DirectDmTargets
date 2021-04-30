@@ -155,14 +155,14 @@ def plt_priors(itot=100):
         plt.title(key)
 
 
-def plot_spectrum(data, color='blue', label='label', drawstyle='none',
+def plot_spectrum(data, color='blue', label='label', linestyle='none',
                   plot_error=True):
     plt.errorbar(data['bin_centers'], data['counts'],
                  xerr=(data['bin_left'] - data['bin_right']) / 2,
                  yerr=np.sqrt(data['counts']) if plot_error else np.zeros(
                      len(data['counts'])),
                  color=color,
-                 drawstyle=drawstyle,
+                 linestyle=linestyle,
                  capsize=2,
                  marker='o',
                  label=label,

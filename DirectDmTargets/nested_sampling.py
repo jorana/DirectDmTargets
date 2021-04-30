@@ -204,7 +204,6 @@ class NestedSamplerStatModel(statistics.StatModel):
             f'NestedSamplerStatModel::\tFinished with running optimizer!')
 
     def print_before_run(self):
-        self.set_models()
         self.log.warning(f"""--------------------------------------------------
         NestedSamplerStatModel::\t{utils.now()}\n\tFinal print of all of the set options:
         self.config['tol'] = {self.config['tol']}
@@ -386,15 +385,17 @@ class NestedSamplerStatModel(statistics.StatModel):
             f"let's return it to whomever asked for it")
         return resdict
 
-    def get_save_dir(self, force_index=False, _hash=None):
-        if (not self.log_dict['saved_in']) or force_index:
-            self.log_dict['saved_in'] = utils.open_save_dir(
-                f'nes_{self.config["sampler"][:2]}',
-                force_index=force_index,
-                _hash=_hash)
-        self.log.info(
-            f'NestedSamplerStatModel::\tget_save_dir\tsave_dir = {self.log_dict["saved_in"]}')
-        return self.log_dict['saved_in']
+    def get_save_dir(self, force_index=False, _hash=None) -> str:
+        saved_in = self.log_dict['saved_in']
+        saved_ok = isinstance(saved_in, str) and os.path.exists(saved_in)
+        if saved_ok and not force_index:
+            return saved_in
+        target_save = utils.open_save_dir(f'nes_{self.config["sampler"][:2]}',
+                                          force_index=force_index,
+                                          _hash=_hash)
+        self.log_dict['saved_in'] = target_save
+        self.log.info(f'NestedSamplerStatModel::\tget_save_dir\tsave_dir = {target_save}')
+        return target_save
 
     def get_tmp_dir(self, force_index=False, _hash=None):
         if (not self.log_dict['tmp_dir']) or force_index:
@@ -455,12 +456,21 @@ class NestedSamplerStatModel(statistics.StatModel):
 
     def show_corner(self):
         self.log.info(
-            f"NestedSamplerStatModel::\t{utils.now(self.config['start'])}\n\tLet's do some graphics, I'll make you a "
+            f"NestedSamplerStatModel::\t{utils.now(self.config['start'])}"
+            f"\n\tLet's do some graphics, I'll make you a "
             f"nice corner plot just now")
         self.check_did_save()
         save_dir = self.log_dict['saved_in']
-        combined_results = load_nestle_samples_from_file(save_dir)
-        nestle_corner(combined_results, save_dir)
+
+        if self.config['sampler'] =='multinest':
+            combined_results = load_multinest_samples_from_file(save_dir)
+            multinest_corner(combined_results, save_dir)
+        elif self.config['sampler'] == 'nestle':
+            combined_results = load_nestle_samples_from_file(save_dir)
+            nestle_corner(combined_results, save_dir)
+        else:
+            # This cannot happen
+            raise ValueError(f"Impossible, sampler was {self.config['sampler']}")
         self.log.info(
             f'NestedSamplerStatModel::\tEnjoy the plot. Maybe you do want to'
             f' save it too?')
