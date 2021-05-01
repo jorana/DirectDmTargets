@@ -142,13 +142,13 @@ class NestedSamplerStatModel(statistics.StatModel):
             self.log_prior_transform_nested(
                 val,
                 self.known_parameters[i]) for i,
-                                              val in enumerate(theta)]
+            val in enumerate(theta)]
         return np.array(result)
 
     def run_nestle(self):
         self.print_before_run()
         assert self.config[
-                   'sampler'] == 'nestle', f'Trying to run nestle but initialization requires {self.config["sampler"]}'
+            'sampler'] == 'nestle', f'Trying to run nestle but initialization requires {self.config["sampler"]}'
 
         # Do the import of nestle inside the class such that the package can be
         # loaded without nestle
@@ -229,7 +229,7 @@ class NestedSamplerStatModel(statistics.StatModel):
     def run_multinest(self):
         self.print_before_run()
         assert self.config[
-                   "sampler"] == 'multinest', f'Trying to run multinest but initialization requires {self.config["sampler"]}'
+            "sampler"] == 'multinest', f'Trying to run multinest but initialization requires {self.config["sampler"]}'
         # Do the import of multinest inside the class such that the package can be
         # loaded without multinest
         try:
