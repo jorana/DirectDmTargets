@@ -420,38 +420,37 @@ class NestedSamplerStatModel(statistics.StatModel):
             f'NestedSamplerStatModel::\tAlright all set, let put all that info'
             f' in {save_dir} and be done with it')
         # save the config, chain and flattened chain
-        if 'HASH' in save_dir or os.path.exists(
-                os.path.join(save_dir, 'config.json')):
-            save_dir = os.path.join(save_dir, 'pid' + str(os.getpid()) + '_')
-        with open(os.path.join(save_dir, 'config.json'), 'w') as file:
+        pid_id = 'pid' + str(os.getpid()) + '_'
+        with open(os.path.join(save_dir, f'{pid_id}config.json'), 'w') as file:
             json.dump(convert_dic_to_savable(self.config), file, indent=4)
-        with open(os.path.join(save_dir, 'res_dict.json'), 'w') as file:
+        with open(os.path.join(save_dir, f'{pid_id}res_dict.json'), 'w') as file:
             json.dump(convert_dic_to_savable(fit_summary), file, indent=4)
         np.save(
-            os.path.join(
-                save_dir, 'config.npy'), convert_dic_to_savable(
-                self.config))
-        np.save(os.path.join(save_dir, 'res_dict.npy'),
+            os.path.join(save_dir, f'{pid_id}config.npy'),
+            convert_dic_to_savable(self.config))
+        np.save(os.path.join(save_dir, f'{pid_id}res_dict.npy'),
                 convert_dic_to_savable(fit_summary))
         for col in self.result.keys():
             if col == 'samples' or not isinstance(col, dict):
                 if self.config["sampler"] == 'multinest' and col == 'samples':
                     # in contrast to nestle, multinest returns the weighted
                     # samples.
-                    np.save(os.path.join(save_dir, 'weighted_samples.npy'),
+                    np.save(os.path.join(save_dir, f'{pid_id}weighted_samples.npy'),
                             self.result[col])
                 else:
                     np.save(
                         os.path.join(
                             save_dir,
-                            col + '.npy'),
+                            pid_id + col + '.npy'),
                         self.result[col])
             else:
-                np.save(os.path.join(save_dir, col + '.npy'),
+                np.save(os.path.join(save_dir, pid_id + col + '.npy'),
                         convert_dic_to_savable(self.result[col]))
         if 'logging' in self.config:
-            shutil.copy(self.config['logging'], os.path.join(
-                save_dir, self.config['logging'].split('/')[-1]))
+            shutil.copy(
+                self.config['logging'],
+                os.path.join(save_dir,
+                             self.config['logging'].split('/')[-1]))
         self.log.info(f'save_results::\tdone_saving')
 
     def show_corner(self):

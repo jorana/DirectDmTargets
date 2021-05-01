@@ -136,7 +136,7 @@ def open_save_dir(save_as, base_dir=None, force_index=False, _hash=None):
         assert force_index is False, f'do not set _hash to {_hash} and force_index to {force_index} simultaneously'
         results_path = _folders_plus_one(base_dir, save_as)
     else:
-        results_path = os.path.join(base_dir, save_as, '_HASH' + str(_hash))
+        results_path = os.path.join(base_dir, save_as + '_HASH' + str(_hash))
 
     check_folder_for_file(os.path.join(results_path, "some_file_goes_here"))
     log.info('open_save_dir::\tusing ' + results_path)

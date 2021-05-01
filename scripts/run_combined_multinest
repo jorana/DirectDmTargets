@@ -41,6 +41,7 @@ def main():
     elif stats.config['sampler'] == 'nestle':
         stats.run_nestle()
     if args.multicore_hash == "" or (args.sampler == 'multinest' and rank == 0):
+        print('SAVING THE RESULTS')
         stats.save_results()
         stats.save_sub_configs()
     assert stats.log_dict['did_run']
@@ -48,6 +49,7 @@ def main():
     print(f"run_dddm_multinest.py::\t"
           f"finished for mw = {args.mw}, sigma = {args.cross_section}")
     print("finished, bye bye")
+    print(rank, args.sampler)
 
 
 def set_context(args):
@@ -66,8 +68,10 @@ def get_multiprocessing_rank():
         raise ModuleNotFoundError('Cannot run in multicore mode as'
                                   ' mpi4py is not installed') from e
         rank = 0
-    print(
-        f"info\nn_cores: {multiprocessing.cpu_count()}\npid: {os.getpid()}\nppid: {os.getppid()}\nrank{rank}")
+    print(f"MPI-info\tn_cores: {multiprocessing.cpu_count()}\t"
+          f"pid: {os.getpid()}\t"
+          f"ppid: {os.getppid()}\trank{rank}")
+    return rank
 
 
 def set_config(model_simulator, args):
