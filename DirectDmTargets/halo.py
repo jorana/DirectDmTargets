@@ -84,9 +84,8 @@ class GenSpectrum:
                                     **kwargs
                                     )
         elif self.experiment['type'] in ['migdal', 'migdal_bg']:
-            # TODO
-            #  This integration takes a long time, hence, we will lower the
-            #  default precision of the scipy dblquad integration
+            # This integration takes a long time, hence, we will lower the
+            # default precision of the scipy dblquad integration
             migdal_integration_kwargs = dict(epsabs=1e-4,
                                              epsrel=1e-4)
             convert_units = (nu.keV * (1000 * nu.kg) * nu.year)
