@@ -21,6 +21,7 @@ def test_emcee():
         plt.clf()
         plt.close()
 
+
 def test_emcee_full_prior():
     fit_class = dddm.MCMCStatModel('Xe')
     fit_class.nwalkers = 10
@@ -41,6 +42,7 @@ def test_emcee_full_prior():
         dddm.emcee_applications.emcee_plots(r, save=True, show=True)
         plt.clf()
         plt.close()
+
 
 def test_emcee_astrophysics_prior():
     fit_class = dddm.MCMCStatModel('Xe')
