@@ -718,7 +718,14 @@ def solve_multinest(LogLikelihood, Prior, n_dims, **kwargs):
 
     analyzer = Analyzer(
         n_dims, outputfiles_basename=outputfiles_basename)
-    stats = analyzer.get_stats()
+    try:
+        stats = analyzer.get_stats()
+    except ValueError as e:
+        # This can happen during testing if we limit the number of iterations
+        warn(f'Cannot load output file: {e}')
+        stats = {'nested sampling global log-evidence': -1,
+                 'nested sampling global log-evidence error': -1
+                 }
     samples = analyzer.get_equal_weighted_posterior()[:, :-1]
 
     return dict(logZ=stats['nested sampling global log-evidence'],
