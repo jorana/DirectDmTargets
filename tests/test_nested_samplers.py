@@ -1,8 +1,10 @@
-import DirectDmTargets as dddm
-import tempfile
-import matplotlib.pyplot as plt
 import logging
+import tempfile
 from sys import platform
+
+import DirectDmTargets as dddm
+import matplotlib.pyplot as plt
+
 log = logging.getLogger()
 
 
@@ -35,6 +37,7 @@ def test_nested_astrophysics_multinest():
     with tempfile.TemporaryDirectory() as tmpdirname:
         def _ret_temp(*args):
             return tmpdirname
+
         dddm.utils.get_result_folder = _ret_temp
         fit_unconstrained.save_results()
         save_as = fit_unconstrained.get_save_dir()
@@ -77,7 +80,13 @@ def test_nestle():
     print('Empty garbade')
     stats.empty_garbage()
     print('Show corner')
-    stats.show_corner()
+    try:
+        stats.show_corner()
+    except FileNotFoundError as e:
+        print(stats.log_dict['saved_in'])
+        import os
+        print(os.listdir(stats.log_dict['saved_in']))
+        raise e
     plt.close()
     plt.clf()
     print('Save & show again')

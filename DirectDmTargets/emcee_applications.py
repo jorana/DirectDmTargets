@@ -8,15 +8,17 @@ MCMC is:
 Nevertheless, the walkers give great insight in how the likelihood-function is
 felt by the steps that the walkers make"""
 
+import datetime
 import json
+import logging
 import multiprocessing
+import os
+
 import corner
 import matplotlib.pyplot as plt
-from DirectDmTargets import statistics, utils, context
-import os
-import datetime
 import numpy as np
-import logging
+from DirectDmTargets import statistics, utils
+
 log = logging.getLogger()
 
 
@@ -37,7 +39,7 @@ class MCMCStatModel(statistics.StatModel):
         super().__init__(*args)
         self.nwalkers = 50
         self.nsteps = 100
-        self.fit_parameters = ['log_mass', 'log_cross_section']
+        self.config['fit_parameters'] = ['log_mass', 'log_cross_section']
         self.sampler = None
         self.pos = None
         self.log_dict = {'sampler': False, 'did_run': False, 'pos': False}
@@ -57,7 +59,7 @@ class MCMCStatModel(statistics.StatModel):
                 1.25 * self.config['prior'][param]['range'][0],
                 0.75 * self.config['prior'][param]['range'][-1]
             ) for _ in range(self.nwalkers)]
-                for param in self.fit_parameters]
+                for param in self.config['fit_parameters']]
         ])
         return pos.T
 
@@ -67,10 +69,10 @@ class MCMCStatModel(statistics.StatModel):
             log.info("using specified start position")
             self.pos = use_pos
             return
-        nparameters = len(self.fit_parameters)
+        nparameters = len(self.config['fit_parameters'])
         keys = statistics.get_prior_list()[:nparameters]
 
-        ranges = [self.config['prior'][self.fit_parameters[i]]['range']
+        ranges = [self.config['prior'][self.config['fit_parameters'][i]]['range']
                   for i in range(nparameters)]
         pos = []
 
@@ -81,7 +83,7 @@ class MCMCStatModel(statistics.StatModel):
                 start_at = np.random.uniform(a, b, (self.nwalkers, 1))
             else:
                 start_at = val + 0.005 * val * \
-                    np.random.randn(self.nwalkers, 1)
+                           np.random.randn(self.nwalkers, 1)
             start_at = np.clip(start_at, a, b)
             pos.append(start_at)
         pos = np.hstack(pos)
@@ -95,11 +97,11 @@ class MCMCStatModel(statistics.StatModel):
         except ModuleNotFoundError:
             raise ModuleNotFoundError('package emcee not found. See README')
 
-        ndim = len(self.fit_parameters)
+        ndim = len(self.config['fit_parameters'])
         kwargs = {"threads": multiprocessing.cpu_count()} if mult else {}
         self.sampler = emcee.EnsembleSampler(self.nwalkers, ndim,
                                              self.log_probability,
-                                             args=([self.fit_parameters]),
+                                             args=([self.config['fit_parameters']]),
                                              **kwargs)
         self.log_dict['sampler'] = True
 
@@ -117,8 +119,8 @@ class MCMCStatModel(statistics.StatModel):
                 f"MCMC did not finish due to a ValueError. Was running with\n"
                 f"pos={self.pos.shape} nsteps = {self.nsteps}, walkers = "
                 f"{self.nwalkers}, ndim = "
-                f"{len(self.fit_parameters)} for fit parameters "
-                f"{self.fit_parameters}") from e
+                f"{len(self.config['fit_parameters'])} for fit parameters "
+                f"{self.config['fit_parameters']}") from e
         self.log_dict['did_run'] = True
         try:
             dt = end - start
@@ -131,7 +133,7 @@ class MCMCStatModel(statistics.StatModel):
     def show_walkers(self):
         if not self.log_dict['did_run']:
             self.run_emcee()
-        labels = self.fit_parameters
+        labels = self.config['fit_parameters']
         fig, axes = plt.subplots(len(labels), figsize=(10, 7), sharex=True)
         samples = self.sampler.get_chain()
         for i, label_i in enumerate(labels):
@@ -154,16 +156,16 @@ class MCMCStatModel(statistics.StatModel):
             flat=True
         )
         truths = [self.config[prior_name] for prior_name in
-                  statistics.get_prior_list()[:len(self.fit_parameters)]]
+                  statistics.get_prior_list()[:len(self.config['fit_parameters'])]]
 
-        corner.corner(flat_samples, labels=self.fit_parameters, truths=truths)
+        corner.corner(flat_samples, labels=self.config['fit_parameters'], truths=truths)
 
     def save_results(
             self,
             save_to_dir=default_emcee_save_dir(),
             force_index=False):
         # save fit parameters to config
-        self.config['fit_parameters'] = self.fit_parameters
+        self.config['fit_parameters'] = self.config['fit_parameters']
         if not self.log_dict['did_run']:
             self.run_emcee()
         # open a folder where to save to results
@@ -253,7 +255,7 @@ def emcee_plots(result, save=False, plot_walkers=True, show=False):
         'poisson',
         'nwalkers',
         'nsteps',
-            'n_energy_bins']:
+        'n_energy_bins']:
         try:
             info += f"\n{str_inf} = %s" % result['config'][str_inf]
             if str_inf == 'start':

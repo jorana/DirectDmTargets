@@ -1,20 +1,25 @@
 """Do a likelihood fit. The class NestedSamplerStatModel is used for fitting applying the bayesian algorithm nestle"""
 
 from __future__ import absolute_import, unicode_literals
-from DirectDmTargets import context, detector, statistics, utils
+
 import datetime
 import json
+import logging
 import os
-from scipy import special as spsp
-import corner
-import matplotlib.pyplot as plt
 import shutil
 import tempfile
-import numpy as np
-import numericalunits as nu
 from warnings import warn
-import logging
+
+import corner
+import matplotlib.pyplot as plt
+import numericalunits as nu
+import numpy as np
+from DirectDmTargets import context, detector, statistics, utils
+from scipy import special as spsp
+
 log = logging.getLogger()
+
+
 # log.setLevel(logging.DEBUG)
 
 
@@ -137,13 +142,13 @@ class NestedSamplerStatModel(statistics.StatModel):
             self.log_prior_transform_nested(
                 val,
                 self.known_parameters[i]) for i,
-            val in enumerate(theta)]
+                                              val in enumerate(theta)]
         return np.array(result)
 
     def run_nestle(self):
         self.print_before_run()
         assert self.config[
-            'sampler'] == 'nestle', f'Trying to run nestle but initialization requires {self.config["sampler"]}'
+                   'sampler'] == 'nestle', f'Trying to run nestle but initialization requires {self.config["sampler"]}'
 
         # Do the import of nestle inside the class such that the package can be
         # loaded without nestle
@@ -224,7 +229,7 @@ class NestedSamplerStatModel(statistics.StatModel):
     def run_multinest(self):
         self.print_before_run()
         assert self.config[
-            "sampler"] == 'multinest', f'Trying to run multinest but initialization requires {self.config["sampler"]}'
+                   "sampler"] == 'multinest', f'Trying to run multinest but initialization requires {self.config["sampler"]}'
         # Do the import of multinest inside the class such that the package can be
         # loaded without multinest
         try:
@@ -547,7 +552,6 @@ def load_nestle_samples(
         load_from=default_nested_save_dir(),
         base=utils.get_result_folder(),
         item='latest'):
-
     save = load_from
     files = os.listdir(base)
     if item == 'latest':
@@ -569,12 +573,16 @@ def load_nestle_samples_from_file(load_dir):
     keys = ['config', 'res_dict', 'h', 'logl', 'logvol', 'logz', 'logzerr',
             'ncall', 'niter', 'samples', 'weights']
     result = {}
+    files_in_dir = os.listdir(load_dir)
     for key in keys:
-        result[key] = np.load(
-            os.path.join(
-                load_dir,
-                key + '.npy'),
-            allow_pickle=True)
+        for file in files_in_dir:
+            if key + '.npy' in file:
+                result[key] = np.load(
+                    os.path.join(load_dir, file),
+                    allow_pickle=True)
+                break
+        else:
+            raise FileNotFoundError(f'No {key} in {load_dir} only:\n{files_in_dir}')
         if key == 'config' or key == 'res_dict':
             result[key] = result[key].item()
     log.info(
@@ -679,7 +687,7 @@ def solve_multinest(LogLikelihood, Prior, n_dims, **kwargs):
     """
     See PyMultinest Solve() for documentation
     """
-    from pymultinest.solve import run, Analyzer, solve
+    from pymultinest.solve import run, Analyzer
     kwargs['n_dims'] = n_dims
     files_temporary = False
     if 'outputfiles_basename' not in kwargs:

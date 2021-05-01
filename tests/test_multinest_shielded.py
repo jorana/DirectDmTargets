@@ -1,5 +1,6 @@
-import DirectDmTargets as dddm
 from sys import platform
+
+import DirectDmTargets as dddm
 
 
 def _is_windows():
@@ -13,7 +14,7 @@ def test_nested_simple_multinest_earth_shielding():
     fit_class.config['tol'] = 0.1
     fit_class.config['nlive'] = 10
     fit_class.config['earth_shielding'] = True
-    fit_class.config['max_iter'] = 1
+    fit_class.config['max_iter'] = 3
     fit_class.config['save_intermediate'] = True
     fit_class.set_nbins()
     fit_class.set_benchmark(mw=49)

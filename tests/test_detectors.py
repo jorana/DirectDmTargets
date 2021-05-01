@@ -1,6 +1,6 @@
 import DirectDmTargets as dddm
-from hypothesis import given, settings, strategies
 import numpy as np
+from hypothesis import given, settings, strategies
 
 
 @settings(deadline=None, max_examples=10)

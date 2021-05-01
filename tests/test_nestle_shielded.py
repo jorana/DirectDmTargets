@@ -1,5 +1,7 @@
-import DirectDmTargets as dddm
 import logging
+
+import DirectDmTargets as dddm
+
 log = logging.getLogger()
 
 

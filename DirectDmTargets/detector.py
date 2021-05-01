@@ -1,9 +1,10 @@
 """Introduce detector effects into the expected detection spectrum"""
 
+from warnings import warn
+
 import numba
 import numpy as np
 import pandas as pd
-from warnings import warn
 from DirectDmTargets.halo import GenSpectrum
 from DirectDmTargets.utils import get_bins
 
@@ -495,7 +496,7 @@ class DetectorSpectrum(GenSpectrum):
             rates += self.experiment['bg_func'](self.E_min,
                                                 self.E_max,
                                                 self.n_bins) * (
-                self.experiment['exp'] / self.experiment['exp_eff'])
+                             self.experiment['exp'] / self.experiment['exp_eff'])
         energies = self.get_bin_centers()
 
         # Set the rate to zero for energies smaller than the threshold

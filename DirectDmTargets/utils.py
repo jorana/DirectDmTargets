@@ -1,11 +1,13 @@
 """Basic functions for saving et cetera"""
 
-from DirectDmTargets import context
-import numpy as np
-import os
 import datetime
-import uuid
 import logging
+import os
+import uuid
+
+import numpy as np
+from DirectDmTargets import context
+
 log = logging.getLogger()
 
 

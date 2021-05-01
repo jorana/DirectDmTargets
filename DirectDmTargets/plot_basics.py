@@ -1,12 +1,13 @@
 """Some basic functions for plotting et cetera. Used to for instance check that
 the likelihood function is well behaved"""
 
-import numpy as np
-from tqdm import tqdm
-import matplotlib.pyplot as plt
-from DirectDmTargets import statistics, halo, detector, utils
 import colorsys
 import os
+
+import matplotlib.pyplot as plt
+import numpy as np
+from DirectDmTargets import statistics, halo, detector, utils
+from tqdm import tqdm
 
 
 def error_bar_hist(ax, data, data_range=None, nbins=50, **kwargs):
@@ -48,8 +49,7 @@ def ll_element_wise(x, y, clip_val=-1e4):
 
 
 def show_ll_function(npoints=1e4, clip_val=-1e4, min_val=0.1):
-    from pylab import meshgrid, cm, imshow, contour, clabel, colorbar, axis, \
-        title, show
+    from pylab import meshgrid, cm, imshow, colorbar, title
     from matplotlib.colors import LogNorm
     x = np.arange(0, npoints, 1)
     y = np.arange(0, npoints, 1)

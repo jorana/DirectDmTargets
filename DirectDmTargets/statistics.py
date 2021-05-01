@@ -1,15 +1,15 @@
 """Statistical model giving likelihoods for detecting a spectrum given a benchmark to compare it with."""
 
-from DirectDmTargets import context, detector, halo, utils
+import logging
+import os
+import time
+from sys import platform
+
 import numericalunits as nu
 import numpy as np
-from scipy.special import loggamma
-import time
-import logging
-import datetime
-from sys import platform
-import os
 import pandas as pd
+from DirectDmTargets import context, detector, halo, utils
+from scipy.special import loggamma
 
 # Set a lower bound to the log-likelihood (this becomes a problem due to
 # machine precision). Set to same number as multinest.
@@ -315,7 +315,7 @@ class StatModel:
             if callable(self.config['detector_config'][key]):
                 continue
             file_name = file_name + '_' + \
-                str(self.config['detector_config'][key])
+                        str(self.config['detector_config'][key])
         file_name = file_name.replace(' ', '_')
         file_name = file_name + '.csv'
         data_at_path, file_path = utils.add_pid_to_csv_filename(file_name)
@@ -623,7 +623,7 @@ class StatModel:
                         v_0=checked_values[2] * nu.km / nu.s,  # 'v_0'
                         v_esc=checked_values[3] * nu.km / nu.s,  # 'v_esc'
                         rho_dm=checked_values[
-                            4] * nu.GeV / nu.c0 ** 2 / nu.cm ** 3)  # 'density'
+                                   4] * nu.GeV / nu.c0 ** 2 / nu.cm ** 3)  # 'density'
                 else:
                     self.log.debug(
                         f"StatModel::\tSUPERVERBOSE\tUsing SHM in likelihood code")
@@ -782,7 +782,6 @@ def log_gauss(a, b, mu, sigma, x):
     :return: log prior of x evaluated for gaussian (given by mu and sigma) if in
     between the bounds
     """
-    raise ValueError(a, b, mu, sigma, x)
     try:
         # for single values of x
         if a < x < b:

@@ -1,9 +1,9 @@
+import tempfile
+
 import DirectDmTargets as dddm
 import matplotlib.pyplot as plt
 import numpy as np
 from hypothesis import given, strategies
-import numpy as np
-import tempfile
 
 
 def test_ll_s():

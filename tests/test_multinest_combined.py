@@ -1,6 +1,8 @@
-import DirectDmTargets as dddm
-from .test_multinest_shielded import _is_windows
 import logging
+
+import DirectDmTargets as dddm
+
+from .test_multinest_shielded import _is_windows
 
 log = logging.getLogger()
 

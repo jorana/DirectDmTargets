@@ -2,13 +2,13 @@
 software_dir: path of installation
 """
 
-from socket import getfqdn
+import logging
 import os
-from warnings import warn
+from socket import getfqdn
 
 import DirectDmTargets
 import verne
-import logging
+
 log = logging.getLogger()
 
 host = getfqdn()
