@@ -282,8 +282,8 @@ class StatModel:
         """
         self.log.warning(
             'Saving intermediate results. Computational gain may be limited')
-        assert 'DetectorSpectrum' in str(
-            self.config['spectrum_class']), "Input detector spectrum"
+        if not 'DetectorSpectrum' in str(self.config['spectrum_class']):
+            raise ValueError("Input detector spectrum")
         # Name the file according to the main parameters. Note that for each of
         # the main parameters
         file_name = os.path.join(
@@ -453,10 +453,10 @@ class StatModel:
 
         # check the input and compute the prior
         elif len(parameter_names) > 1:
-            assert len(parameter_vals) == len(
-                parameter_names), f"provide enough names (" \
-                                  f"{parameter_names}) for the " \
-                                  f"parameters (len{len(parameter_vals)})"
+            if len(parameter_vals) != len(parameter_names):
+                raise ValueError(
+                    f"provide enough names {parameter_names}) "
+                    f"for parameters (len{len(parameter_vals)})")
             lp = np.sum([self.log_prior(*_x) for _x in
                          zip(parameter_vals, parameter_names)])
         else:
@@ -518,8 +518,9 @@ class StatModel:
         """
         self.log.info(
             f'StatModel::\tevaluate spectrum for {len(values)} parameters')
-        assert len(values) == len(parameter_names), f'trying to fit {len(values)} ' \
-                                                    f'parameters but {parameter_names} are given.'
+        if len(values) != len(parameter_names):
+            raise ValueError(f'trying to fit {len(values)} parameters but '
+                             f'{parameter_names} are given.')
         default_order = [
             'log_mass',
             'log_cross_section',
@@ -539,7 +540,8 @@ class StatModel:
             spec_class = self.config['halo_model']
 
             if self.config['earth_shielding']:
-                assert str(spec_class) == str(halo.VerneSHM())
+                if not str(spec_class) == str(halo.VerneSHM()):
+                    raise ValueError('Not running with shielding!')
 
             interm_exists, interm_file, interm_spec = self.find_intermediate_result(
                 nbin=self.config['n_energy_bins'],
@@ -706,9 +708,10 @@ def log_likelihood(model, y):
     :param y: the number of counts in bin i
     :return: sum of the log-likelihoods of the bins
     """
-    assert_string = f"Data and model should be of same dimensions (now " \
-                    f"{len(y)} and {len(model)})"
-    assert len(y) == len(model), assert_string
+
+    if len(y) != len(model):
+        raise ValueError(f"Data and model should be of same dimensions (now "
+                         f"{len(y)} and {len(model)})")
 
     res = 0
     # pylint: disable=consider-using-enumerate
