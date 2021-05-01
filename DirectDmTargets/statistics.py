@@ -1,15 +1,15 @@
 """Statistical model giving likelihoods for detecting a spectrum given a benchmark to compare it with."""
 
-from DirectDmTargets import context, detector, halo, utils
+import logging
+import os
+import time
+from sys import platform
+
 import numericalunits as nu
 import numpy as np
-from scipy.special import loggamma
-import time
-import logging
-import datetime
-from sys import platform
-import os
 import pandas as pd
+from DirectDmTargets import context, detector, halo, utils
+from scipy.special import loggamma
 
 # Set a lower bound to the log-likelihood (this becomes a problem due to
 # machine precision). Set to same number as multinest.
@@ -97,8 +97,8 @@ class StatModel:
         :param detector_name: name of the detector (e.g. Xe)
         """
         if detector_name not in detector.experiment and detector_config is None:
-            raise ValueError(
-                'Please provide detector that is preconfigured or provide new one with detector_dict')
+            raise ValueError('Please provide detector that is '
+                             'preconfigured or provide new one with detector_dict')
         if detector_config is None:
             detector_config = detector.experiment[detector_name]
 
@@ -248,7 +248,7 @@ class StatModel:
                 err_message = f"{param} does not match any of the known parameters try " \
                               f"any of {self.known_parameters}"
                 raise NotImplementedError(err_message)
-        if not params == self.known_parameters[:len(params)]:
+        if params != self.known_parameters[:len(params)]:
             err_message = f"The parameters are not input in the correct order. Please" \
                           f" insert {self.known_parameters[:len(params)]} rather than {params}."
             raise NameError(err_message)
@@ -282,8 +282,8 @@ class StatModel:
         """
         self.log.warning(
             'Saving intermediate results. Computational gain may be limited')
-        assert 'DetectorSpectrum' in str(
-            self.config['spectrum_class']), "Input detector spectrum"
+        if 'DetectorSpectrum' not in str(self.config['spectrum_class']):
+            raise ValueError("Input detector spectrum")
         # Name the file according to the main parameters. Note that for each of
         # the main parameters
         file_name = os.path.join(
@@ -307,7 +307,7 @@ class StatModel:
             (int(
                 self.config['poisson'] if poisson is None else poisson)),
             'spectrum')
-
+        print(file_name)
         # Add all other parameters that are in the detector config
         if det_conf is None:
             det_conf = self.config['detector_config']
@@ -367,7 +367,7 @@ class StatModel:
         try:
             # rename the file to also reflect the hosts name such that we don't make two
             # copies at the same place with from two different hosts
-            if not (context.host in spectrum_file):
+            if context.host not in spectrum_file:
                 spectrum_file = spectrum_file.replace(
                     '.csv', context.host + '.csv')
             try:
@@ -453,10 +453,10 @@ class StatModel:
 
         # check the input and compute the prior
         elif len(parameter_names) > 1:
-            assert len(parameter_vals) == len(
-                parameter_names), f"provide enough names (" \
-                                  f"{parameter_names}) for the " \
-                                  f"parameters (len{len(parameter_vals)})"
+            if len(parameter_vals) != len(parameter_names):
+                raise ValueError(
+                    f"provide enough names {parameter_names}) "
+                    f"for parameters (len{len(parameter_vals)})")
             lp = np.sum([self.log_prior(*_x) for _x in
                          zip(parameter_vals, parameter_names)])
         else:
@@ -492,7 +492,7 @@ class StatModel:
         # For each of the priors read from the config file how the prior looks
         # like. Get the boundaries (and mean (m) and width (s) for gaussian
         # distributions).
-        self.log.info(f'StatModel::\tevaluating priors')
+        self.log.info(f'StatModel::\tevaluating priors for {variable_name}')
         if self.config['prior'][variable_name]['prior_type'] == 'flat':
             a, b = self.config['prior'][variable_name]['param']
             return log_flat(a, b, value)
@@ -518,8 +518,9 @@ class StatModel:
         """
         self.log.info(
             f'StatModel::\tevaluate spectrum for {len(values)} parameters')
-        assert len(values) == len(parameter_names), f'trying to fit {len(values)} ' \
-                                                    f'parameters but {parameter_names} are given.'
+        if len(values) != len(parameter_names):
+            raise ValueError(f'trying to fit {len(values)} parameters but '
+                             f'{parameter_names} are given.')
         default_order = [
             'log_mass',
             'log_cross_section',
@@ -539,7 +540,8 @@ class StatModel:
             spec_class = self.config['halo_model']
 
             if self.config['earth_shielding']:
-                assert str(spec_class) == str(halo.VerneSHM())
+                if str(spec_class) != str(halo.VerneSHM()):
+                    raise ValueError('Not running with shielding!')
 
             interm_exists, interm_file, interm_spec = self.find_intermediate_result(
                 nbin=self.config['n_energy_bins'],
@@ -605,7 +607,7 @@ class StatModel:
                 self.save_intermediate_result(binned_spectrum, interm_file)
             return binned_spectrum
         elif len(parameter_names) == 5 or len(parameter_names) == 6:
-            if not parameter_names == default_order[:len(parameter_names)]:
+            if parameter_names != default_order[:len(parameter_names)]:
                 raise NameError(
                     f"The parameters are not in correct order. Please insert"
                     f"{default_order[:len(parameter_names)]} rather than "
@@ -660,11 +662,8 @@ class StatModel:
                     f"{parameter_names} = {values}.\nIf this occurs, one or "
                     f"more priors might not be constrained correctly.")
                 if 'migd' in self.config['detector']:
+                    binned_spectrum = spectrum.set_negative_to_zero(binned_spectrum)
                     self.log.error(error_message)
-                    mask = binned_spectrum['counts'] < 0
-                    # Capping the rates
-                    # See https://github.com/jorana/DirectDmTargets/issues/31
-                    binned_spectrum['counts'][mask] = 0
                 else:
                     raise ValueError(error_message)
             self.log.debug(f"StatModel::\tSUPERVERBOSE\treturning results")
@@ -706,9 +705,10 @@ def log_likelihood(model, y):
     :param y: the number of counts in bin i
     :return: sum of the log-likelihoods of the bins
     """
-    assert_string = f"Data and model should be of same dimensions (now " \
-                    f"{len(y)} and {len(model)})"
-    assert len(y) == len(model), assert_string
+
+    if len(y) != len(model):
+        raise ValueError(f"Data and model should be of same dimensions (now "
+                         f"{len(y)} and {len(model)})")
 
     res = 0
     # pylint: disable=consider-using-enumerate
@@ -741,7 +741,7 @@ def check_shape(xs):
     :param xs: values
     :return: flat array of values
     """
-    if not len(xs) > 0:
+    if len(xs) <= 0:
         raise TypeError(
             f"Provided incorrect type of {xs}. Takes either np.array or list")
     if not isinstance(xs, np.ndarray):

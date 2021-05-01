@@ -18,12 +18,15 @@ setuptools.setup(
     package_dir={'DirectDmTargets': 'DirectDmTargets'},
     package_data={'DirectDmTargets': [
         'data/*']},
-    tests_require=requirements + ['pytest'],
+    tests_require=requirements + ['pytest',
+                                  'hypothesis-numpy'],
     scripts=['scripts/run_combined_multinest',
              'scripts/run_dddm_emcee',
              'scripts/run_dddm_multinest',
              ],
     keywords='todo',
     classifiers=['Intended Audience :: Science/Research',
+                 'Development Status :: 3 - Alpha',
+                 'Programming Language :: Python',
                  'Programming Language :: Python :: 3'],
     zip_safe=False)

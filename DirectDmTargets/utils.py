@@ -1,11 +1,13 @@
 """Basic functions for saving et cetera"""
 
-from DirectDmTargets import context
-import numpy as np
-import os
 import datetime
-import uuid
 import logging
+import os
+import uuid
+
+import numpy as np
+from DirectDmTargets import context
+
 log = logging.getLogger()
 
 
@@ -136,7 +138,7 @@ def open_save_dir(save_as, base_dir=None, force_index=False, _hash=None):
         assert force_index is False, f'do not set _hash to {_hash} and force_index to {force_index} simultaneously'
         results_path = _folders_plus_one(base_dir, save_as)
     else:
-        results_path = os.path.join(base_dir, save_as, '_HASH' + str(_hash))
+        results_path = os.path.join(base_dir, save_as + '_HASH' + str(_hash))
 
     check_folder_for_file(os.path.join(results_path, "some_file_goes_here"))
     log.info('open_save_dir::\tusing ' + results_path)
@@ -203,8 +205,8 @@ def add_pid_to_csv_filename(name):
         log.debug(
             f'VerneSHM::\tUsing {str_in_list(file_name, files_in_folder)} since it has {file_name}')
         exist_csv = True
-        abs_file_name = requested_folder + \
-            str_in_list(file_name, files_in_folder)
+        abs_file_name = os.path.join(requested_folder,
+                                     str_in_list(file_name, files_in_folder))
         log.info(f'VerneSHM::\tUsing {abs_file_name} as input')
     else:
         log.info("VerneSHM::\tNo file found")

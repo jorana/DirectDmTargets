@@ -1,21 +1,19 @@
 """For a given detector get a WIMPrate for a given detector (not taking into
 account any detector effects"""
 
-from warnings import warn
-from DirectDmTargets.context import tmp_folder, context
-from DirectDmTargets import utils
+import logging
+import os
+import shutil
+
+import numericalunits as nu
 import numpy as np
 import pandas as pd
-import wimprates as wr
-import numericalunits as nu
-import os
-from scipy.interpolate import interp1d
-import datetime
-import time
-import subprocess
 import verne
-import shutil
-import logging
+import wimprates as wr
+from DirectDmTargets import utils
+from DirectDmTargets.context import context
+from scipy.interpolate import interp1d
+
 log = logging.getLogger()
 
 
@@ -86,9 +84,8 @@ class GenSpectrum:
                                     **kwargs
                                     )
         elif self.experiment['type'] in ['migdal', 'migdal_bg']:
-            # TODO
-            #  This integration takes a long time, hence, we will lower the
-            #  default precision of the scipy dblquad integration
+            # This integration takes a long time, hence, we will lower the
+            # default precision of the scipy dblquad integration
             migdal_integration_kwargs = dict(epsabs=1e-4,
                                              epsrel=1e-4)
             convert_units = (nu.keV * (1000 * nu.kg) * nu.year)

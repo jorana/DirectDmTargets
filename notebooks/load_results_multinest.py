@@ -36,7 +36,7 @@ print("load_results_multinest.py\tdone packages, get results")
 
 # loading normal results.
 results = {}
-all_res = dddm.context['results_dir']
+all_res = dddm.context.context['results_dir']
 res_dirs = os.listdir(all_res)
 res_dirs.reverse()
 no_result = []

@@ -1,20 +1,25 @@
 """Do a likelihood fit. The class NestedSamplerStatModel is used for fitting applying the bayesian algorithm nestle"""
 
 from __future__ import absolute_import, unicode_literals
-from DirectDmTargets import context, detector, statistics, utils
+
 import datetime
 import json
+import logging
 import os
-from scipy import special as spsp
-import corner
-import matplotlib.pyplot as plt
 import shutil
 import tempfile
-import numpy as np
-import numericalunits as nu
 from warnings import warn
-import logging
+
+import corner
+import matplotlib.pyplot as plt
+import numericalunits as nu
+import numpy as np
+from DirectDmTargets import context, detector, statistics, utils
+from scipy import special as spsp
+
 log = logging.getLogger()
+
+
 # log.setLevel(logging.DEBUG)
 
 
@@ -204,7 +209,6 @@ class NestedSamplerStatModel(statistics.StatModel):
             f'NestedSamplerStatModel::\tFinished with running optimizer!')
 
     def print_before_run(self):
-        self.set_models()
         self.log.warning(f"""--------------------------------------------------
         NestedSamplerStatModel::\t{utils.now()}\n\tFinal print of all of the set options:
         self.config['tol'] = {self.config['tol']}
@@ -386,21 +390,23 @@ class NestedSamplerStatModel(statistics.StatModel):
             f"let's return it to whomever asked for it")
         return resdict
 
-    def get_save_dir(self, force_index=False, _hash=None):
-        if (not self.log_dict['saved_in']) or force_index:
-            self.log_dict['saved_in'] = utils.open_save_dir(
-                f'nes_{self.config["sampler"][:2]}',
-                force_index=force_index,
-                _hash=_hash)
-        self.log.info(
-            f'NestedSamplerStatModel::\tget_save_dir\tsave_dir = {self.log_dict["saved_in"]}')
-        return self.log_dict['saved_in']
+    def get_save_dir(self, force_index=False, _hash=None) -> str:
+        saved_in = self.log_dict['saved_in']
+        saved_ok = isinstance(saved_in, str) and os.path.exists(saved_in)
+        if saved_ok and not force_index:
+            return saved_in
+        target_save = utils.open_save_dir(f'nes_{self.config["sampler"][:2]}',
+                                          force_index=force_index,
+                                          _hash=_hash)
+        self.log_dict['saved_in'] = target_save
+        self.log.info(f'NestedSamplerStatModel::\tget_save_dir\tsave_dir = {target_save}')
+        return target_save
 
     def get_tmp_dir(self, force_index=False, _hash=None):
         if (not self.log_dict['tmp_dir']) or force_index:
             self.log_dict['tmp_dir'] = utils.open_save_dir(
                 f'{self.config["sampler"]}',
-                base_dir=context['tmp_folder'],
+                base_dir=context.context['tmp_folder'],
                 force_index=force_index,
                 _hash=_hash)
         self.log.info(
@@ -419,48 +425,56 @@ class NestedSamplerStatModel(statistics.StatModel):
             f'NestedSamplerStatModel::\tAlright all set, let put all that info'
             f' in {save_dir} and be done with it')
         # save the config, chain and flattened chain
-        if 'HASH' in save_dir or os.path.exists(
-                os.path.join(save_dir, 'config.json')):
-            save_dir = os.path.join(save_dir, 'pid' + str(os.getpid()) + '_')
-        with open(os.path.join(save_dir, 'config.json'), 'w') as file:
+        pid_id = 'pid' + str(os.getpid()) + '_'
+        with open(os.path.join(save_dir, f'{pid_id}config.json'), 'w') as file:
             json.dump(convert_dic_to_savable(self.config), file, indent=4)
-        with open(os.path.join(save_dir, 'res_dict.json'), 'w') as file:
+        with open(os.path.join(save_dir, f'{pid_id}res_dict.json'), 'w') as file:
             json.dump(convert_dic_to_savable(fit_summary), file, indent=4)
         np.save(
-            os.path.join(
-                save_dir, 'config.npy'), convert_dic_to_savable(
-                self.config))
-        np.save(os.path.join(save_dir, 'res_dict.npy'),
+            os.path.join(save_dir, f'{pid_id}config.npy'),
+            convert_dic_to_savable(self.config))
+        np.save(os.path.join(save_dir, f'{pid_id}res_dict.npy'),
                 convert_dic_to_savable(fit_summary))
         for col in self.result.keys():
             if col == 'samples' or not isinstance(col, dict):
                 if self.config["sampler"] == 'multinest' and col == 'samples':
                     # in contrast to nestle, multinest returns the weighted
                     # samples.
-                    np.save(os.path.join(save_dir, 'weighted_samples.npy'),
+                    np.save(os.path.join(save_dir, f'{pid_id}weighted_samples.npy'),
                             self.result[col])
                 else:
                     np.save(
                         os.path.join(
                             save_dir,
-                            col + '.npy'),
+                            pid_id + col + '.npy'),
                         self.result[col])
             else:
-                np.save(os.path.join(save_dir, col + '.npy'),
+                np.save(os.path.join(save_dir, pid_id + col + '.npy'),
                         convert_dic_to_savable(self.result[col]))
         if 'logging' in self.config:
-            shutil.copy(self.config['logging'], os.path.join(
-                save_dir, self.config['logging'].split('/')[-1]))
+            shutil.copy(
+                self.config['logging'],
+                os.path.join(save_dir,
+                             self.config['logging'].split('/')[-1]))
         self.log.info(f'save_results::\tdone_saving')
 
     def show_corner(self):
         self.log.info(
-            f"NestedSamplerStatModel::\t{utils.now(self.config['start'])}\n\tLet's do some graphics, I'll make you a "
+            f"NestedSamplerStatModel::\t{utils.now(self.config['start'])}"
+            f"\n\tLet's do some graphics, I'll make you a "
             f"nice corner plot just now")
         self.check_did_save()
         save_dir = self.log_dict['saved_in']
-        combined_results = load_nestle_samples_from_file(save_dir)
-        nestle_corner(combined_results, save_dir)
+
+        if self.config['sampler'] == 'multinest':
+            combined_results = load_multinest_samples_from_file(save_dir)
+            multinest_corner(combined_results, save_dir)
+        elif self.config['sampler'] == 'nestle':
+            combined_results = load_nestle_samples_from_file(save_dir)
+            nestle_corner(combined_results, save_dir)
+        else:
+            # This cannot happen
+            raise ValueError(f"Impossible, sampler was {self.config['sampler']}")
         self.log.info(
             f'NestedSamplerStatModel::\tEnjoy the plot. Maybe you do want to'
             f' save it too?')
@@ -538,7 +552,6 @@ def load_nestle_samples(
         load_from=default_nested_save_dir(),
         base=utils.get_result_folder(),
         item='latest'):
-
     save = load_from
     files = os.listdir(base)
     if item == 'latest':
@@ -560,12 +573,16 @@ def load_nestle_samples_from_file(load_dir):
     keys = ['config', 'res_dict', 'h', 'logl', 'logvol', 'logz', 'logzerr',
             'ncall', 'niter', 'samples', 'weights']
     result = {}
+    files_in_dir = os.listdir(load_dir)
     for key in keys:
-        result[key] = np.load(
-            os.path.join(
-                load_dir,
-                key + '.npy'),
-            allow_pickle=True)
+        for file in files_in_dir:
+            if key + '.npy' in file:
+                result[key] = np.load(
+                    os.path.join(load_dir, file),
+                    allow_pickle=True)
+                break
+        else:
+            raise FileNotFoundError(f'No {key} in {load_dir} only:\n{files_in_dir}')
         if key == 'config' or key == 'res_dict':
             result[key] = result[key].item()
     log.info(
@@ -670,7 +687,7 @@ def solve_multinest(LogLikelihood, Prior, n_dims, **kwargs):
     """
     See PyMultinest Solve() for documentation
     """
-    from pymultinest.solve import run, Analyzer, solve
+    from pymultinest.solve import run, Analyzer
     kwargs['n_dims'] = n_dims
     files_temporary = False
     if 'outputfiles_basename' not in kwargs:

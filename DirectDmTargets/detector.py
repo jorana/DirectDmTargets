@@ -1,9 +1,10 @@
 """Introduce detector effects into the expected detection spectrum"""
 
+from warnings import warn
+
 import numba
 import numpy as np
 import pandas as pd
-from warnings import warn
 from DirectDmTargets.halo import GenSpectrum
 from DirectDmTargets.utils import get_bins
 
