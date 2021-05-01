@@ -38,7 +38,7 @@ def test_emcee_full_prior():
         save_dir = fit_class.config['save_dir']
         r = dddm.emcee_applications.load_chain_emcee(
             override_load_from=save_dir)
-        dddm.emcee_applications.emcee_plots(r, save=True, show=True)
+        dddm.emcee_applications.emcee_plots(r, save=True, show=False)
         plt.clf()
         plt.close()
 
@@ -57,6 +57,6 @@ def test_emcee_astrophysics_prior():
         save_dir = fit_class.config['save_dir']
         r = dddm.emcee_applications.load_chain_emcee(
             override_load_from=save_dir)
-        dddm.emcee_applications.emcee_plots(r, save=True, show=True)
+        dddm.emcee_applications.emcee_plots(r, save=True, show=False)
         plt.clf()
         plt.close()
