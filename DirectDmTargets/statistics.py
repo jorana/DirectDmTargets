@@ -662,11 +662,8 @@ class StatModel:
                     f"{parameter_names} = {values}.\nIf this occurs, one or "
                     f"more priors might not be constrained correctly.")
                 if 'migd' in self.config['detector']:
+                    binned_spectrum = spectrum.set_negative_to_zero(binned_spectrum)
                     self.log.error(error_message)
-                    mask = binned_spectrum['counts'] < 0
-                    # Capping the rates
-                    # See https://github.com/jorana/DirectDmTargets/issues/31
-                    binned_spectrum['counts'][mask] = 0
                 else:
                     raise ValueError(error_message)
             self.log.debug(f"StatModel::\tSUPERVERBOSE\treturning results")
