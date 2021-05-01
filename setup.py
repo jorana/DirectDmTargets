@@ -25,7 +25,5 @@ setuptools.setup(
              ],
     keywords='todo',
     classifiers=['Intended Audience :: Science/Research',
-                 'Development Status :: 3 - Alpha',
-                 'Programming Language :: Python',
                  'Programming Language :: Python :: 3'],
     zip_safe=False)
