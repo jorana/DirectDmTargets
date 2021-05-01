@@ -492,7 +492,7 @@ class StatModel:
         # For each of the priors read from the config file how the prior looks
         # like. Get the boundaries (and mean (m) and width (s) for gaussian
         # distributions).
-        self.log.info(f'StatModel::\tevaluating priors')
+        self.log.info(f'StatModel::\tevaluating priors for {variable_name}')
         if self.config['prior'][variable_name]['prior_type'] == 'flat':
             a, b = self.config['prior'][variable_name]['param']
             return log_flat(a, b, value)
@@ -782,6 +782,7 @@ def log_gauss(a, b, mu, sigma, x):
     :return: log prior of x evaluated for gaussian (given by mu and sigma) if in
     between the bounds
     """
+    raise ValueError(a, b, mu, sigma, x)
     try:
         # for single values of x
         if a < x < b:
