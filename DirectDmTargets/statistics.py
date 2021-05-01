@@ -248,7 +248,7 @@ class StatModel:
                 err_message = f"{param} does not match any of the known parameters try " \
                               f"any of {self.known_parameters}"
                 raise NotImplementedError(err_message)
-        if not params == self.known_parameters[:len(params)]:
+        if params != self.known_parameters[:len(params)]:
             err_message = f"The parameters are not input in the correct order. Please" \
                           f" insert {self.known_parameters[:len(params)]} rather than {params}."
             raise NameError(err_message)
@@ -367,7 +367,7 @@ class StatModel:
         try:
             # rename the file to also reflect the hosts name such that we don't make two
             # copies at the same place with from two different hosts
-            if not (context.host in spectrum_file):
+            if context.host not in spectrum_file:
                 spectrum_file = spectrum_file.replace(
                     '.csv', context.host + '.csv')
             try:
@@ -540,7 +540,7 @@ class StatModel:
             spec_class = self.config['halo_model']
 
             if self.config['earth_shielding']:
-                if not str(spec_class) == str(halo.VerneSHM()):
+                if str(spec_class) != str(halo.VerneSHM()):
                     raise ValueError('Not running with shielding!')
 
             interm_exists, interm_file, interm_spec = self.find_intermediate_result(
@@ -607,7 +607,7 @@ class StatModel:
                 self.save_intermediate_result(binned_spectrum, interm_file)
             return binned_spectrum
         elif len(parameter_names) == 5 or len(parameter_names) == 6:
-            if not parameter_names == default_order[:len(parameter_names)]:
+            if parameter_names != default_order[:len(parameter_names)]:
                 raise NameError(
                     f"The parameters are not in correct order. Please insert"
                     f"{default_order[:len(parameter_names)]} rather than "
@@ -744,7 +744,7 @@ def check_shape(xs):
     :param xs: values
     :return: flat array of values
     """
-    if not len(xs) > 0:
+    if len(xs) <= 0:
         raise TypeError(
             f"Provided incorrect type of {xs}. Takes either np.array or list")
     if not isinstance(xs, np.ndarray):
