@@ -282,7 +282,7 @@ class StatModel:
         """
         self.log.warning(
             'Saving intermediate results. Computational gain may be limited')
-        if not 'DetectorSpectrum' in str(self.config['spectrum_class']):
+        if 'DetectorSpectrum' not in str(self.config['spectrum_class']):
             raise ValueError("Input detector spectrum")
         # Name the file according to the main parameters. Note that for each of
         # the main parameters
