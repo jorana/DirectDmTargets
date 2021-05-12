@@ -46,7 +46,7 @@ jobs:
         run: |
           bash .github/scripts/install_on_linux.sh
       - name: Install python dependencies
-        uses: py-actions/py-dependency-install@v2
+        uses: py-actions/py-dependency-install@v2.1.0
       - name: Install other stuff
         run: |
           pip install pytest hypothesis flake8 pytest-cov
