@@ -28,7 +28,7 @@ jobs:
     - name: Checkout repo
       uses: actions/checkout@v2
     - name: Install python dependencies
-      uses: py-actions/py-dependency-install@v2
+      uses: py-actions/py-dependency-install@v2.1.0
     - name: Install requirements
       run: |
         bash .github/scripts/install_on_linux.sh
