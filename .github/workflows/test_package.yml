@@ -24,7 +24,7 @@ jobs:
         python-version: ["3.8"]
     steps:
       - name: Setup python
-        uses: actions/setup-python@v2 # https://github.com/marketplace/actions/setup-miniconda
+        uses: actions/setup-python@v2.2.2 # https://github.com/marketplace/actions/setup-miniconda
         with:
           python-version: ${{ matrix.python-version }}
       - uses: conda-incubator/setup-miniconda@v2.1.1
