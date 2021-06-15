@@ -13,8 +13,7 @@ log = logging.getLogger()
 
 host = getfqdn()
 log.debug(f'Host: {host}')
-
- = '/tmp/'
+_naive_tmp = '/tmp/'
 
 if 'stbc' in host or 'nikhef' in host:
     context = {'software_dir': '/project/xenon/jorana/software/DD_DM_targets/',
