@@ -13,7 +13,8 @@ log = logging.getLogger()
 
 host = getfqdn()
 log.debug(f'Host: {host}')
-_naive_tmp = '/tmp/'
+
+ = '/tmp/'
 
 if 'stbc' in host or 'nikhef' in host:
     context = {'software_dir': '/project/xenon/jorana/software/DD_DM_targets/',
@@ -34,7 +35,7 @@ if 'stbc' in host or 'nikhef' in host:
             # Not fine, we cannot use the /tmp/ folder on the stoomboot nodes
             raise ValueError(f'No tmp folder found on {host}. '
                              f'Environment vars:\n{os.environ}')
-    if os.path.exists(tmp_folder):
+    if not os.path.exists(tmp_folder):
         raise FileNotFoundError(f"Cannot find tmp folder at {tmp_folder}")
     context['tmp_folder'] = tmp_folder
     for key in context.keys():
