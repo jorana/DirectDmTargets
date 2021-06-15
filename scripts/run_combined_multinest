@@ -101,6 +101,8 @@ def set_config(model_simulator, args):
 
     if args.shielding:
         update_config['halo_model'] = dddm.VerneSHM()
+    else:
+        update_config['halo_model'] = dddm.SHM()
 
     model_simulator.config.update(update_config)
     update_keys = list(update_config.keys())

@@ -15,6 +15,7 @@ from DirectDmTargets.context import context
 from scipy.interpolate import interp1d
 
 log = logging.getLogger()
+log.setLevel(logging.DEBUG)
 
 
 class GenSpectrum:
@@ -254,43 +255,44 @@ class VerneSHM:
 
         # Convert file_name and self.fname to folder and name of csv file where
         # to save.
-        exist_csv, abs_file_name = utils.add_pid_to_csv_filename(file_name)
-        assertion_string = f'abs file {abs_file_name} should be a string\n'
+        temp_file_name = utils.add_temp_to_csv(file_name)
+        exist_csv = os.path.exists(file_name)
+        assertion_string = f'abs file {temp_file_name} should be a string\n'
         assertion_string += f'exists csv {exist_csv} should be a bool'
-        log.info(f'load_f::\twrite to {abs_file_name} ({not exist_csv}. '
-                 f'Then copy to {file_name}')
-        assert isinstance(
-            abs_file_name, str) and isinstance(
-            exist_csv, bool), assertion_string
+        log.info(f'load_f::\twrite to {file_name} ({not exist_csv}). '
+                 f'Then copy to {temp_file_name}')
+        assert (isinstance(temp_file_name, str) and
+                isinstance(exist_csv, bool)), assertion_string
         if not exist_csv:
-            verne.CalcVelDist.write_calcveldist(
+            log.info(f'Using {file_name} for the velocity distribution. Writing to {temp_file_name}')
+            df = verne.CalcVelDist.avg_calcveldist(
                 m_x=10. ** self.log_mass,
                 sigma_p=10. ** self.log_cross_section,
                 loc=self.location,
                 v_esc=self.v_esc_nodim,
                 v_0=self.v_0_nodim,
-                save_as=abs_file_name,
                 N_gamma=4,
             )
 
             if not os.path.exists(file_name):
-                log.debug(f'load_f:\tcopy from temp-folder to verne_folder')
-                shutil.move(abs_file_name, file_name)
+                log.info(f'writing to {temp_file_name}')
+                df.to_csv(temp_file_name, index=False)
+                if not os.path.exists(file_name):
+                    log.info(f'moving {temp_file_name} to {file_name}')
+                    shutil.move(temp_file_name, file_name)
             else:
-                log.warning(
-                    f'load_f:\twhile writing {abs_file_name}, {file_name} was created')
+                log.warning(f'while writing {temp_file_name}, {file_name} was created')
         else:
             log.info(f'Using {file_name} for the velocity distribution')
-
+            try:
+                df = pd.read_csv(file_name)
+            except pd.io.common.EmptyDataError as pandas_error:
+                os.remove(file_name)
+                raise pandas_error
         # Alright now load the data and interpolate that. This is the output
         # that wimprates need
         if not os.path.exists(os.path.abspath(file_name)):
-            raise OSError(f'{file_name} should exist')
-        try:
-            df = pd.read_csv(file_name)
-        except pd.io.common.EmptyDataError as pandas_error:
-            os.remove(file_name)
-            raise pandas_error
+            raise OSError(f'{file_name} should exist. Is there anything at {temp_file_name}')
 
         if not len(df):
             # Somehow we got an empty dataframe, we cannot continue

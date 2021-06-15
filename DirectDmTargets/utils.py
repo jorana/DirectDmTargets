@@ -142,8 +142,8 @@ def open_save_dir(save_as, base_dir=None, force_index=False, _hash=None):
 
     check_folder_for_file(os.path.join(results_path, "some_file_goes_here"))
     log.info('open_save_dir::\tusing ' + results_path)
-    log.debug(
-        f'Other files in {results_path} base are {os.listdir(os.path.split(results_path)[0])}')
+    # log.debug(
+    #     f'Other files in {results_path} base are {os.listdir(os.path.split(results_path)[0])}')
     return results_path
 
 
@@ -159,13 +159,19 @@ def str_in_list(string, _list):
 def is_str_in_list(string, _list):
     """checks if sting is in any of the items in _list.
     :return bool:"""
-    log.debug(f'is_str_in_list::\tlooking for {string} in {_list}')
+    # log.debug(f'is_str_in_list::\tlooking for {string} in {_list}')
     for name in _list:
         if string in name:
             log.debug(f'is_str_in_list::\t{string} is in  {name}!')
             return True
-        log.debug(f'is_str_in_list::\t{string} is not in  {name}')
+        # log.debug(f'is_str_in_list::\t{string} is not in  {name}')
     return False
+
+
+def add_temp_to_csv(abspath):
+    assert '.csv' in abspath, f"{abspath} is not .csv"
+    abspath = abspath.replace('.csv', f'_temp_{os.getpid()}.csv')
+    return abspath
 
 
 def add_pid_to_csv_filename(name):
@@ -199,7 +205,8 @@ def add_pid_to_csv_filename(name):
     log.debug(f'VerneSHM::\tlooking for "{file_name}" in "{requested_folder}".'
               f'\n\tDoes it have the right file?\n\t'
               f'{is_str_in_list(file_name, files_in_folder)}'
-              f'That folder has "{files_in_folder}". ')
+              # f'That folder has "{files_in_folder}".'
+              f' ')
 
     if is_str_in_list(file_name, files_in_folder):
         log.debug(
