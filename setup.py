@@ -22,7 +22,6 @@ setuptools.setup(
                                   'hypothesis-numpy'],
     scripts=['scripts/run_combined_multinest',
              'scripts/run_dddm_emcee',
-             'scripts/run_dddm_multinest',
              ],
     keywords='todo',
     classifiers=['Intended Audience :: Science/Research',

@@ -264,7 +264,8 @@ class VerneSHM:
         assert (isinstance(temp_file_name, str) and
                 isinstance(exist_csv, bool)), assertion_string
         if not exist_csv:
-            log.info(f'Using {file_name} for the velocity distribution. Writing to {temp_file_name}')
+            log.info(f'Using {file_name} for the velocity distribution. '
+                     f'Writing to {temp_file_name}')
             df = verne.CalcVelDist.avg_calcveldist(
                 m_x=10. ** self.log_mass,
                 sigma_p=10. ** self.log_cross_section,
