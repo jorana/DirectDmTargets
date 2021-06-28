@@ -509,6 +509,9 @@ class DetectorSpectrum(GenSpectrum):
         events = np.array(smear_signal(rates, energies, sigma, bin_width))
         # re-bin final result to the desired number of bins
         events = self.chuck_integration(events, energies, result_bins)
+        
+        # Set the bins back to the default 
+        self.n_bins = self.n_bins_result 
         return events * self.experiment['exp_eff']
 
     def get_events(self):
