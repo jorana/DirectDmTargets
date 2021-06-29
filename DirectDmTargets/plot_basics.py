@@ -201,15 +201,23 @@ def save_canvas(name,
     if os.path.exists(save_dir) and os.path.exists(save_dir + '/pdf'):
         plt.savefig(f"{save_dir}/{name}.png", dpi=200, bbox_inches="tight")
         for extension in 'pdf svg'.split():
-            plt.savefig(os.path.join(save_dir, extension, f'{name}.pdf'), dpi=100, bbox_inches="tight")
+            plt.savefig(
+                os.path.join(
+                    save_dir,
+                    extension,
+                    f'{name}.pdf'),
+                dpi=100,
+                bbox_inches="tight")
         if pickle_dump:
             pickle_dump_figure(os.path.join(save_dir, 'pkl', f'{name}.pkl'))
     else:
         raise FileExistsError(f'{save_dir} does not exist or does not have /pdf')
 
+
 def pickle_dump_figure(name):
     fig = plt.gcf()
     pickle.dump(fig, open(name, 'wb'))
+
 
 def open_pickle_figure(name):
     figx = pickle.load(open(name, 'rb'))
