@@ -185,7 +185,6 @@ def get_color_from_range(val, _range=(0, 1), it=0):
     return [float(r) for r in res]
 
 
-import pickle
 def save_canvas(name,
                 save_dir='./figures',
                 dpi=200,
@@ -205,13 +204,21 @@ def save_canvas(name,
     if os.path.exists(save_dir):
         plt.savefig(f"{save_dir}/{name}.png", dpi=dpi, bbox_inches="tight")
         for extension in 'pdf svg'.split():
-            plt.savefig(os.path.join(save_dir, extension, f'{name}.{extension}'), dpi=dpi, bbox_inches="tight")
+            plt.savefig(
+                os.path.join(
+                    save_dir,
+                    extension,
+                    f'{name}.{extension}'),
+                dpi=dpi,
+                bbox_inches="tight")
     else:
         raise FileExistsError(f'{save_dir} does not exist or does not have /pdf')
+
 
 def pickle_dump_figure(name):
     fig = plt.gcf()
     pickle.dump(fig, open(name, 'wb'))
+
 
 def open_pickle_figure(name):
     figx = pickle.load(open(name, 'rb'))
