@@ -86,7 +86,7 @@ def set_config(model_simulator, args):
         'save_intermediate': args.save_intermediate,
         'fit_parameters': model_simulator.known_parameters[:args.nparams],
         'nlive': args.nlive,
-#        'E_max': args.e_max,
+        #        'E_max': args.e_max,
         'tol': args.tol}
 
     model_simulator.set_prior(args.priors_from)

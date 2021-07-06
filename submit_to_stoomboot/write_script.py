@@ -63,7 +63,8 @@ base_dir = args.base_dir
 # where to write
 #
 _scriptfile = '%s_%s.sh' % ('dddm', args.arguments.replace("-", "_"))
-_scriptfile = _scriptfile.replace('_context_from_json /project/xenon/jorana/software/dddm_paper/dddm_context.json', '')
+_scriptfile = _scriptfile.replace(
+    '_context_from_json /project/xenon/jorana/software/dddm_paper/dddm_context.json', '')
 if 'multicore_hash' in args.arguments:
     print(f'write_script.py::\tChange scriptfile name')
     script_split = _scriptfile.strip('.sh').split('multicore_hash')

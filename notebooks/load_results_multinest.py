@@ -310,7 +310,7 @@ def one_confidence_plot(
 
 
 def _confidence_plot(item, X, Y, H, bin_range, text_box=False, nsigma=3,
-                     make_xticks = True,
+                     make_xticks=True,
                      cbar_note="", cmap=cm.inferno_r, alpha=1,
                      ):
     xmean, xerr = weighted_avg_and_std(X, np.mean(H, axis=0))
@@ -370,13 +370,13 @@ def _confidence_plot(item, X, Y, H, bin_range, text_box=False, nsigma=3,
     # regions, so let's turn them off.
     for c in cset2.collections:
         c.set_linestyle('solid')
-    
+
     cbar = ax.figure.colorbar(contours)
     col_labels = [r'$3\sigma$', r'$2\sigma$', r'$1\sigma$'][3 - nsigma:]
     cbar.set_ticklabels(col_labels)
     cbar.set_label("Posterior probability" + cbar_note)
 
-    if make_xticks:        
+    if make_xticks:
         secax = ax.secondary_xaxis('top', functions=(pow10, np.log10))
 
         if 'migd' in results[item]['config']['detector']:
@@ -641,7 +641,7 @@ def combined_confidence_plot(items,
                 nsigma=nsigma,
                 cbar_note=cbar_notes[k],
                 cmap=cmap[k] if cmap else colormaps[k],
-                make_xticks =False,
+                make_xticks=False,
                 alpha=alpha /
                 len(items) if combine else alpha)
             _results.append(res)
@@ -855,7 +855,7 @@ def combine_sets(items,
                     notes, [0, sub_number, number_i])]
                 def_show_single(it, _name, name_base, **kwargs)
                 exec_show(show)
-                
+
         if level > 0:
             f_print(f'at 1/{level}')
             for plot_times in range(2):
